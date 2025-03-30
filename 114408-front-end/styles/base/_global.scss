@@ -1,0 +1,26 @@
+@import "./variables";
+@import "./mixin";
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&display=swap");
+
+// 全局基礎樣式
+body {
+  background-color: $background-gray;
+}
+
+* {
+  font-family: "Noto Sans TC", sans-serif !important;
+}
+
+p {
+  font-size: $regular-size;
+  color: $main-black;
+
+  @include X-Small {
+    font-size: $small-size;
+  }
+}
+
+a {
+  text-decoration: none;
+  font-size: $regular-size;
+}
