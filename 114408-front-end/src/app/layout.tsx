@@ -22,8 +22,8 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <body>
+        <BottomNav title="待核銷報帳"/>
         {children}
-        <BottomNav />
       </body>
     </html>
   );

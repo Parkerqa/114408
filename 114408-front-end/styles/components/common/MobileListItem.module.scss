@@ -1,0 +1,35 @@
+@use "@/styles/base/variables" as *;
+
+.wrap {
+  margin: 2% 0;
+  padding: 5% 0;
+  display: flex;
+  justify-content: space-evenly;
+  background-color: $main-white;
+  box-shadow: 0px 4px 4px 1px rgba(0, 0, 0, 0.1);
+
+  .circle {
+    color: $main-white;
+    font-weight: 500;
+    padding: 3%;
+    border-radius: 50%;
+    background-color: $light-gray;
+  }
+
+  .detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 70%;
+    height: fit-content;
+
+    .item {
+      display: flex;
+      gap: 2rem;
+
+      .info {
+        max-width: 75%;
+      }
+    }
+  }
+}
