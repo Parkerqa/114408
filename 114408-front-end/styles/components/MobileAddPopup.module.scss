@@ -1,0 +1,34 @@
+@use "@/styles/base/variables" as *;
+
+.wrap {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  top: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba($color: #000000, $alpha: 0.2);
+
+  .iconWrap {
+    width: fit-content;
+    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 35px;
+    margin-bottom: 5rem;
+    border-radius: 50%;
+    background-color: $main-white;
+
+    .icon {
+      color: $main-black;
+    }
+
+    p {
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+  }
+}
