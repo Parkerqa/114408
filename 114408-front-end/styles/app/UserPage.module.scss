@@ -1,4 +1,9 @@
-.list{
-    max-height: 70vh;
+.wrap {
+  display: flex;
+  flex-direction: column;
+  .list {
+    margin: 10% 0;
+    max-height: 75vh;
     overflow: scroll;
+  }
 }

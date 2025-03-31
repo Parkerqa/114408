@@ -4,13 +4,13 @@ import styles from "@/styles/app/UserPage.module.scss";
 
 export default function User() {
   return (
-    <>
+    <div className={styles.wrap}>
       <input type="text" name="" id="" />
       <div className={styles.list}>
         {liseData.map((item, index) => (
           <MobileListItem data={item} key={index} />
         ))}
       </div>
-    </>
+    </div>
   );
 }
