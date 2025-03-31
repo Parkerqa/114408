@@ -1,8 +1,33 @@
+@use "@/styles/base/variables" as *;
+
 .wrap {
   display: flex;
   flex-direction: column;
+
+  .searchBar {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: flex-end;
+
+    .searchBtn {
+      color: $main-white;
+      background-color: $light-gray;
+      padding: 10px;
+      border-radius: 5px;
+      transition: ease-in-out 0.1s;
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
+    .onSearch {
+      background-color: $medium-gray;
+    }
+  }
+
   .list {
-    margin: 10% 0;
+    margin: 5% 0;
     max-height: 75vh;
     overflow: scroll;
   }
