@@ -1,0 +1,70 @@
+services:
+  backend:
+    build: ./backend
+    image: tts_backend
+    container_name: tts_backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - app-net
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_PORT: ${DB_PORT}
+      LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
+      LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
+    volumes:
+      - ./backend:/app
+    restart: always
+
+  db:
+    image: mysql:8.4.4
+    networks:
+      - app-net
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: always
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    command: http backend:8000
+    networks:
+      - app-net
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    depends_on:
+      - backend
+    ports:
+      - "4040:4040"
+
+  webhook_updater:
+    build: ./backend
+    image: webhook_updater
+    container_name: webhook_updater
+    command: python set_webhook.py
+    depends_on:
+      - ngrok
+    networks:
+      - app-net
+    environment:
+      LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
+    volumes:
+      - ./backend:/app
+
+volumes:
+  mysql-data:
+
+networks:
+  app-net:
