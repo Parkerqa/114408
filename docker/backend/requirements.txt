@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+mysql-connector-python
+sqlalchemy
+python-dotenv
+flask
+line-bot-sdk
+pymysql
+pyngrok
+openai==0.28
+requests
+cryptography
