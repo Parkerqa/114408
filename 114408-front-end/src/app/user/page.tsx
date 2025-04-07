@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 
 import MobileAddPopup from "@/components/MobileAddPopup";
 import InputField from "@/components/common/InputField";
-import { liseData } from "@/lib/data/listData";
+import { listData } from "@/lib/data/listData";
 import MobileListItem from "@/components/common/MobileListItem";
 import styles from "@/styles/app/UserPage.module.scss";
 import { useState } from "react";
@@ -34,7 +34,7 @@ export default function User() {
           />
         </div>
         <div className={styles.list}>
-          {liseData.map((item, index) => (
+          {listData?.map((item, index) => (
             <MobileListItem data={item} key={index} />
           ))}
         </div>

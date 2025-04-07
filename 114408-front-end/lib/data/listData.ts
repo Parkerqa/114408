@@ -1,6 +1,6 @@
 import { listType } from "@/lib/types/listType";
 
-export const liseData: listType[] = [
+export const listData: listType[] = [
   {
     time: "2025/03/08",
     type: "電子發票",
