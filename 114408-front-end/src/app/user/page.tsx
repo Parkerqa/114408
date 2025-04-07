@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { Pencil } from "lucide-react";
 import { Search } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -9,8 +10,10 @@ import InputField from "@/components/common/InputField";
 import { liseData } from "@/lib/data/listData";
 import MobileListItem from "@/components/common/MobileListItem";
 import styles from "@/styles/app/UserPage.module.scss";
+import { useState } from "react";
 
 export default function User() {
+  const [isAdd, setIsAdd] = useState<boolean>(false);
   const { register, watch } = useForm();
 
   const keyword = watch("keyword");
@@ -36,7 +39,14 @@ export default function User() {
           ))}
         </div>
       </div>
-      <MobileAddPopup />
+      <Plus
+        onClick={() => {
+          setIsAdd(true);
+        }}
+        className={styles.addBtn}
+        strokeWidth={4}
+      />
+      {isAdd && <MobileAddPopup setIsAdd={setIsAdd} />}
     </>
   );
 }

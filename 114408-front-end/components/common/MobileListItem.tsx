@@ -7,7 +7,7 @@ import styles from "@/styles/components/common/MobileListItem.module.scss";
 import { listType } from "@/lib/types/listType";
 
 export default function MobileListItem({ data }: { data: listType }) {
-  const [isOpen, setIsOpen] = useState<boolean>(true);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const title = ["時間", "種類", "標題", "編號", "金額", "狀態"];
   const values = [
     data.time,
