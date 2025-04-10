@@ -1,6 +1,7 @@
+import Image from "next/image";
+
 import { bottomNavData } from "@/lib/data/bottomNavData";
 import styles from "@/styles/components/layout/BottomNav.module.scss";
-import Image from "next/image";
 
 export default function BottomNav({ title }: { title: string }) {
   const currentPage = bottomNavData.find((item) => item.title === title);
