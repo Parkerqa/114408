@@ -1,7 +1,7 @@
 import { useDropzone } from "react-dropzone";
 
 import { HtmlDivPropsType } from "@/lib/types/HtmlDivType";
-import TitleBox from "@/components/common/TitleBox";
+import BasePopup from "@/components/common/BasePopup";
 
 export default function FileFrame({ ...props }: HtmlDivPropsType) {
   const { getRootProps, getInputProps, acceptedFiles } = useDropzone({
@@ -10,11 +10,11 @@ export default function FileFrame({ ...props }: HtmlDivPropsType) {
   });
 
   return (
-    <TitleBox {...props}>
+    <BasePopup {...props}>
       <div {...getRootProps()} className="border p-4">
         <input {...getInputProps()} />
         <p>點擊或拖曳圖片到這裡上傳</p>
       </div>
-    </TitleBox>
+    </BasePopup>
   );
 }
