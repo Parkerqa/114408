@@ -17,6 +17,7 @@ services:
       DB_PORT: ${DB_PORT}
       LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
       LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
     volumes:
       - ./backend:/app
     restart: always
@@ -50,7 +51,7 @@ services:
       - "4040:4040"
 
   webhook_updater:
-    build: ./backend
+    build: ./scripts
     image: webhook_updater
     container_name: webhook_updater
     command: python set_webhook.py
@@ -60,8 +61,6 @@ services:
       - app-net
     environment:
       LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
-    volumes:
-      - ./backend:/app
 
 volumes:
   mysql-data:
