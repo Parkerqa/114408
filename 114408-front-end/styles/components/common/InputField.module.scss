@@ -21,6 +21,7 @@
   }
 
   .field {
+    box-sizing: border-box;
     color: $main-black;
     height: 50px;
     border: none;
@@ -33,5 +34,9 @@
     &::placeholder {
       color: $light-gray;
     }
+  }
+
+  .hasPadding{
+    padding-left: 50px;
   }
 }

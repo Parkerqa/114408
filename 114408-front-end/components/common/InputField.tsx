@@ -11,10 +11,12 @@ export default function InputField({
   register,
   style,
   icon,
+  isCornerRadius,
 }: {
   type: string;
   hint?: string;
   label?: string;
+  isCornerRadius?: boolean;
   register?: UseFormRegisterReturn;
   style?: React.CSSProperties;
   icon?: React.ReactNode;
@@ -27,14 +29,27 @@ export default function InputField({
   };
 
   return (
-    <div className={styles.fieldWrap}>
+    <div
+      className={styles.fieldWrap}
+      style={isCornerRadius ? { borderRadius: "50px" } : {}}
+    >
       {label && <label className={styles.title}>{label}</label>}
-      {!hasValue && icon && <span className={styles.icon}>{icon}</span>}
+      {!hasValue && icon && (
+        <span
+          className={styles.icon}
+          style={isCornerRadius ? { marginLeft: "20px" } : {}}
+        >
+          {icon}
+        </span>
+      )}
       <input
         type={type}
         placeholder={hint}
-        className={styles.field}
-        style={style}
+        className={`${styles.field} ${!hasValue && icon && styles.hasPadding}`}
+        style={{
+          ...(isCornerRadius ? { borderRadius: "50px" } : {}),
+          ...style,
+        }}
         {...register}
         onChange={handleChange}
       />
