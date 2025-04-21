@@ -1,5 +1,6 @@
 import "@/styles/main.scss";
 import type { Metadata } from "next";
+
 import BottomNav from "@/components/layout/BottomNav";
 
 export const metadata: Metadata = {
@@ -22,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <body>
-        <BottomNav title="待核銷報帳"/>
+        <BottomNav title="待核銷報帳" />
         {children}
       </body>
     </html>
