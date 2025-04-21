@@ -1,10 +1,18 @@
+"use client";
+
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 import { bottomNavData } from "@/lib/data/bottomNavData";
 import styles from "@/styles/components/layout/BottomNav.module.scss";
 
 export default function BottomNav({ title }: { title: string }) {
+  const pathname = usePathname();
+  const isAuthPage = pathname === "/login" || pathname === "/signup";
   const currentPage = bottomNavData.find((item) => item.title === title);
+
+  if (isAuthPage) return null;
+
   return (
     <>
       <div className={styles.header}>
