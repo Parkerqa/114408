@@ -1,0 +1,12 @@
+@use "@/styles/base/variables" as *;
+
+.loginFrame{
+    display: flex;
+    flex-direction: column;
+    gap: 4vh;
+
+    .forget{
+        font-size: $small-size;
+        color: $medium-gray;
+    }
+}

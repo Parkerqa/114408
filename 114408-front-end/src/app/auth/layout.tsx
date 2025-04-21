@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import styles from "@/styles/app/login/Layout.module.scss";
+import styles from "@/styles/app/auth/Layout.module.scss";
 
 export default function LoginLayout({
   children,
@@ -9,7 +9,7 @@ export default function LoginLayout({
 }) {
   return (
     <html lang="zh">
-      <body>
+      <body className={styles.body}>
         <Image src={"/logo.svg"} height={70} width={70} alt="logo" />
         {children}
         <div className={styles.circles}>
