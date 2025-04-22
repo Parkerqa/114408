@@ -1,17 +1,19 @@
-from fastapi import APIRouter, Request, Header
-from linebot.exceptions import InvalidSignatureError
-from linebot import LineBotApi, WebhookHandler
 import os
+
+from fastapi import APIRouter, Header, Request
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
+
 from .events import register_events
 
-router = APIRouter()
+router = APIRouter(tags=["LINE Bot"])
 
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 
 register_events(handler, line_bot_api)
 
-@router.post("/callback")
+@router.post("/callback", summary="LINE Bot Webhook")
 async def callback(request: Request, x_line_signature: str = Header(...)):
     body = await request.body()
     try:
