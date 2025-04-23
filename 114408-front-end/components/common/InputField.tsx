@@ -34,7 +34,7 @@ export default function InputField({
       style={isCornerRadius ? { borderRadius: "50px" } : {}}
     >
       {label && <label className={styles.title}>{label}</label>}
-      {!hasValue && icon && (
+      {icon && (
         <span
           className={styles.icon}
           style={isCornerRadius ? { marginLeft: "20px" } : {}}
@@ -42,10 +42,14 @@ export default function InputField({
           {icon}
         </span>
       )}
+
       <input
         type={type}
         placeholder={hint}
-        className={`${styles.field} ${!hasValue && icon && styles.hasPadding}`}
+        className={`${styles.field}
+        ${!hasValue && styles.hasPadding}
+        ${icon && styles.hasPadding}
+        `}
         style={{
           ...(isCornerRadius ? { borderRadius: "50px" } : {}),
           ...style,
