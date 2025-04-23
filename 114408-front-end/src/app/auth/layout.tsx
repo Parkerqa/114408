@@ -10,7 +10,13 @@ export default function LoginLayout({
   return (
     <html lang="zh">
       <body className={styles.body}>
-        <Image src={"/logo.svg"} height={70} width={70} alt="logo" />
+        <Image
+          src={"/logo.svg"}
+          height={70}
+          width={70}
+          alt="logo"
+          className={styles.logo}
+        />
         {children}
         <div className={styles.circles}>
           <div className={styles.bigCircle}></div>

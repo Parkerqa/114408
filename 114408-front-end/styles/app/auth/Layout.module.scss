@@ -6,40 +6,47 @@
   overflow: hidden;
   overscroll-behavior: none;
   touch-action: none;
-}
-
-.circles {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  position: absolute;
-  bottom: -10vw;
-  right: 0;
 
-  .bigCircle {
-    position: absolute;
-    z-index: 1;
-    width: 500px;
-    height: 500px;
-    border-radius: 50%;
-    background-color: rgba($color: $medium-gray, $alpha: 0.15);
+  .logo {
+    margin-top: 13vh;
   }
 
-  .meduimCircle {
+  .circles {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: absolute;
-    z-index: 2;
-    width: 425px;
-    height: 425px;
-    border-radius: 50%;
-    background-color: rgba($color: $medium-gray, $alpha: 0.3);
-  }
+    bottom: -10vw;
+    right: 0;
 
-  .smallCircle {
-    position: absolute;
-    z-index: 3;
-    width: 335px;
-    height: 335px;
-    border-radius: 50%;
-    background-color: rgba($color: $medium-gray, $alpha: 0.8);
+    .bigCircle {
+      position: absolute;
+      z-index: 1;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background-color: rgba($color: $medium-gray, $alpha: 0.15);
+    }
+
+    .meduimCircle {
+      position: absolute;
+      z-index: 2;
+      width: 425px;
+      height: 425px;
+      border-radius: 50%;
+      background-color: rgba($color: $medium-gray, $alpha: 0.3);
+    }
+
+    .smallCircle {
+      position: absolute;
+      z-index: 3;
+      width: 335px;
+      height: 335px;
+      border-radius: 50%;
+      background-color: rgba($color: $medium-gray, $alpha: 0.8);
+    }
   }
 }
