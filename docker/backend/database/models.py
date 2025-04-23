@@ -3,6 +3,7 @@ from typing import Optional
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+
 class Base(DeclarativeBase):
     pass
 
@@ -67,7 +68,7 @@ class TicketDetail(Base):
     __tablename__ = 'ticket_detail'
 
     td_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    TID: Mapped[int] = mapped_column(Integer)
+    TID: Mapped[str] = mapped_column(String(10))
     time: Mapped[str] = mapped_column(String(45))
     title: Mapped[str] = mapped_column(String(45))
     money: Mapped[Optional[str]] = mapped_column(String(45))

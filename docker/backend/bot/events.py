@@ -1,5 +1,7 @@
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from utils.openai import chat_with_gpt
 from database.crud import get_ailog
+from linebot.models import MessageEvent, TextMessage, TextSendMessage
+
 
 def register_events(handler, line_bot_api):
 
@@ -11,19 +13,13 @@ def register_events(handler, line_bot_api):
             reply_text = get_ailog()
         elif msg == "你好":
             reply_text = "你好，謝謝小籠包"
+        elif msg == "(emoji)":
+            reply_text = "這是表情貼圖"
+        elif msg.startswith("ai:"):
+            prompt = msg[3:].strip()
+            reply_text = chat_with_gpt(prompt)
         else:
-            reply_text = "不支援"
-            # try:
-            #     response = openai.ChatCompletion.create(
-            #         model="gpt-3.5-turbo",  # 或 gpt-4
-            #         messages=[
-            #             {"role": "system", "content": "你是一個親切的LINE聊天助手，以下對話請用繁體中文回答問題"},
-            #             {"role": "user", "content": user_msg}
-            #         ]
-            #     )
-            #     reply_text = response['choices'][0]['message']['content'].strip()
-            # except Exception as e:
-            #     reply_text = f"GPT 回應失敗：{str(e)}"
+            reply_text = ("盡請期待")
 
         line_bot_api.reply_message(
             event.reply_token,

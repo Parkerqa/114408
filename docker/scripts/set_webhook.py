@@ -1,6 +1,7 @@
-import requests
-import time
 import os
+import time
+
+import requests
 
 def get_ngrok_url():
     time.sleep(3)
@@ -11,7 +12,7 @@ def get_ngrok_url():
             if tunnel["proto"] == "https":
                 return tunnel["public_url"]
     except Exception as e:
-        print("無法取得 ngrok URL:", e)
+        print("❌ 無法取得 ngrok URL:", e)
     return None
 
 def set_line_webhook(public_url):
@@ -37,3 +38,13 @@ def set_line_webhook(public_url):
     else:
         print(f"❌ 設定 webhook 失敗，狀態碼: {response.status_code}")
         print(response.text)
+
+def set_webhook():
+    public_url = get_ngrok_url()
+    if public_url:
+        set_line_webhook(public_url)
+    else:
+        print("❌ 無法取得 ngrok 公開網址，請確認 ngrok 是否有開啟")
+
+if __name__ == "__main__":
+    set_webhook()
