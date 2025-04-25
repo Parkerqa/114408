@@ -1,5 +1,6 @@
 import "@/styles/main.scss";
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 
 import BottomNav from "@/components/layout/BottomNav";
 
@@ -22,6 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh">
+      <Toaster richColors position="top-center" />
       <body>
         <BottomNav title="待核銷報帳" />
         {children}
