@@ -17,7 +17,7 @@ API.interceptors.request.use(function (config: InternalAxiosRequestConfig) {
 
 API.interceptors.response.use(
   async (config) => {
-    if (!config.data.result) {
+    if (config.data.state === "error") {
       throw config.data;
     } else {
       if (config.headers["x-auth-token"]) {
