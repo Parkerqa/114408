@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Mail } from "lucide-react";
 import { UserRound } from "lucide-react";
 import { LockKeyhole } from "lucide-react";
 
 import InputField from "@/components/common/InputField";
+import userAPI from "@/services/userAPI";
 import styles from "@/styles/app/auth/AuthPage.module.scss";
+import { AuthFormData } from "@/lib/types/UserAPIType";
 
-const Login = () => {
+const Login = ({ register }: { register: any }) => {
   return (
     <div className={styles.loginFrame}>
       <InputField
@@ -17,20 +20,22 @@ const Login = () => {
         isCornerRadius={true}
         style={{ width: "80vw" }}
         icon={<Mail size={24} color="#3f3f3f" />}
+        register={register("email")}
       />
       <InputField
         hint="password"
-        type="text"
+        type="password"
         isCornerRadius={true}
         style={{ width: "80vw" }}
         icon={<LockKeyhole size={24} color="#3f3f3f" />}
+        register={register("password")}
       />
       <span className={styles.forget}>忘記密碼？</span>
     </div>
   );
 };
 
-const SignUp = () => {
+const SignUp = ({ register }: { register: any }) => {
   return (
     <div className={styles.loginFrame}>
       <InputField
@@ -39,6 +44,7 @@ const SignUp = () => {
         isCornerRadius={true}
         style={{ width: "80vw" }}
         icon={<UserRound size={24} color="#3f3f3f" />}
+        register={register("username")}
       />
       <InputField
         hint="email"
@@ -46,13 +52,15 @@ const SignUp = () => {
         isCornerRadius={true}
         style={{ width: "80vw" }}
         icon={<Mail size={24} color="#3f3f3f" />}
+        register={register("email")}
       />
       <InputField
         hint="password"
-        type="text"
+        type="password"
         isCornerRadius={true}
         style={{ width: "80vw" }}
         icon={<LockKeyhole size={24} color="#3f3f3f" />}
+        register={register("password")}
       />
     </div>
   );
@@ -60,22 +68,50 @@ const SignUp = () => {
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState<boolean>(false);
+  const { register, handleSubmit } = useForm<AuthFormData>();
 
   const loginClass = isLogin ? styles.focusItem : styles.item;
   const signupClass = !isLogin ? styles.focusItem : styles.item;
 
+  const onSubmit = async (data: AuthFormData) => {
+    try {
+      if (isLogin) {
+        await userAPI.login({
+          email: data.email,
+          password: data.password,
+        });
+      } else if (data.username) {
+        console.log(data);
+        const res = await userAPI.register({
+          username: data.username,
+          email: data.email,
+          password: data.password,
+        });
+        console.log(res);
+      }
+    } catch (err) {
+      console.error("請求錯誤：", err);
+    }
+  };
+
   return (
-    <div className={styles.authWrap}>
-      <div className={styles.option}>
-        <p className={loginClass} onClick={() => setIsLogin(true)}>
-          登入
-        </p>
-        <p className={signupClass} onClick={() => setIsLogin(false)}>
-          註冊
-        </p>
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className={styles.authWrap}>
+        <div className={styles.option}>
+          <p className={loginClass} onClick={() => setIsLogin(true)}>
+            登入
+          </p>
+          <p className={signupClass} onClick={() => setIsLogin(false)}>
+            註冊
+          </p>
+        </div>
+        {isLogin ? (
+          <Login register={register} />
+        ) : (
+          <SignUp register={register} />
+        )}
+        <button className={styles.click}>{isLogin ? "登入" : "註冊"}</button>
       </div>
-      {isLogin ? <Login /> : <SignUp />}
-      <button className={styles.click}>{isLogin ? "登入" : "註冊"}</button> 
-    </div>
+    </form>
   );
 }
