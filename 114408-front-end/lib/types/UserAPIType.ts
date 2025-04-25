@@ -1,10 +1,5 @@
-export type Register = {
-  username: string;
+export type AuthFormData = {
   email: string;
   password: string;
-};
-
-export type Login = {
-  email: string;
-  password: string;
+  username?: string;
 };

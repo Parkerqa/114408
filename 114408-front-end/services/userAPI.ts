@@ -1,13 +1,16 @@
 import API from "@/lib/api/api";
 import { Response } from "@/lib/api/requestType";
-import { Login, Register } from "@/lib/types/UserAPIType";
+import { AuthFormData } from "@/lib/types/UserAPIType";
 
 const userAPI = {
-  register: (data: Register): Promise<Response<any>> =>
+  register: (data: AuthFormData): Promise<any> =>
     API.post(`/register`, data, {
       headers: { "Content-Type": "application/json" },
     }),
-  login: (data: Login): Promise<any> => API.post("/login"),
+  login: (data: AuthFormData): Promise<any> =>
+    API.post("/login", data, {
+      headers: { "Content-Type": "application/json" },
+    }),
 };
 
 export default userAPI;
