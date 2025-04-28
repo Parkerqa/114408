@@ -84,7 +84,6 @@ export default function Auth() {
           password: data.password,
         });
       } else if (data.username) {
-        console.log(data);
         res = await userAPI.register({
           username: data.username,
           email: data.email,

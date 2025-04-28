@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { Pencil } from "lucide-react";
 import { Search } from "lucide-react";
@@ -10,14 +11,27 @@ import InputField from "@/components/common/InputField";
 import { listData } from "@/lib/data/listData";
 import MobileListItem from "@/components/common/MobileListItem";
 import styles from "@/styles/app/UserPage.module.scss";
-import { useState } from "react";
+import ticketAPI from "@/services/ticketAPI";
 
 export default function User() {
   const [isAdd, setIsAdd] = useState<boolean>(false);
+  const [data, setData] = useState();
   const { register, watch } = useForm();
 
   const keyword = watch("keyword");
   const onSearch = !!keyword;
+
+  const getList = async () => {
+    try {
+      const res = await ticketAPI.getList();
+      console.log(res);
+    } catch {}
+  };
+
+  getList();
+  // useEffect(() => {
+  //   getList();
+  // }, []);
 
   return (
     <>
