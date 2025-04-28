@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { Mail } from "lucide-react";
 import { UserRound } from "lucide-react";
 import { LockKeyhole } from "lucide-react";
@@ -68,30 +69,37 @@ const SignUp = ({ register }: { register: any }) => {
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState<boolean>(false);
+  const route = useRouter();
   const { register, handleSubmit } = useForm<AuthFormData>();
 
   const loginClass = isLogin ? styles.focusItem : styles.item;
   const signupClass = !isLogin ? styles.focusItem : styles.item;
 
   const onSubmit = async (data: AuthFormData) => {
+    let res;
     try {
       if (isLogin) {
-        await userAPI.login({
+        res = await userAPI.login({
           email: data.email,
           password: data.password,
         });
       } else if (data.username) {
         console.log(data);
-        const res = await userAPI.register({
+        res = await userAPI.register({
           username: data.username,
           email: data.email,
           password: data.password,
         });
-        console.log(res);
       }
-    } catch (err) {
-      console.error("請求錯誤：", err);
-    }
+
+      if (res) {
+        if (res.message === "登入成功！") {
+          route.push("/user");
+        } else if (res.message === "註冊成功！") {
+          setIsLogin(true);
+        }
+      } 
+    } catch {}
   };
 
   return (
