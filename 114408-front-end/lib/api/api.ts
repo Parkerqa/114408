@@ -13,7 +13,7 @@ API.interceptors.request.use((config) => {
   config.headers["Content-Type"] = "application/json";
   const token = localStorage.getItem("token");
   if (token) {
-    config.headers["Authorization"] = `Bearer ${token}`;
+    config.headers["Authorization"] = token;
   }
   return config;
 });
@@ -25,8 +25,8 @@ API.interceptors.response.use(
       if (config.toast) toast.error(response.data?.message || "操作失敗");
       throw response.data;
     } else {
-      if (response.headers["x-auth-token"]) {
-        localStorage.setItem("token", response.headers["x-auth-token"]);
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
       }
       if (config.toast) toast.success(response.data?.message || "操作成功");
     }
