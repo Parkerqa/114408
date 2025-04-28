@@ -51,9 +51,13 @@ export default function MobileAddPopup({
             }}
           />
         )}
-        {isFileUpload && <FileFrame             onClick={(e) => {
+        {isFileUpload && (
+          <FileFrame
+            onClick={(e) => {
               e.stopPropagation();
-            }}/>}
+            }}
+          />
+        )}
       </div>
     </>
   );

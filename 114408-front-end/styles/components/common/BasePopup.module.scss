@@ -14,7 +14,7 @@
     position: relative;
     height: fit-content;
     width: fit-content;
-    padding: 3rem;
+    padding: 4rem 3rem 2rem;
     background-color: $main-white;
     border-radius: 22px;
     box-shadow: 0 4 4 rgba($color: #000000, $alpha: 0.25);
@@ -25,6 +25,9 @@
       align-items: center;
       top: 1rem;
       left: 0;
+      font-size: $large-size;
+      font-weight: bold;
+      letter-spacing: 2px;
 
       .decoration {
         display: block;

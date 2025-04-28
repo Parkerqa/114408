@@ -1,0 +1,49 @@
+@use "@/styles/base/variables" as *;
+
+.webWrap {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+
+  :global(video) {
+    border-radius: 20px;
+  }
+
+  .operateBtn {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 5%;
+    gap: 3%;
+
+    .shutter {
+      padding: 2vw 6vw;
+      border-radius: 5px;
+      background-color: $medium-gray;
+      color: $main-white;
+      font-size: $regular-size;
+    }
+
+    .close {
+      padding: 2vw 3vw;
+      border-radius: 5px;
+      background-color: $light-gray;
+    }
+  }
+}
+
+.enable {
+  padding: 5vw;
+  border-radius: 10px;
+  background-color: $light-gray;
+  font-size: $regular-size;
+  transition: ease-in-out 0.2s;
+
+  &:hover {
+    background-color: $medium-gray;
+    color: $main-white;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}

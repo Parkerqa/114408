@@ -3,11 +3,14 @@
 import React, { useRef, useState, useCallback } from "react";
 import Webcam from "react-webcam";
 
-import { HtmlDivPropsType } from "@/lib/types/HtmlDivType";
 import BasePopup from "@/components/common/BasePopup";
+import { HtmlDivPropsType } from "@/lib/types/HtmlDivType";
+import styles from "@/styles/components/CamaraFrame.module.scss";
 
 const videoConstraints = {
   facingMode: "environment",
+  width: { ideal: 250 },
+  height: { ideal: 400 },
 };
 
 export default function CameraFrame({ ...props }: HtmlDivPropsType) {
@@ -35,9 +38,9 @@ export default function CameraFrame({ ...props }: HtmlDivPropsType) {
 
   return (
     <BasePopup {...props} title="相機掃描">
-      <div>
+      <>
         {cameraEnabled ? (
-          <>
+          <div className={styles.webWrap}>
             <Webcam
               audio={false}
               ref={webcamRef}
@@ -45,17 +48,23 @@ export default function CameraFrame({ ...props }: HtmlDivPropsType) {
               videoConstraints={videoConstraints}
               style={{ width: "100%", height: "auto" }}
             />
-            <div>
-              <button onClick={handleCapture}>拍照</button>
-              <button onClick={handleDisableCamera}>關閉相機</button>
+            <div className={styles.operateBtn}>
+              <button className={styles.close} onClick={handleDisableCamera}>
+                關閉相機
+              </button>
+              <button className={styles.shutter} onClick={handleCapture}>
+                拍照
+              </button>
             </div>
-          </>
+          </div>
         ) : (
           <div>
-            <button onClick={handleEnableCamera}>點我啟用相機</button>
+            <button onClick={handleEnableCamera} className={styles.enable}>
+              點我啟用相機
+            </button>
           </div>
         )}
-      </div>
+      </>
     </BasePopup>
   );
 }
