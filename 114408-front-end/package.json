@@ -18,7 +18,8 @@
     "react-hook-form": "^7.55.0",
     "react-icons": "^5.5.0",
     "react-webcam": "^7.2.0",
-    "sass": "^1.86.0"
+    "sass": "^1.86.0",
+    "sonner": "^2.0.3"
   },
   "devDependencies": {
     "@babel/preset-typescript": "^7.27.0",
