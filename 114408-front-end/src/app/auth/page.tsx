@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -21,7 +22,7 @@ const Login = ({ register }: { register: any }) => {
         isCornerRadius={true}
         style={{ width: "80vw" }}
         icon={<Mail size={24} color="#3f3f3f" />}
-        register={register("email")}
+        register={register("email", { required: true })}
       />
       <InputField
         hint="password"
@@ -29,7 +30,7 @@ const Login = ({ register }: { register: any }) => {
         isCornerRadius={true}
         style={{ width: "80vw" }}
         icon={<LockKeyhole size={24} color="#3f3f3f" />}
-        register={register("password")}
+        register={register("password", { required: true })}
       />
       <span className={styles.forget}>忘記密碼？</span>
     </div>
@@ -45,7 +46,7 @@ const SignUp = ({ register }: { register: any }) => {
         isCornerRadius={true}
         style={{ width: "80vw" }}
         icon={<UserRound size={24} color="#3f3f3f" />}
-        register={register("username")}
+        register={register("username", { required: true })}
       />
       <InputField
         hint="email"
@@ -53,7 +54,7 @@ const SignUp = ({ register }: { register: any }) => {
         isCornerRadius={true}
         style={{ width: "80vw" }}
         icon={<Mail size={24} color="#3f3f3f" />}
-        register={register("email")}
+        register={register("email", { required: true })}
       />
       <InputField
         hint="password"
@@ -61,7 +62,7 @@ const SignUp = ({ register }: { register: any }) => {
         isCornerRadius={true}
         style={{ width: "80vw" }}
         icon={<LockKeyhole size={24} color="#3f3f3f" />}
-        register={register("password")}
+        register={register("password", { required: true })}
       />
     </div>
   );
@@ -97,12 +98,16 @@ export default function Auth() {
         } else if (res.message === "註冊成功！") {
           setIsLogin(true);
         }
-      } 
+      }
     } catch {}
   };
 
+  const onError = () => {
+    toast.error("請完整填寫所有欄位！");
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit, onError)}>
       <div className={styles.authWrap}>
         <div className={styles.option}>
           <p className={loginClass} onClick={() => setIsLogin(true)}>

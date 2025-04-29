@@ -12,10 +12,11 @@ export default function LoginLayout({
       <body className={styles.body}>
         <Image
           src={"/logo.svg"}
-          height={70}
-          width={70}
+          height={80}
+          width={80}
           alt="logo"
           className={styles.logo}
+          priority
         />
         {children}
         <div className={styles.circles}>
