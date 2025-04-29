@@ -1,5 +1,3 @@
-fastapi
-uvicorn
 mysql-connector-python
 sqlalchemy
 python-dotenv
@@ -12,6 +10,3 @@ cryptography
 paddlepaddle==3.0.0b2 -f https://www.paddlepaddle.org.cn/packages/stable/cpu
 paddleocr>=2.0.1
 opencc-python-reimplemented
-opencv-python
-numpy
-python-multipart
