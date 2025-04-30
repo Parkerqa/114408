@@ -1,3 +1,4 @@
+import self,jwt, MySQLdb,MySQLdb.cursors,datetime
 from flask import Flask, request, redirect, url_for, flash, jsonify,current_app
 from flask_mysqldb import MySQL
 from flask_bcrypt import Bcrypt
@@ -8,8 +9,9 @@ from itsdangerous import URLSafeTimedSerializer
 import string , random ,os, uuid
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
-import jwt, MySQLdb
+from datetime import  timedelta
+from functools import wraps
+
 
 app = Flask(__name__)
 CORS(app)
@@ -47,9 +49,9 @@ def generate_reset_token(email):
 def confirm_reset_token(token, expiration=3600):
     try:
         email = s.loads(token, salt='password-reset-salt', max_age=expiration)
-    except:
+        return email
+    except Exception as e:
         return None
-    return email
 
 def generate_random_password(length=10):
     chars = string.ascii_letters + string.digits
@@ -58,28 +60,52 @@ def generate_random_password(length=10):
 def generate_auth_token(uid):
     payload = {
         'uid': uid,
-        'exp': datetime.utcnow() + timedelta(hours=2)  # Token 有效 2 小時
+        'exp': datetime.utcnow() + timedelta(hours=1)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
     return token
 
-# User 類別
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+
+        if not token:
+            return jsonify({'message': 'Token 缺失'}), 401
+
+        try:
+            data = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            request.user = data  # 保存用戶資料在 request 上
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token 過期'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'message': '無效的 Token'}), 401
+
+        return f(*args, **kwargs)
+    return decorated
+
 class User(UserMixin):
     def __init__(self, uid, username, priority):
-        self.id = uid
+        self.id = uid  # Flask-Login 預設要有 .id 屬性
         self.username = username
         self.priority = priority
-        self.uid = uid
 
 # 加載使用者
 @login_manager.user_loader
-def load_user(user_id):
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM User WHERE uid = %s", (user_id,))
-    user = cur.fetchone()
-    cur.close()
-    if user:
-        return User(user['uid'], user['username'], user['priority'])
+def load_user(user_uid):
+    from MySQLdb.cursors import DictCursor
+    with app.app_context():  # 只有在你確定不是在請求處理流程時才需要這行
+        cur = mysql.connection.cursor(DictCursor)
+        cur.execute("SELECT uid, username, priority FROM User WHERE uid = %s", (user_uid,))
+        user_data = cur.fetchone()
+        cur.close()
+
+    if user_data:
+        return User(user_data['uid'], user_data['username'], user_data['priority'])
     return None
 
 # 註冊功能
@@ -115,16 +141,14 @@ def login():
     cur.close()
 
     if user and bcrypt.check_password_hash(user['password'], password):
-        login_user(User(user['uid'], user['username'], user['priority']))
+        token = jwt.encode({
+            'uid': user['uid'],
+            'username': user['username'],
+            'priority': user['priority'],
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+        }, SECRET_KEY, algorithm='HS256')
 
-        # 產生 token
-        token = generate_auth_token(user['uid'])
-
-        return jsonify({
-            'message': '登入成功！',
-            'state': 'success',
-            'token': token
-        })
+        return jsonify({'message': '登入成功', 'state': 'success','token': token})
 
     return jsonify({'message': '信箱或密碼錯誤', 'state': 'error'})
 
@@ -152,11 +176,11 @@ def forget_password():
         return jsonify({'message': '我們已幫您重設密碼，請查看信箱', 'state': 'success'})
 
     cur.close()
-    return jsonify({'message': '找不到此 email'}), 404
+    return jsonify({'message': '找不到此 email','state': 'error'}), 404
 
 # 修改使用者
 @app.route('/change_user_if', methods=['PATCH'])
-@login_required
+@token_required
 def change_user_if():
     try:
         data = request.get_json()
@@ -166,7 +190,7 @@ def change_user_if():
         old_password = data.get('old_password')
 
         if new_password and not old_password:
-            return jsonify({'message': '舊密碼為必填項目'}), 400
+            return jsonify({'message': '舊密碼為必填項目','state': 'error'}), 400
 
         cur = mysql.connection.cursor()
 
@@ -175,12 +199,12 @@ def change_user_if():
         stored_pw = cur.fetchone()
 
         if stored_pw is None:
-            return jsonify({'message': '找不到用戶資料'}), 404
+            return jsonify({'message': '找不到用戶資料','state': 'error'}), 404
 
         if new_password:
             # 核對舊密碼是否正確
             if not bcrypt.check_password_hash(stored_pw['password'], old_password):
-                return jsonify({'message': '舊密碼錯誤'}), 400
+                return jsonify({'message': '舊密碼錯誤','state': 'error'}), 400
 
             # 加密新密碼
             hashed_new = bcrypt.generate_password_hash(new_password).decode('utf-8')
@@ -197,17 +221,17 @@ def change_user_if():
         mysql.connection.commit()
         cur.close()
 
-        return jsonify({'message': '資料更新成功'}), 200
+        return jsonify({'message': '資料更新成功','state': 'success'}), 200
 
     except Exception as e:
         print(f"[ERROR] 更新資料錯誤：{e}")
-        return jsonify({'message': '更新資料時發生錯誤'}), 500
+        return jsonify({'message': '更新資料時發生錯誤', 'state': 'error'}), 500
 
 
 
 # 查詢發票
 @app.route('/list_ticket', methods=['GET'])
-@login_required
+@token_required
 def list_ticket():
     try:
         cur = mysql.connection.cursor()
@@ -217,22 +241,21 @@ def list_ticket():
                 SELECT T.tid, T.declaration_date, T.type, T.status,
                        TD.title, TD.money
                 FROM Ticket T
-                JOIN Ticket_detail TD ON T.tid = TD.tid
+                LEFT JOIN Ticket_detail TD ON T.tid = TD.tid
             """)
         else:
             cur.execute("""
                 SELECT T.tid, T.declaration_date, T.type, T.status,
                        TD.title, TD.money
                 FROM Ticket T
-                JOIN Ticket_detail TD ON T.tid = TD.tid
+                LEFT JOIN Ticket_detail TD ON T.tid = TD.tid
                 WHERE T.uid = %s
             """, (current_user.id,))
 
         tickets = cur.fetchall()
         cur.close()
-
         if not tickets:
-            return jsonify({'message': '目前沒有發票資料'}), 404
+            return jsonify({'message': '目前沒有發票資料','state':'error'}), 404
 
         results = []
         for t in tickets:
@@ -252,7 +275,7 @@ def list_ticket():
 
 # 刪除發票
 @app.route('/delete_ticket/<int:tid>', methods=['DELETE'])
-@login_required
+@token_required
 def delete_ticket(tid):
     try:
         cur = mysql.connection.cursor()
@@ -262,15 +285,15 @@ def delete_ticket(tid):
         ticket = cur.fetchone()
 
         if not ticket:
-            return jsonify({'message': '找不到該發票'}), 404
+            return jsonify({'message': '找不到該發票','state': 'error'}), 404
 
         # 所有人都不能刪除 status 為 2 的發票
         if ticket['status'] == 2:
-            return jsonify({'message': '無法刪除已完成的發票'}), 403
+            return jsonify({'message': '無法刪除已完成的發票','state': 'error'}), 403
 
         # 一般使用者只能刪除自己的發票
         if current_user.priority == 0 and ticket['uid'] != int(current_user.id):
-            return jsonify({'message': '你無權刪除此發票'}), 403
+            return jsonify({'message': '你無權刪除此發票','state': 'error'}), 403
 
         # 執行刪除
         cur.execute("DELETE FROM Ticket_detail WHERE tid = %s", (tid,))
@@ -278,14 +301,14 @@ def delete_ticket(tid):
         mysql.connection.commit()
         cur.close()
 
-        return jsonify({'message': '發票已成功刪除'}), 200
+        return jsonify({'message': '發票已成功刪除','state': 'success'}), 200
 
     except Exception as e:
-        return jsonify({'message': '刪除發票時發生錯誤'}), 500
+        return jsonify({'message': '刪除發票時發生錯誤', 'state': 'error'}), 500
 
 #修改發票內容
 @app.route('/change_ticket/<int:tid>', methods=['PATCH'])
-@login_required
+@token_required
 def change_ticket(tid):
     try:
         data = request.get_json()
@@ -293,7 +316,7 @@ def change_ticket(tid):
         new_details = data.get('detail')
 
         if not new_class or not isinstance(new_details, list):
-            return jsonify({'message': '請提供 class 和 detail'}), 400
+            return jsonify({'message': '請提供 class 和 detail','state': 'error'}), 400
 
         cur = mysql.connection.cursor()
 
@@ -301,13 +324,13 @@ def change_ticket(tid):
         cur.execute("SELECT * FROM Ticket WHERE tid = %s", (tid,))
         ticket = cur.fetchone()
         if not ticket:
-            return jsonify({'message': '找不到發票'}), 404
+            return jsonify({'message': '找不到發票', 'state': 'error'}), 404
 
         if int(ticket['status']) == 2:
-            return jsonify({'message': '無法修改已完成的發票'}), 403
+            return jsonify({'message': '無法修改已完成的發票', 'state': 'error'}), 403
 
         if current_user.priority == 0 and ticket['uid'] != int(current_user.id):
-            return jsonify({'message': '你無權修改這張發票'}), 403
+            return jsonify({'message': '你無權修改這張發票', 'state': 'error'}), 403
 
         # 更新 class
         cur.execute("UPDATE Ticket SET class = %s WHERE tid = %s", (new_class, tid))
@@ -334,7 +357,7 @@ def change_ticket(tid):
                         (title, money, detail_id, tid)
                     )
                 else:
-                    return jsonify({'message': f'找不到明細 id {detail_id}'}), 400
+                    return jsonify({'message': f'找不到明細 id {detail_id}','state':'error'}), 400
             else:
                 # 新增明細
                 cur.execute(
@@ -353,21 +376,21 @@ def change_ticket(tid):
         mysql.connection.commit()
         cur.close()
 
-        return jsonify({'message': '發票已成功修改'}), 200
+        return jsonify({'message': '發票已成功修改','state': 'success'}), 200
 
     except Exception as e:
         print(f"[ERROR] 修改發票錯誤：{e}")
-        return jsonify({'message': '修改發票時發生錯誤'}), 500
+        return jsonify({'message': '修改發票時發生錯誤', 'state': 'error'}), 500
 
 #查詢發票內容
 @app.route('/search_ticket', methods=['GET'])
-@login_required
+@token_required
 def search_ticket():
     try:
         keyword = request.args.get('q', '').strip()
 
         if not keyword:
-            return jsonify({'message': '請提供查詢字詞參數 q'}), 400
+            return jsonify({'message': '請提供查詢字詞參數 q', 'state': 'error'}), 400
 
         cur = mysql.connection.cursor(DictCursor)
 
@@ -406,22 +429,22 @@ def search_ticket():
 
     except Exception as e:
         print(f"[ERROR] 查詢發票錯誤：{e}")
-        return jsonify({'message': '查詢時發生錯誤'}), 500
+        return jsonify({'message': '查詢時發生錯誤','state': 'error'}), 500
 
 #上傳發票
 @app.route('/upload', methods=['POST'])
-@login_required
+@token_required
 def upload():
     if 'photo' not in request.files:
-        return jsonify({'message': '缺少 photo'}), 400
+        return jsonify({'message': '缺少 photo', 'state': 'error'}), 400
 
     file = request.files['photo']
 
     if not file or file.filename == '':
-        return jsonify({'message': '未選擇檔案'}), 400
+        return jsonify({'message': '未選擇檔案', 'state': 'error'}), 400
 
     if not allowed_file(file.filename):
-        return jsonify({'message': '不支援的檔案格式'}), 400
+        return jsonify({'message': '不支援的檔案格式', 'state': 'error'}), 400
 
     try:
         ext = file.filename.rsplit('.', 1)[1].lower()
@@ -436,15 +459,15 @@ def upload():
         mysql.connection.commit()
         cur.close()
 
-        return jsonify({'message': '圖片上傳並建立新發票成功', 'filename': new_filename, 'tid': tid}), 200
+        return jsonify({'message': '圖片上傳並建立新發票成功','state':'success', 'filename': new_filename, 'tid': tid}), 200
 
     except Exception as e:
         print(f"[ERROR] 上傳圖片失敗：{e}")
-        return jsonify({'message': '伺服器錯誤'}), 500
+        return jsonify({'message': '伺服器錯誤','state': 'error'}), 500
 
 #總結金額
 @app.route('/total_money', methods=['GET'])
-@login_required
+@token_required
 def total_money():
     try:
         cur = mysql.connection.cursor(DictCursor)
@@ -460,11 +483,11 @@ def total_money():
 
     except Exception as e:
         print(f"[ERROR] 加總 money 失敗：{e}")
-        return jsonify({'message': '加總時發生錯誤'}), 500
+        return jsonify({'message': '加總時發生錯誤','state': 'error'}), 500
 
 #用種類查詢發票
 @app.route('/list_type', methods=['GET'])
-@login_required
+@token_required
 def list_type():
     cur = mysql.connection.cursor(DictCursor)
     cur.execute("SELECT DISTINCT class FROM Ticket")
@@ -475,7 +498,7 @@ def list_type():
 
 #用日期查詢發票
 @app.route('/list_date', methods=['GET'])
-@login_required
+@token_required
 def list_date():
     cur = mysql.connection.cursor()
     # 使用 DATE_FORMAT 將 creatdate 格式化為 yyyy/mm/dd
@@ -486,27 +509,26 @@ def list_date():
     return jsonify({'dates': dates}), 200
 
 # 登出
-@app.route('/logout')
-@login_required
+@app.route('/logout', methods=['POST'])
+@token_required
 def logout():
     logout_user()
-    flash('你已成功登出', 'success')
-    return redirect(url_for('login'))
+    return jsonify({'message': '登出成功','state': 'success'}), 200
 
 #上傳使用者照片
 @app.route('/upload_user_photo', methods=['POST'])
-@login_required
+@token_required
 def upload_user_photo():
     if 'photo' not in request.files:
-        return jsonify({'message': '缺少 photo'}), 400
+        return jsonify({'message': '缺少 photo', 'state': 'error'}), 400
 
     file = request.files['photo']
 
     if not file or file.filename == '':
-        return jsonify({'message': '未選擇檔案'}), 400
+        return jsonify({'message': '未選擇檔案','state': 'error'}), 400
 
     if not allowed_file(file.filename):
-        return jsonify({'message': '不支援的檔案格式'}), 400
+        return jsonify({'message': '不支援的檔案格式', 'state': 'error'}), 400
 
     try:
         ext = file.filename.rsplit('.', 1)[1].lower()
@@ -535,15 +557,15 @@ def upload_user_photo():
             if os.path.exists(old_path):
                 os.remove(old_path)
 
-        return jsonify({'message': '大頭貼上傳成功', 'filename': new_filename}), 200
+        return jsonify({'message': '大頭貼上傳成功','state' : 'success' ,'filename': new_filename}), 200
 
     except Exception as e:
         print(f"[ERROR] 上傳大頭貼失敗：{e}")
-        return jsonify({'message': '伺服器錯誤'}), 500
+        return jsonify({'message': '伺服器錯誤', 'state': 'error'}), 500
 
 #修改黑白模式
 @app.route('/change_theme', methods=['PATCH'])
-@login_required
+@token_required
 def change_theme():
     try:
         data = request.get_json()
@@ -566,15 +588,15 @@ def change_theme():
         mysql.connection.commit()
         cur.close()
 
-        return jsonify({'message': '主題模式已更新', 'theme': new_theme}), 200
+        return jsonify({'message': '主題模式已更新','state' : 'success' ,'theme': new_theme}), 200
 
     except Exception as e:
         print(f"[ERROR] 修改主題模式失敗：{e}")
-        return jsonify({'message': '伺服器錯誤'}), 500
+        return jsonify({'message': '伺服器錯誤','state': 'error'}), 500
 
 #使用者列表
 @app.route('/list_user', methods=['GET'])
-@login_required
+@token_required
 def list_user():
     try:
         # 直接設定 DictCursor
@@ -584,7 +606,7 @@ def list_user():
         cur.close()
 
         if not user:
-            return jsonify({'message': '找不到使用者'}), 404
+            return jsonify({'message': '找不到使用者', 'state': 'error'}), 404
 
         user_info = {
             'username': user['username'],
@@ -595,10 +617,28 @@ def list_user():
 
     except Exception as e:
         print(f"[ERROR] 取得當前使用者資料失敗：{e}")
-        return jsonify({'message': '伺服器錯誤', 'error': str(e)}), 500
+        return jsonify({'message': '伺服器錯誤', 'state': 'error'}), 500
 
 
-#
+#統計未審核的發票
+@app.route('/unaudited_invoices', methods=['GET'])
+@token_required
+def unaudited_invoices():
+    try:
+        cur = mysql.connection.cursor()
+
+        # 查詢所有 status = 1 的票券數量
+        cur.execute("SELECT COUNT(*) AS count FROM Ticket WHERE status = 1")
+        result = cur.fetchone()
+
+        cur.close()
+
+        return jsonify({'message': '統計成功','state': 'success','status_1_count': result['count']}), 200
+
+    except Exception as e:
+        print(f"[ERROR] 統計 status=1 錯誤：{e}")
+        return jsonify({'message': '統計失敗','state': 'error'}), 500
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
