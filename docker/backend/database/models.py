@@ -75,11 +75,9 @@ class TicketDetail(Base):
 
 
 class User(Base):
-    __tablename__ = 'user'
+    __tablename__ = "users"
 
-    UID: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(45))
-    password: Mapped[str] = mapped_column(String(45))
-    mail: Mapped[str] = mapped_column(String(45))
-    priority: Mapped[int] = mapped_column(Integer)
-    img: Mapped[Optional[str]] = mapped_column(String(45))
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(128), nullable=False)
