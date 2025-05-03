@@ -11,7 +11,12 @@ export default function BasePopup({
 }) {
   return (
     <div className={styles.wrap} {...props}>
-      <div className={styles.childrenWrap}>
+      <div
+        className={styles.childrenWrap}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
         {title && (
           <div className={styles.title}>
             <span className={styles.decoration}></span>

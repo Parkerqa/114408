@@ -48,11 +48,11 @@ export default function BottomNav({ title }: { title: string }) {
           </div>
         ))}
         <Image
-          width={30}
-          height={30}
+          width={32}
+          height={32}
           src={"/bottomNavIcon/user.png"}
           alt={"user"}
-          style={{ borderRadius: "50%" }}
+          style={{ borderRadius: "50%",marginBottom:"2%" }}
         />
       </div>
     </>

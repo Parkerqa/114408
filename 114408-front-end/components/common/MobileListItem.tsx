@@ -4,9 +4,9 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import styles from "@/styles/components/common/MobileListItem.module.scss";
-import { listType } from "@/lib/types/listType";
+import { ticketListType } from "@/lib/types/TicketType";
 
-export default function MobileListItem({ data }: { data: listType }) {
+export default function MobileListItem({ data }: { data: ticketListType }) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const title = ["時間", "種類", "標題", "編號", "金額", "狀態"];
   const values = [
