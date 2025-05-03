@@ -84,22 +84,22 @@ export default function Auth() {
           email: data.email,
           password: data.password,
         });
+        if (res.state === "success") {
+          route.push("/user");
+        }
       } else if (data.username) {
         res = await userAPI.register({
           username: data.username,
           email: data.email,
           password: data.password,
         });
-      }
-
-      if (res) {
-        if (res.message === "登入成功！") {
-          route.push("/user");
-        } else if (res.message === "註冊成功！") {
+        if (res.state === "success") {
           setIsLogin(true);
         }
       }
-    } catch {}
+    } catch {
+      toast.error("發生錯誤，請稍後再試");
+    }
   };
 
   const onError = () => {
