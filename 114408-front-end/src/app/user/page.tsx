@@ -9,13 +9,14 @@ import { useForm } from "react-hook-form";
 import MobileAddPopup from "@/components/MobileAddPopup";
 import InputField from "@/components/common/InputField";
 import { listData } from "@/lib/data/listData";
+import { ticketListType } from "@/lib/types/TicketType";
 import MobileListItem from "@/components/common/MobileListItem";
 import styles from "@/styles/app/UserPage.module.scss";
 import ticketAPI from "@/services/ticketAPI";
 
 export default function User() {
   const [isAdd, setIsAdd] = useState<boolean>(false);
-  const [data, setData] = useState();
+  const [data, setData] = useState<ticketListType[]>([]);
   const { register, watch } = useForm();
 
   const keyword = watch("keyword");
@@ -24,14 +25,15 @@ export default function User() {
   const getList = async () => {
     try {
       const res = await ticketAPI.getList();
-      console.log(res);
+      if (res.data) {
+        setData(res.data);
+      }
     } catch {}
   };
 
-  getList();
-  // useEffect(() => {
-  //   getList();
-  // }, []);
+  useEffect(() => {
+    getList();
+  }, []);
 
   return (
     <>
@@ -48,7 +50,7 @@ export default function User() {
           />
         </div>
         <div className={styles.list}>
-          {listData?.map((item, index) => (
+          {data?.map((item, index) => (
             <MobileListItem data={item} key={index} />
           ))}
         </div>
