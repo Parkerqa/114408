@@ -1,4 +1,5 @@
-export type Response = {
+export type Response<T> = {
   message: string;
-  state?: string;
+  state: string;
+  data?: T;
 };

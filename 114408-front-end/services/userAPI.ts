@@ -3,16 +3,17 @@ import { Response } from "@/lib/types/ResponseType";
 import { AuthFormData } from "@/lib/types/UserAPIType";
 
 const userAPI = {
-  register: (data: AuthFormData): Promise<Response> =>
+  register: (data: AuthFormData): Promise<Response<any>> =>
     API.post(`/register`, data, {
       headers: { "Content-Type": "application/json" },
       toast: true,
     }),
-  login: (data: AuthFormData): Promise<Response> =>
+  login: (data: AuthFormData): Promise<Response<any>> =>
     API.post("/login", data, {
       headers: { "Content-Type": "application/json" },
       toast: true,
     }),
+    // verifyToken:(token:string):Promise<Response>=>
 };
 
 export default userAPI;

@@ -1,8 +1,8 @@
-export type listType = {
+export type ticketListType = {
   time: string;
   type: string;
-  number: string;
   title: string;
+  number: string;
   money: number;
   state: string;
 };
