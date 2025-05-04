@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 
 import MobileAddPopup from "@/components/MobileAddPopup";
 import InputField from "@/components/common/InputField";
-import { listData } from "@/lib/data/listData";
 import { ticketListType } from "@/lib/types/TicketType";
 import MobileListItem from "@/components/common/MobileListItem";
 import styles from "@/styles/app/UserPage.module.scss";

@@ -47,6 +47,7 @@ const SignUp = ({ register }: { register: any }) => {
         style={{ width: "80vw" }}
         icon={<UserRound size={24} color="#3f3f3f" />}
         register={register("username", { required: true })}
+        showIcon={true}
       />
       <InputField
         hint="email"
@@ -55,6 +56,7 @@ const SignUp = ({ register }: { register: any }) => {
         style={{ width: "80vw" }}
         icon={<Mail size={24} color="#3f3f3f" />}
         register={register("email", { required: true })}
+        showIcon={true}
       />
       <InputField
         hint="password"
@@ -63,6 +65,7 @@ const SignUp = ({ register }: { register: any }) => {
         style={{ width: "80vw" }}
         icon={<LockKeyhole size={24} color="#3f3f3f" />}
         register={register("password", { required: true })}
+        showIcon={true}
       />
     </div>
   );
