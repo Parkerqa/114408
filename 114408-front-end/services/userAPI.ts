@@ -13,7 +13,8 @@ const userAPI = {
       headers: { "Content-Type": "application/json" },
       toast: true,
     }),
-    // verifyToken:(token:string):Promise<Response>=>
+  // verifyToken:(token:string):Promise<Response>=>
+  getUser: (): Promise<Response<any>> => API.post(`/list_user`),
 };
 
 export default userAPI;

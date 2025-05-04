@@ -1,0 +1,63 @@
+@use "@/styles/base/variables" as *;
+
+.settingWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  gap: 5vh;
+
+  .userTitle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5%;
+    margin-top: 10%;
+    width: 100%;
+
+    p {
+      font-size: $large-size;
+    }
+  }
+
+  .detail {
+    display: flex;
+    flex-direction: column;
+    gap: 3vh;
+    justify-content: center;
+
+    .detailTitle {
+      font-weight: bold;
+      font-size: $regular-size;
+    }
+
+    .button {
+      display: flex;
+      justify-content: flex-end;
+      gap: 5%;
+
+      .logout,
+      .edit,
+      .editSure {
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: $regular-size;
+      }
+
+      .logout {
+        background-color: $light-gray;
+      }
+
+      .edit {
+        background-color: $background-gray;
+        border: solid 2px $light-gray;
+      }
+
+      .editSure {
+        background-color: $medium-gray;
+        color: $main-white;
+      }
+    }
+  }
+}
