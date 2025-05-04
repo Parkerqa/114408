@@ -1,30 +1,35 @@
 "use client";
 
 import styles from "@/styles/components/common/InputField.module.scss";
-import { UseFormRegisterReturn } from "react-hook-form";
-import React, { useState } from "react";
+import React from "react";
 
 export default function InputField({
   type,
   hint,
   label,
   register,
+  value,
   style,
   icon,
+  showIcon = false,
   isCornerRadius,
+  iconRight,
 }: {
   type: string;
   hint?: string;
   label?: string;
   isCornerRadius?: boolean;
-  register?: UseFormRegisterReturn;
+  register?: any;
+  value?: string;
   style?: React.CSSProperties;
+  showIcon?: boolean;
   icon?: React.ReactNode;
+  iconRight?: boolean;
 }) {
-  const [hasValue, setHasValue] = useState(false);
+  const showLeftIcon = icon && showIcon && !iconRight;
+  const showRightIcon = icon && showIcon && iconRight;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setHasValue(e.target.value !== "");
     register?.onChange?.(e);
   };
 
@@ -34,21 +39,28 @@ export default function InputField({
       style={isCornerRadius ? { borderRadius: "50px" } : {}}
     >
       {label && <label className={styles.title}>{label}</label>}
-      {icon && (
+      {showLeftIcon && (
         <span
-          className={styles.icon}
+          className={styles.iconLeft}
           style={isCornerRadius ? { marginLeft: "20px" } : {}}
         >
           {icon}
         </span>
       )}
-
+      {showRightIcon && (
+        <span
+          className={styles.iconRight}
+          style={isCornerRadius ? { marginRight: "20px" } : {}}
+        >
+          {icon}
+        </span>
+      )}
       <input
+        value={value}
         type={type}
         placeholder={hint}
         className={`${styles.field}
-        ${!hasValue && styles.hasPadding}
-        ${icon && styles.hasPadding}
+        ${showLeftIcon && styles.hasPadding}
         `}
         style={{
           ...(isCornerRadius ? { borderRadius: "50px" } : {}),

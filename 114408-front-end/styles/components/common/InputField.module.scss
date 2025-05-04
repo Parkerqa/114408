@@ -13,11 +13,18 @@
     margin: 0 10px;
   }
 
-  .icon {
+  .iconLeft {
     color: $light-gray;
     position: absolute;
     top: 35%;
-    margin-left: 10px;
+    left: 0px;
+  }
+
+  .iconRight {
+    color: $light-gray;
+    position: absolute;
+    top: 35%;
+    right: 10px;
   }
 
   .field {
