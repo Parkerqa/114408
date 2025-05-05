@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <body>
-      <Toaster richColors position="top-center" />
+        <Toaster richColors position="top-center" />
         <BottomNav title="待核銷報帳" />
         {children}
       </body>
