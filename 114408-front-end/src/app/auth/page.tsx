@@ -74,7 +74,7 @@ const SignUp = ({ register }: { register: any }) => {
 };
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState<boolean>(false);
+  const [isLogin, setIsLogin] = useState<boolean>(true);
   const route = useRouter();
   const { register, handleSubmit } = useForm<AuthFormData>();
 

@@ -14,7 +14,7 @@ const userAPI = {
       toast: true,
     }),
   // verifyToken:(token:string):Promise<Response>=>
-  getUser: (): Promise<Response<any>> => API.post(`/list_user`),
+  getUser: (): Promise<Response<any>> => API.get(`/list_user`),
 };
 
 export default userAPI;
