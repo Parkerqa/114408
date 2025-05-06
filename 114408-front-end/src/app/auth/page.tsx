@@ -23,6 +23,7 @@ const Login = ({ register }: { register: any }) => {
         style={{ width: "80vw" }}
         icon={<Mail size={24} color="#3f3f3f" />}
         register={register("email", { required: true })}
+        showIcon={true}
       />
       <InputField
         hint="password"
@@ -31,6 +32,7 @@ const Login = ({ register }: { register: any }) => {
         style={{ width: "80vw" }}
         icon={<LockKeyhole size={24} color="#3f3f3f" />}
         register={register("password", { required: true })}
+        showIcon={true}
       />
       <span className={styles.forget}>忘記密碼？</span>
     </div>
@@ -72,7 +74,7 @@ const SignUp = ({ register }: { register: any }) => {
 };
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState<boolean>(false);
+  const [isLogin, setIsLogin] = useState<boolean>(true);
   const route = useRouter();
   const { register, handleSubmit } = useForm<AuthFormData>();
 

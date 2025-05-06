@@ -3,8 +3,9 @@
 import Image from "next/image";
 import { toast } from "sonner";
 import { PencilLine } from "lucide-react";
-import { set, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import InputField from "@/components/common/InputField";
 import styles from "@/styles/app/SettingPage.module.scss";
@@ -12,6 +13,7 @@ import userAPI from "@/services/userAPI";
 
 const MobileSetting = ({ register, watch }: { register: any; watch: any }) => {
   const [isEdit, setIsEdit] = useState<boolean>();
+  const route = useRouter();
 
   return (
     <div className={styles.settingWrap}>
@@ -58,25 +60,45 @@ const MobileSetting = ({ register, watch }: { register: any; watch: any }) => {
           value={watch("password")}
         />
         <div className={styles.button}>
-          <button className={styles.logout}>登出</button>
           {isEdit ? (
-            <button
-              className={styles.editSure}
-              onClick={() => {
-                setIsEdit(false);
-              }}
-            >
-              確定修改
-            </button>
+            <>
+              <button
+                className={styles.cancel}
+                onClick={() => {
+                  setIsEdit(false);
+                }}
+              >
+                取消
+              </button>
+              <button
+                className={styles.editSure}
+                onClick={() => {
+                  setIsEdit(false);
+                }}
+              >
+                確定修改
+              </button>
+            </>
           ) : (
-            <button
-              className={styles.edit}
-              onClick={() => {
-                setIsEdit(true);
-              }}
-            >
-              修改
-            </button>
+            <>
+              <button
+                className={styles.logout}
+                onClick={() => {
+                  route.push("/auth");
+                  localStorage.clear;
+                }}
+              >
+                登出
+              </button>
+              <button
+                className={styles.edit}
+                onClick={() => {
+                  setIsEdit(true);
+                }}
+              >
+                修改
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -86,18 +108,17 @@ const MobileSetting = ({ register, watch }: { register: any; watch: any }) => {
 
 export default function Setting() {
   const [user, setUser] = useState();
-  const { register, watch } = useForm({
-    defaultValues: {
-      username: "",
-      email: "",
-      password: "*********",
-    },
-  });
+  const { register, watch, reset } = useForm();
 
   const getUser = async () => {
     try {
       const res = await userAPI.getUser();
       if (res.data) {
+        reset({
+          username: res.data.username,
+          email: res.data.email,
+          password:"*********"
+        });
         setUser(res.data);
       }
     } catch {

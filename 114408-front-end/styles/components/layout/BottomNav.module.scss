@@ -41,3 +41,8 @@
     background-color: $light-gray;
   }
 }
+
+.focusIcon {
+  filter: brightness(0) saturate(100%) invert(30%) sepia(9%) saturate(481%)
+    hue-rotate(169deg) brightness(97%) contrast(93%);
+}
