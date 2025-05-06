@@ -58,25 +58,37 @@ const MobileSetting = ({ register, watch }: { register: any; watch: any }) => {
           value={watch("password")}
         />
         <div className={styles.button}>
-          <button className={styles.logout}>登出</button>
           {isEdit ? (
-            <button
-              className={styles.editSure}
-              onClick={() => {
-                setIsEdit(false);
-              }}
-            >
-              確定修改
-            </button>
+            <>
+              <button
+                className={styles.cancel}
+                onClick={() => {
+                  setIsEdit(false);
+                }}
+              >
+                取消
+              </button>
+              <button
+                className={styles.editSure}
+                onClick={() => {
+                  setIsEdit(false);
+                }}
+              >
+                確定修改
+              </button>
+            </>
           ) : (
-            <button
-              className={styles.edit}
-              onClick={() => {
-                setIsEdit(true);
-              }}
-            >
-              修改
-            </button>
+            <>
+              <button className={styles.logout}>登出</button>
+              <button
+                className={styles.edit}
+                onClick={() => {
+                  setIsEdit(true);
+                }}
+              >
+                修改
+              </button>
+            </>
           )}
         </div>
       </div>
