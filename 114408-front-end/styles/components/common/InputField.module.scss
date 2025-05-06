@@ -1,0 +1,49 @@
+@use "@/styles/base/variables" as *;
+
+.fieldWrap {
+  width: fit-content;
+  position: relative;
+  box-shadow: 0px 4px 4px 1px rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
+
+  .title {
+    font-size: $small-size;
+    position: absolute;
+    color: $medium-gray;
+    margin: 0 10px;
+  }
+
+  .iconLeft {
+    color: $light-gray;
+    position: absolute;
+    top: 35%;
+    left: 0px;
+  }
+
+  .iconRight {
+    color: $light-gray;
+    position: absolute;
+    top: 35%;
+    right: 10px;
+  }
+
+  .field {
+    box-sizing: border-box;
+    color: $main-black;
+    height: 50px;
+    border: none;
+    padding: 0 10px;
+    margin-top: 5px;
+    outline: none;
+    border-radius: 5px;
+    background-color: $main-white;
+
+    &::placeholder {
+      color: $light-gray;
+    }
+  }
+
+  .hasPadding {
+    padding-left: 50px;
+  }
+}

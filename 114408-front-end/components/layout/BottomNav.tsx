@@ -1,9 +1,18 @@
+"use client";
+
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+
 import { bottomNavData } from "@/lib/data/bottomNavData";
 import styles from "@/styles/components/layout/BottomNav.module.scss";
-import Image from "next/image";
 
 export default function BottomNav({ title }: { title: string }) {
+  const pathname = usePathname();
+  const isAuthPage = pathname === "/auth";
   const currentPage = bottomNavData.find((item) => item.title === title);
+
+  if (isAuthPage) return null;
+
   return (
     <>
       <div className={styles.header}>
@@ -39,11 +48,11 @@ export default function BottomNav({ title }: { title: string }) {
           </div>
         ))}
         <Image
-          width={30}
-          height={30}
+          width={32}
+          height={32}
           src={"/bottomNavIcon/user.png"}
           alt={"user"}
-          style={{ borderRadius: "50%" }}
+          style={{ borderRadius: "50%",marginBottom:"2%" }}
         />
       </div>
     </>
