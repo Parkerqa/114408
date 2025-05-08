@@ -9,7 +9,7 @@ const userAPI = {
       toast: true,
     }),
   login: (data: AuthFormData): Promise<Response<any>> =>
-    API.post("/login", data, {
+    API.post("/user/login", data, {
       headers: { "Content-Type": "application/json" },
       toast: true,
     }),
