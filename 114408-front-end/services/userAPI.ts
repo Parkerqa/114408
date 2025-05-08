@@ -14,6 +14,7 @@ const userAPI = {
       toast: true,
     }),
   // verifyToken:(token:string):Promise<Response>=>
+  getRole: (): Promise<Response<any>> => API.get(`/`),
   getUser: (): Promise<Response<any>> => API.get(`/list_user`),
 };
 
