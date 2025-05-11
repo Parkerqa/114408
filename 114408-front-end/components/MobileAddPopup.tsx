@@ -44,14 +44,8 @@ export default function MobileAddPopup({
           <Camera size={55} strokeWidth={1.5} className={styles.icon} />
           <p>相機掃描</p>
         </div>
-        {isCameraScan && <CameraFrame />}
-        {isFileUpload && (
-          <FileFrame
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          />
-        )}
+        {isCameraScan && <CameraFrame setIsAdd={setIsAdd} />}
+        {isFileUpload && <FileFrame setIsAdd={setIsAdd} />}
       </div>
     </>
   );
