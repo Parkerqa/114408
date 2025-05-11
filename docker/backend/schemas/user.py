@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 
 # user base
@@ -17,7 +17,7 @@ class UserOut(BaseModel):
     img: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
 
 # register
