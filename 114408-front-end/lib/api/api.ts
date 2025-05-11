@@ -10,7 +10,9 @@ const API = axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL });
 
 API.interceptors.request.use((config) => {
   config.headers = config.headers || {};
-  config.headers["Content-Type"] = "application/json";
+  if (!config.headers["Content-Type"]) {
+    config.headers["Content-Type"] = "application/json";
+  }
   const token = localStorage.getItem("token");
   if (token) {
     config.headers["Authorization"] = `Bearer ${token}`;
@@ -23,10 +25,9 @@ API.interceptors.response.use(
     const config = response.config as CustomAxiosRequestConfig;
     if (response.data?.state === "error") {
       if (config.toast) toast.error(response.data?.message || "操作失敗");
-      throw response.data;
     } else {
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
+      if (response.data.data.access_token) {
+        localStorage.setItem("token", response.data.data.access_token);
       }
       if (config.toast) toast.success(response.data?.message || "操作成功");
     }
