@@ -14,11 +14,6 @@
       background-color: $light-gray;
       padding: 10px;
       border-radius: 5px;
-      transition: ease-in-out 0.1s;
-
-      &:active {
-        transform: scale(0.95);
-      }
     }
 
     .onSearch {

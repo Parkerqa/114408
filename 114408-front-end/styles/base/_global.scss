@@ -26,8 +26,13 @@ a {
   font-size: variables.$regular-size;
 }
 
-button{
+button {
   background: none;
   border: none;
   outline: none;
+  transition: ease-in-out 0.2s;
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
