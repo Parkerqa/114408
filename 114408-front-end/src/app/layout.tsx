@@ -2,7 +2,7 @@ import "@/styles/main.scss";
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 
-import { UserRoleProvider } from "@/lib/context/UserRoleContext";
+import { ConfigProvider } from "@/lib/context/ConfigContext";
 import { LoadingProvider } from "@/lib/context/LoadingContext";
 import BottomNav from "@/components/layout/BottomNav";
 
@@ -28,10 +28,10 @@ export default function RootLayout({
       <body>
         <Toaster richColors position="top-center" />
         <LoadingProvider>
-          <UserRoleProvider>
+          <ConfigProvider>
             <BottomNav />
             {children}
-          </UserRoleProvider>
+          </ConfigProvider>
         </LoadingProvider>
       </body>
     </html>
