@@ -1,7 +1,7 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from model.db_utils import SessionLocal
-from model.models import User
+from model.models import User, OtherSetting
 
 
 # dependencies.py
@@ -100,5 +100,23 @@ def update_user_img(uid: int, filename: str):
         db.rollback()
         print(f"[ERROR] update_user_img: {e}")
         return False
+    finally:
+        db.close()
+
+def get_user_settings(uid: int):
+    db: Session = SessionLocal()
+    try:
+        user = db.query(User).filter(User.uid == uid).one_or_none()
+        if not user:
+            return False
+        user = aliased(User)
+        settings = aliased(OtherSetting)
+        return db.query(user.priority, settings.theme)\
+            .outerjoin(settings, user.uid == settings.uid)\
+            .filter(user.uid == uid)\
+            .one_or_none()
+    except Exception as e:
+        print(f"[ERROR] get_user_settings: {e}")
+        return None
     finally:
         db.close()

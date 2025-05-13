@@ -7,7 +7,7 @@ from pathlib import Path
 from core.upload_utils import is_valid_image
 from model.user_model import (create_user, get_user_by_email, get_user_by_uid,
                               update_password, update_user_img,
-                              update_user_info)
+                              update_user_info, get_user_settings)
 from schemas.user import (ModifyUserInfo, PasswordChange, PasswordForget,
                           UserCreate, UserLogin)
 from views.auth import create_access_token, hash_password, verify_password
@@ -67,13 +67,7 @@ def change_user_info_logic(user, payload: ModifyUserInfo):
     if user.email != payload.email and get_user_by_email(payload.email):
         return "此電子郵件已被其他帳戶使用", "error", 409
 
-    if not payload.old_password:
-        return "舊密碼為必填項目", "error", 400
-
     if payload.new_password:
-        # 核對舊密碼是否正確
-        if not verify_password(payload.old_password, user.password):
-            return "舊密碼錯誤", "error", 401
         stored_password = hash_password(payload.new_password)
     else:
         stored_password = user.password
@@ -133,9 +127,26 @@ def get_current_user_info_logic(uid: int):
 
         user_info = {
             "username": user.username,
-            "email": user.email
+            "email": user.email,
+            "img": user.img
         }
-        return "取得使用者成功", "success", 200, {"user": user_info}
+        return "取得使用者成功", "success", 200, user_info
+
+    except Exception as e:
+        print(f"[ERROR] 取得使用者資料失敗：{e}")
+        return "伺服器錯誤", "error", 500, None
+
+def get_current_user_settings_logic(uid: int):
+    try:
+        user = get_user_settings(uid)
+        if not user:
+            return "找不到使用者", "error", 404, None
+
+        user_info = {
+            "priority": user.priority,
+            "theme": user.theme
+        }
+        return "取得使用者成功", "success", 200, user_info
 
     except Exception as e:
         print(f"[ERROR] 取得使用者資料失敗：{e}")

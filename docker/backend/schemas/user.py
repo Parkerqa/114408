@@ -44,5 +44,4 @@ class PasswordForget(BaseModel):
 class ModifyUserInfo(BaseModel):
     username: str
     email: EmailStr
-    old_password: str
     new_password: Optional[str] = None  # 若提供才改密碼
