@@ -8,6 +8,7 @@ import { Mail } from "lucide-react";
 import { UserRound } from "lucide-react";
 import { LockKeyhole } from "lucide-react";
 
+import { useLoading } from "@/lib/context/LoadingContext";
 import InputField from "@/components/common/InputField";
 import userAPI from "@/services/userAPI";
 import styles from "@/styles/app/auth/AuthPage.module.scss";
@@ -74,15 +75,17 @@ const SignUp = ({ register }: { register: any }) => {
 };
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState<boolean>(true);
   const route = useRouter();
+  const [isLogin, setIsLogin] = useState<boolean>(true);
   const { register, handleSubmit } = useForm<AuthFormData>();
+  const { setLoading } = useLoading();
 
   const loginClass = isLogin ? styles.focusItem : styles.item;
   const signupClass = !isLogin ? styles.focusItem : styles.item;
 
   const onSubmit = async (data: AuthFormData) => {
     let res;
+    setLoading(true);
     try {
       if (isLogin) {
         res = await userAPI.login({
@@ -103,7 +106,8 @@ export default function Auth() {
         }
       }
     } catch {
-      toast.error("發生錯誤，請稍後再試");
+    } finally {
+      setLoading(false);
     }
   };
 

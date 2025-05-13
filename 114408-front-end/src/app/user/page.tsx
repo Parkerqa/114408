@@ -7,11 +7,11 @@ import { Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import MobileAddPopup from "@/components/MobileAddPopup";
+import MobileListItem from "@/components/common/MobileListItem";
 import InputField from "@/components/common/InputField";
 import { ticketListType } from "@/lib/types/TicketType";
-import MobileListItem from "@/components/common/MobileListItem";
-import styles from "@/styles/app/UserPage.module.scss";
 import ticketAPI from "@/services/ticketAPI";
+import styles from "@/styles/app/UserPage.module.scss";
 
 export default function User() {
   const [isAdd, setIsAdd] = useState<boolean>(false);
