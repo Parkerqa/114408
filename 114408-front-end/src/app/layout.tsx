@@ -1,5 +1,9 @@
 import "@/styles/main.scss";
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
+
+import { ConfigProvider } from "@/lib/context/ConfigContext";
+import { LoadingProvider } from "@/lib/context/LoadingContext";
 import BottomNav from "@/components/layout/BottomNav";
 
 export const metadata: Metadata = {
@@ -22,8 +26,13 @@ export default function RootLayout({
   return (
     <html lang="zh">
       <body>
-        <BottomNav title="待核銷報帳"/>
-        {children}
+        <Toaster richColors position="top-center" />
+        <LoadingProvider>
+          <ConfigProvider>
+            <BottomNav />
+            {children}
+          </ConfigProvider>
+        </LoadingProvider>
       </body>
     </html>
   );

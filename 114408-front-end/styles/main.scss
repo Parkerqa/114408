@@ -1,5 +1,5 @@
-@import './base/reset';
-@import './base/global';
-@import './base/variables';
-@import './base/extends';
-@import './base/mixin';
+@use 'base/reset';
+@use 'base/global';
+@use 'base/variables';
+@use 'base/extends';
+@use 'base/mixin';

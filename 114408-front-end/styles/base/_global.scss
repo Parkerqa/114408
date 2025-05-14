@@ -1,10 +1,11 @@
-@import "./variables";
-@import "./mixin";
+@use "variables";
+@use "mixin";
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&display=swap");
 
 // 全局基礎樣式
 body {
-  background-color: $background-gray;
+  background-color: variables.$background-gray;
+  color: variables.$main-black;
 }
 
 * {
@@ -12,15 +13,30 @@ body {
 }
 
 p {
-  font-size: $regular-size;
-  color: $main-black;
+  font-size: variables.$regular-size;
+  color: variables.$main-black;
 
-  @include X-Small {
-    font-size: $small-size;
+  @include mixin.X-Small {
+    font-size: variables.$small-size;
   }
 }
 
 a {
   text-decoration: none;
-  font-size: $regular-size;
+  font-size: variables.$regular-size;
+}
+
+button {
+  background: none;
+  border: none;
+  outline: none;
+  transition: ease-in-out 0.2s;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }

@@ -1,0 +1,42 @@
+@use "@/styles/base/variables" as *;
+
+.wrap {
+  z-index: 9999;
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .childrenWrap {
+    position: relative;
+    height: fit-content;
+    width: fit-content;
+    padding: 4rem 3rem 2rem;
+    background-color: $main-white;
+    border-radius: 22px;
+    box-shadow: 0 4 4 rgba($color: #000000, $alpha: 0.25);
+
+    .title {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      top: 1rem;
+      left: 0;
+      font-size: $large-size;
+      font-weight: bold;
+      letter-spacing: 2px;
+
+      .decoration {
+        display: block;
+        width: 10px;
+        height: 40px;
+        background-color: $medium-gray;
+        margin-right: 1rem;
+        border-radius: 0px 100px 100px 0px;
+      }
+    }
+  }
+}
