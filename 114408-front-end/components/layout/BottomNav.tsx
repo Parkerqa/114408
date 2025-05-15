@@ -15,8 +15,6 @@ export default function BottomNav() {
   );
   const title = currentItem?.title || "";
 
-  console.log(currentItem);
-
   if (isAuthPage) return null;
 
   return (

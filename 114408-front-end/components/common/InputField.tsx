@@ -8,30 +8,26 @@ export default function InputField({
   hint,
   label,
   register,
-  value,
   style,
   icon,
   showIcon = false,
   isCornerRadius,
   iconRight,
+  readonly = false,
 }: {
   type: string;
   hint?: string;
   label?: string;
   isCornerRadius?: boolean;
   register?: any;
-  value?: string;
   style?: React.CSSProperties;
   showIcon?: boolean;
   icon?: React.ReactNode;
   iconRight?: boolean;
+  readonly?: boolean;
 }) {
   const showLeftIcon = icon && showIcon && !iconRight;
   const showRightIcon = icon && showIcon && iconRight;
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    register?.onChange?.(e);
-  };
 
   return (
     <div
@@ -56,7 +52,6 @@ export default function InputField({
         </span>
       )}
       <input
-        value={value}
         type={type}
         placeholder={hint}
         className={`${styles.field}
@@ -67,7 +62,7 @@ export default function InputField({
           ...style,
         }}
         {...register}
-        onChange={handleChange}
+        readOnly={readonly}
       />
     </div>
   );
