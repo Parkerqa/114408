@@ -5,19 +5,29 @@ services:
     container_name: tts_backend
     ports:
       - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - app-net
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+    restart: always
+
+  db:
+    image: mysql:8.4.4
     networks:
       - app-net
     environment:
-      DB_HOST: ${DB_HOST}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_DATABASE: ${DB_DATABASE}
-      DB_PORT: ${DB_PORT}
-      LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
-      LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
     volumes:
-      - ./backend:/app
+      - mysql-data:/var/lib/mysql
     restart: always
 
   ngrok:
