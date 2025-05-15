@@ -6,10 +6,9 @@ from pathlib import Path
 
 from core.upload_utils import is_valid_image
 from model.user_model import (create_user, get_user_by_email, get_user_by_uid,
-                              update_password, update_user_img,
-                              update_user_info, get_user_settings)
-from schemas.user import (ModifyUserInfo, PasswordChange, PasswordForget,
-                          UserCreate, UserLogin)
+                              get_user_settings, update_password,
+                              update_user_img, update_user_info)
+from schemas.user import ModifyUserInfo, PasswordChange, UserCreate, UserLogin
 from views.auth import create_access_token, hash_password, verify_password
 from views.email import send_email
 
@@ -39,10 +38,10 @@ def login_logic(payload: UserLogin):
         "access_token": token
     }
 
-def change_password_logic(user_info, payload: PasswordChange):
-    if not verify_password(payload.old_password, user_info.password):
+def change_password_logic(user, payload: PasswordChange):
+    if not verify_password(payload.old_password, user.password):
         return "舊密碼錯誤", "error", 401
-    email = user_info.email
+    email = user.email
     if update_password(email, hash_password(payload.new_password)):
         return "密碼已更新成功", "success", 200
     return "更新資料庫失敗", "error", 500

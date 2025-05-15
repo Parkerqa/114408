@@ -1,11 +1,10 @@
 import logging
 import os
 
+from core.response import make_response
 from fastapi import APIRouter, Header, Request
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-
-from core.response import make_response
 from views.bot import register_events_logic
 
 logger = logging.getLogger(__name__)

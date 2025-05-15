@@ -1,11 +1,12 @@
-from sqlalchemy.orm import Session, aliased
+from typing import Optional
 
 from model.db_utils import SessionLocal
-from model.models import User, OtherSetting
+from model.models import OtherSetting, User
+from sqlalchemy.orm import Session, aliased
 
 
 # dependencies.py
-def get_user(db: Session, uid: int):
+def get_user(db: Session, uid: int) -> Optional[User]:
     try:
         return db.query(User).filter(User.uid == uid).one_or_none()
     except Exception as e:
@@ -14,7 +15,7 @@ def get_user(db: Session, uid: int):
 
 
 # 給 views 使用的查詢函式
-def get_user_by_email(email: str):
+def get_user_by_email(email: str) -> Optional[User]:
     db: Session = SessionLocal()
     try:
         return db.query(User).filter(User.email == email).one_or_none()
@@ -25,7 +26,7 @@ def get_user_by_email(email: str):
         db.close()
 
 # 建立使用者
-def create_user(username: str, email: str, password: str):
+def create_user(username: str, email: str, password: str) -> bool:
     db: Session = SessionLocal()
     try:
         user = User(username=username, email=email, password=password, priority=0)
@@ -40,7 +41,7 @@ def create_user(username: str, email: str, password: str):
         db.close()
 
 # 更新密碼
-def update_password(email: str, new_pwd: str):
+def update_password(email: str, new_pwd: str) -> bool:
     db: Session = SessionLocal()
     try:
         user = db.query(User).filter(User.email == email).one_or_none()
@@ -57,7 +58,7 @@ def update_password(email: str, new_pwd: str):
         db.close()
 
 # 更新使用者資料
-def update_user_info(uid: int, username: str, email: str, password: str):
+def update_user_info(uid: int, username: str, email: str, password: str) -> bool:
     db: Session = SessionLocal()
     try:
         user = db.query(User).filter(User.uid == uid).one_or_none()
@@ -76,7 +77,7 @@ def update_user_info(uid: int, username: str, email: str, password: str):
         db.close()
 
 # 給 views 使用的查詢函式
-def get_user_by_uid(uid: int):
+def get_user_by_uid(uid: int) -> Optional[User]:
     db: Session = SessionLocal()
     try:
         return db.query(User).filter(User.uid == uid).one_or_none()
@@ -87,7 +88,7 @@ def get_user_by_uid(uid: int):
         db.close()
 
 # 更新使用者頭像
-def update_user_img(uid: int, filename: str):
+def update_user_img(uid: int, filename: str) -> bool:
     db: Session = SessionLocal()
     try:
         user = db.query(User).filter(User.uid == uid).one_or_none()
@@ -108,7 +109,7 @@ def get_user_settings(uid: int):
     try:
         user = db.query(User).filter(User.uid == uid).one_or_none()
         if not user:
-            return False
+            return None
         user = aliased(User)
         settings = aliased(OtherSetting)
         return db.query(user.priority, settings.theme)\

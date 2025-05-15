@@ -8,7 +8,6 @@ from starlette.status import (HTTP_404_NOT_FOUND, HTTP_405_METHOD_NOT_ALLOWED,
                               HTTP_422_UNPROCESSABLE_ENTITY,
                               HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 response_router = APIRouter()
 
 # 統一回傳格式函數

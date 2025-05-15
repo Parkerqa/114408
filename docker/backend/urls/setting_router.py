@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends
-
 from core.response import make_response
 from dependencies import get_current_user
+from fastapi import APIRouter, Depends
 from schemas.setting import ColorSetting, ThemeUpdate
 from views.settings import change_color_logic, change_theme_logic
 

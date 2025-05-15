@@ -1,6 +1,5 @@
-from fastapi import APIRouter
-
 from core.response import make_response
+from fastapi import APIRouter
 from schemas.openai import ChatRequest
 from views.openai import chat_with_gpt_logic
 

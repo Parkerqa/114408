@@ -2,8 +2,6 @@ import os
 
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 
-from schemas.user import PasswordForget
-
 conf = ConnectionConfig(
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME"),
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD"),

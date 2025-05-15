@@ -1,13 +1,13 @@
-from fastapi import APIRouter, Depends, File, Query, UploadFile, Path
-
 from core.response import make_response
 from dependencies import get_current_user, require_role
-from schemas.ticket import TicketUpdate, TicketAuditRequest
-from views.ticket import (change_ticket_logic, delete_ticket_logic,
-                          list_class_logic, list_date_logic, list_ticket_logic,
+from fastapi import APIRouter, Depends, File, Path, Query, UploadFile
+from schemas.ticket import TicketAuditRequest, TicketUpdate
+from views.ticket import (audit_ticket_service, change_ticket_logic,
+                          delete_ticket_logic, list_class_logic,
+                          list_date_logic, list_ticket_logic,
                           not_write_off_logic, search_ticket_logic,
                           total_money_logic, unaudited_invoices_logic,
-                          upload_ticket_logic, write_off_logic, audit_ticket_service)
+                          upload_ticket_logic, write_off_logic)
 
 ticket_router = APIRouter()
 

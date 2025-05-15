@@ -1,8 +1,5 @@
-from fastapi import APIRouter, Depends, File, UploadFile
-from sqlalchemy.orm import Session
-
 from core.response import make_response
-from model.db_utils import get_db
+from fastapi import APIRouter, File, UploadFile
 from views.ocr import ocr_logic
 
 ocr_router = APIRouter()

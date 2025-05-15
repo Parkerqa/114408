@@ -3,7 +3,6 @@ import uuid
 from typing import Dict, List, Tuple
 
 from fastapi import UploadFile
-
 from model.ticket_model import (count_by_status, count_status_1, create_ticket,
                                 create_ticket_detail, delete_ticket_by_id,
                                 delete_ticket_details_by_ids, get_all_tickets,
@@ -11,7 +10,8 @@ from model.ticket_model import (count_by_status, count_status_1, create_ticket,
                                 get_distinct_dates, get_ticket_by_id,
                                 get_tickets_by_user, get_total_money,
                                 search_tickets_by_keyword, sum_money_by_status,
-                                update_ticket_class, update_ticket_detail, update_ticket_status)
+                                update_ticket_class, update_ticket_detail,
+                                update_ticket_status)
 
 
 def list_ticket_logic(current_user) -> Tuple[str, str, int, List[Dict] or None]:

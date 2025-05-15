@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends
-
 from core.response import make_response
 from dependencies import get_current_user
+from fastapi import APIRouter, Depends
 from schemas.classinfo import ClassCreate, ClassUpdate
 from views.classinfo import (add_class_logic, delete_class_logic,
                              update_class_logic)

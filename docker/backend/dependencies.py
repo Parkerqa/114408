@@ -1,9 +1,8 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
-
 from model.db_utils import get_db
 from model.user_model import get_user
+from sqlalchemy.orm import Session
 from views.auth import decode_access_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")

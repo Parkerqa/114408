@@ -3,10 +3,9 @@ import re
 import tempfile
 
 import opencc
-from paddleocr import PaddleOCR
-
 from core.upload_utils import is_valid_image
 from model.ocr_model import save_ocr_result
+from paddleocr import PaddleOCR
 
 # 初始化模型
 ocr_model = PaddleOCR(lang='ch', use_gpu=False)

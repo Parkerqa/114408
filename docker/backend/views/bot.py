@@ -1,7 +1,6 @@
 import logging
 
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-
 from model.bot_model import get_ticket_by_uid
 from views.openai import chat_with_gpt_logic
 
@@ -27,7 +26,7 @@ def get_reply_text(msg: str):
 
         if msg.startswith("ai:"):
             prompt = msg[3:].strip()
-            return chat_with_gpt(prompt)
+            return chat_with_gpt_logic(prompt)
 
         return PREDEFINED_RESPONSES.get(msg, "盡請期待")
 

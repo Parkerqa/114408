@@ -1,14 +1,12 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-
 from core.response import make_response
-from dependencies import get_current_user, require_role
-from model.db_utils import get_db
+from dependencies import require_role
+from fastapi import APIRouter, Depends, File, UploadFile
 from schemas.user import (ModifyUserInfo, PasswordChange, PasswordForget,
-                          UserCreate, UserLogin, UserOut)
+                          UserCreate, UserLogin)
 from views.user import (change_password_logic, change_user_info_logic,
                         forget_password_logic, get_current_user_info_logic,
-                        login_logic, register_logic, upload_user_photo_logic,
-                        get_current_user_settings_logic)
+                        get_current_user_settings_logic, login_logic,
+                        register_logic, upload_user_photo_logic)
 
 user_router = APIRouter()
 
