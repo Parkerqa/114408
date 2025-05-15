@@ -8,7 +8,7 @@ from core.upload_utils import is_valid_image
 from model.user_model import (create_user, get_user_by_email, get_user_by_uid,
                               get_user_settings, update_password,
                               update_user_img, update_user_info)
-from schemas.user import ModifyUserInfo, PasswordChange, UserCreate, UserLogin
+from schemas.user import ModifyUserInfo, UserCreate, UserLogin
 from views.auth import create_access_token, hash_password, verify_password
 from views.email import send_email
 
@@ -37,14 +37,6 @@ def login_logic(payload: UserLogin):
     return "登入成功", "success", 200, {
         "access_token": token
     }
-
-def change_password_logic(user, payload: PasswordChange):
-    if not verify_password(payload.old_password, user.password):
-        return "舊密碼錯誤", "error", 401
-    email = user.email
-    if update_password(email, hash_password(payload.new_password)):
-        return "密碼已更新成功", "success", 200
-    return "更新資料庫失敗", "error", 500
 
 async def forget_password_logic(email: str):
     user = get_user_by_email(email)
