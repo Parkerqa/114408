@@ -1,3 +1,4 @@
+import os
 from typing import Tuple
 
 from fastapi import UploadFile
@@ -5,8 +6,9 @@ from fastapi import UploadFile
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
 MAX_FILE_SIZE_MB = 5  # 最大 5MB
 
-def allowed_file(filename: str) -> bool:
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
+# 若資料夾不存在會自動建立
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def is_valid_image(photo: UploadFile, content: bytes) -> Tuple[bool, str]:
     ext = photo.filename.rsplit(".", 1)[-1].lower()
