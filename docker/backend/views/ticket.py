@@ -2,6 +2,7 @@ import os
 import uuid
 from typing import Dict, List, Tuple
 
+from core.upload_utils import UPLOAD_FOLDER, is_valid_image
 from fastapi import UploadFile
 from model.ticket_model import (count_by_status, count_status_1, create_ticket,
                                 create_ticket_detail, delete_ticket_by_id,
@@ -14,10 +15,10 @@ from model.ticket_model import (count_by_status, count_status_1, create_ticket,
                                 update_ticket_status)
 
 
-def list_ticket_logic(current_user) -> Tuple[str, str, int, List[Dict] or None]:
+def list_ticket_logic(user) -> Tuple[str, str, int, List[Dict] or None]:
     try:
-        uid = current_user.uid
-        priority = current_user.priority
+        uid = user.uid
+        priority = user.priority
 
         if priority == 1:
             tickets = get_all_tickets()
@@ -43,7 +44,7 @@ def list_ticket_logic(current_user) -> Tuple[str, str, int, List[Dict] or None]:
         print(e)
         return "伺服器錯誤", "error", 500, []
 
-def delete_ticket_logic(tid: int, current_user) -> Tuple[str, str, int]:
+def delete_ticket_logic(tid: int, user) -> Tuple[str, str, int]:
     try:
         ticket = get_ticket_by_id(tid)
         if not ticket:
@@ -54,7 +55,7 @@ def delete_ticket_logic(tid: int, current_user) -> Tuple[str, str, int]:
             return "無法刪除已完成的發票", "error", 403
 
         # 一般使用者只能刪除自己的發票
-        if current_user.priority == 0 and ticket.uid != current_user.uid:
+        if user.priority == 0 and ticket.uid != user.uid:
             return "你無權刪除此發票", "error", 403
 
         success = delete_ticket_by_id(tid)
@@ -66,7 +67,7 @@ def delete_ticket_logic(tid: int, current_user) -> Tuple[str, str, int]:
         print(e)
         return "伺服器錯誤", "error", 500
 
-def change_ticket_logic(tid: int, payload, current_user) -> Tuple[str, str, int]:
+def change_ticket_logic(tid: int, payload, user) -> Tuple[str, str, int]:
     try:
         if not payload.class_ or not isinstance(payload.detail, list):
             return "請提供 class 和 detail", "error", 400
@@ -78,7 +79,7 @@ def change_ticket_logic(tid: int, payload, current_user) -> Tuple[str, str, int]
         if ticket.status == 2:
             return "無法修改已完成的發票", "error", 403
 
-        if current_user.priority == 0 and ticket.uid != current_user.uid:
+        if user.priority == 0 and ticket.uid != user.uid:
             return "你無權修改這張發票", "error", 403
 
         if not update_ticket_class(tid, payload.class_):
@@ -116,7 +117,7 @@ def change_ticket_logic(tid: int, payload, current_user) -> Tuple[str, str, int]
         print(f"[ERROR] 修改發票錯誤：{e}")
         return "修改發票時發生錯誤", "error", 500
 
-def search_ticket_logic(keyword: str, current_user) -> Tuple[str, str, int, List[Dict] or None]:
+def search_ticket_logic(keyword: str, user) -> Tuple[str, str, int, List[Dict] or None]:
     try:
         tickets = search_tickets_by_keyword(keyword)
 
@@ -126,9 +127,9 @@ def search_ticket_logic(keyword: str, current_user) -> Tuple[str, str, int, List
         filtered = []
 
         for row in tickets:
-            if current_user.priority == 0:
+            if user.priority == 0:
                 # 一般使用者只能看到自己的票
-                if row.uid != current_user.uid:
+                if row.uid != user.uid:
                     continue
                 filtered.append({
                     "class": row.class_,
@@ -156,33 +157,27 @@ def search_ticket_logic(keyword: str, current_user) -> Tuple[str, str, int, List
         print(f"[ERROR] 查詢發票錯誤：{e}")
         return "查詢時發生錯誤", "error", 500, None
 
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
-UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
-# 若資料夾不存在會自動建立
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-def allowed_file(filename: str) -> bool:
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-async def upload_ticket_logic(file: UploadFile, current_user) -> Tuple[str, str, int, List[Dict] or None]:
-    if not file or not file.filename:
+async def upload_ticket_logic(image: UploadFile, user) -> Tuple[str, str, int, List[Dict] or None]:
+    if not image or not image.filename:
         return "未選擇檔案", "error", 400, None
 
-    if not allowed_file(file.filename):
-        return "不支援的檔案格式", "error", 400, None
+    img_bytes = await image.read()
+    is_valid, reason = is_valid_image(image, img_bytes)
+    if not is_valid:
+        return reason, "error", 400, None
 
     try:
-        ext = file.filename.rsplit('.', 1)[1].lower()
+        ext = image.filename.rsplit('.', 1)[1].lower()
         new_filename = f"{uuid.uuid4().hex}.{ext}"
         save_path = os.path.join(UPLOAD_FOLDER, new_filename)
 
         # 儲存檔案
-        contents = await file.read()
+        contents = await image.read()
         with open(save_path, "wb") as f:
             f.write(contents)
 
         # 建立發票資料
-        tid = create_ticket(current_user.uid, new_filename)
+        tid = create_ticket(user.uid, new_filename)
 
         if not tid:
             return "建立發票失敗", "error", 500, None
@@ -196,9 +191,9 @@ async def upload_ticket_logic(file: UploadFile, current_user) -> Tuple[str, str,
         print(f"[ERROR] 上傳圖片失敗：{e}")
         return "伺服器錯誤", "error", 500, None
 
-def total_money_logic(current_user) -> Tuple[str, str, int, List[Dict] or None]:
+def total_money_logic(user) -> Tuple[str, str, int, List[Dict] or None]:
     try:
-        total = get_total_money(current_user)
+        total = get_total_money(user)
         return "查詢成功", "success", 200, {"total_money": total}
     except Exception as e:
         print(f"[ERROR] 加總 money 失敗：{e}")
@@ -252,7 +247,7 @@ def write_off_logic() -> Tuple[str, str, int, List[Dict] or None]:
         print(f"[ERROR] 統計 status=2 與金額加總錯誤：{e}")
         return "伺服器錯誤", "error", 500, None
 
-def audit_ticket_service(tid: int, status: int):
+def audit_ticket_logic(tid: int, status: int):
     ticket = get_ticket_by_id(tid)
     if not ticket:
         return "找不到該發票", "error", 404

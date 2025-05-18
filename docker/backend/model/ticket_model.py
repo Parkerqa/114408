@@ -229,7 +229,7 @@ def sum_money_by_status(status: int) -> int or None:
     finally:
         db.close()
 
-def update_ticket_status(tid: int, status: int):
+def update_ticket_status(tid: int, status: int) -> bool:
     db: Session = SessionLocal()
     try:
         ticket = db.query(Ticket).filter(Ticket.tid == tid).first()
