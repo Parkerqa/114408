@@ -1,10 +1,9 @@
 from core.response import make_response
 from dependencies import require_role
 from fastapi import APIRouter, Depends, File, UploadFile
-from schemas.user import (ModifyUserInfo, PasswordForget,
-                          UserCreate, UserLogin)
-from views.user import (change_user_info_logic,
-                        forget_password_logic, get_current_user_info_logic,
+from schemas.user import ModifyUserInfo, PasswordForget, UserCreate, UserLogin
+from views.user import (change_user_info_logic, forget_password_logic,
+                        get_current_user_info_logic,
                         get_current_user_settings_logic, login_logic,
                         register_logic, upload_user_photo_logic)
 
