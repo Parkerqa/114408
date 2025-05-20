@@ -54,5 +54,5 @@ docker compose up
 
 ```aiignore
 (第一次啟動)
-docker compose exec -T db mysql -uroot -p123456 114408 < ./vm_mysql/backup.sql
+docker compose exec -T db mysql -uroot -p123456 114408 < backup.sql
 ```
