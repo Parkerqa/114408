@@ -27,20 +27,20 @@ def update_or_insert_color_setting(uid: int, payload) -> bool:
     try:
         setting = db.query(OtherSetting).filter(OtherSetting.uid == uid).first()
         if setting:
-            setting.red_but = payload.red_but
+            setting.red_bot = payload.red_bot
             setting.red_top = payload.red_top
-            setting.yellow_but = payload.yellow_but
+            setting.yellow_bot = payload.yellow_bot
             setting.yellow_top = payload.yellow_top
-            setting.green_but = payload.green_but
+            setting.green_bot = payload.green_bot
             setting.green_top = payload.green_top
         else:
             new_setting = OtherSetting(
                 uid=uid,
-                red_but=payload.red_but,
+                red_bot=payload.red_bot,
                 red_top=payload.red_top,
-                yellow_but=payload.yellow_but,
+                yellow_bot=payload.yellow_bot,
                 yellow_top=payload.yellow_top,
-                green_but=payload.green_but,
+                green_bot=payload.green_bot,
                 green_top=payload.green_top,
             )
             db.add(new_setting)
