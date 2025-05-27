@@ -1,7 +1,7 @@
 @use "@/styles/base/variables" as *;
 
 .uploadWrap {
-  border: 4px dashed $light-gray;
+  border: 4px dashed var(--second-color);
   padding: 3rem 2rem 2.5rem;
   border-radius: 20px;
   display: flex;
@@ -15,7 +15,7 @@
   }
 
   svg {
-    color: $medium-gray;
+    color: var(--primary-color);
   }
 }
 
@@ -56,13 +56,13 @@
 
 .hint {
   margin: 20px 0;
-  color: $point-red;
+  color: var(--point-red);
 }
 
 .submit {
   padding: 10px 25px;
   border-radius: 10px;
-  background-color: $medium-gray;
+  background-color: var(--primary-color);
   color: $main-white;
   font-weight: bold;
   font-size: $regular-size;

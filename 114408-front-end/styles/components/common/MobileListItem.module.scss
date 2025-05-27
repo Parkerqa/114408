@@ -36,7 +36,7 @@
 
 .detailBox {
   .toggle {
-    background-color: $medium-gray;
+    background-color: var(--primary-color);
   }
 
   .item {
@@ -48,7 +48,7 @@
   align-items: center;
 
   .toggle {
-    background-color: $light-gray;
+    background-color: var(--second-color);
   }
 
   .item {

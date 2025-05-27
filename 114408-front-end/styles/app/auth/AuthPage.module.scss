@@ -15,7 +15,7 @@
 
     .forget {
       font-size: $small-size;
-      color: $medium-gray;
+      color: var(--primary-color);
       margin-left: 5vw;
     }
   }
@@ -30,7 +30,7 @@
       font-weight: bold;
       padding: 15 20px;
       position: relative;
-      color: $light-gray;
+      color: var(--second-color);
 
       &::after {
         content: "";
@@ -39,16 +39,16 @@
         bottom: 0;
         width: 100%;
         height: 2px;
-        background-color: $light-gray;
+        background-color: var(--second-color);
         border-radius: 5px;
       }
     }
 
     .focusItem {
-      color: $main-black;
+      color: var(--text-color);
 
       &::after {
-        background-color: $main-black;
+        background-color: var(--text-color);
       }
     }
   }
@@ -58,7 +58,7 @@
     outline: none;
     border: none;
     font-size: $regular-size;
-    background-color: $medium-gray;
+    background-color: var(--primary-color);
     color: $main-white;
     padding: 1vh 9vw;
     border-radius: 50px;
