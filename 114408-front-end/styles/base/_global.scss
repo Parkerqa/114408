@@ -2,10 +2,36 @@
 @use "mixin";
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&display=swap");
 
+/* Light Theme - Default */
+:root {
+  --background-color: #f5f6f7;
+  --background-light-color: #fff;
+  --text-color: #3f4360;
+  --text-light-color: #8a8c9d;
+  --primary-color: #5caed6;
+  --second-color: #aad9eb;
+  --point-red: #ff8a8a;
+  --point-yellow: #ffbf6a;
+  --input-box-shadow: rgba(12, 98, 139, 0.15);
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --background-color: #1e1e2f;
+  --background-light-color: #3a3a4a;
+  --text-color: #f0f0f5;
+  --text-light-color: #8a8c9d;
+  --primary-color: #3a77d1;
+  --second-color: #759BD3;
+  --point-red: #ff6b6b;
+  --point-yellow: #ffc107;
+  --input-box-shadow: rgba(163, 192, 254, 0.08);
+}
+
 // 全局基礎樣式
 body {
-  background-color: variables.$background-gray;
-  color: variables.$main-black;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
 * {
@@ -14,7 +40,7 @@ body {
 
 p {
   font-size: variables.$regular-size;
-  color: variables.$main-black;
+  color: var(--text-color);
 
   @include mixin.X-Small {
     font-size: variables.$small-size;

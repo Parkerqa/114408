@@ -11,13 +11,13 @@
 
     .searchBtn {
       color: $main-white;
-      background-color: $light-gray;
+      background-color: var(--second-color);
       padding: 10px;
       border-radius: 5px;
     }
 
     .onSearch {
-      background-color: $medium-gray;
+      background-color: var(--primary-color);
     }
   }
 
@@ -29,7 +29,7 @@
 }
 
 .addBtn {
-  background-color: $main-black;
+  background-color: var(--text-color);
   color: $main-white;
   border-radius: 50%;
   padding: 0.95rem;

@@ -33,7 +33,7 @@
         display: block;
         width: 10px;
         height: 40px;
-        background-color: $medium-gray;
+        background-color: var(--primary-color);
         margin-right: 1rem;
         border-radius: 0px 100px 100px 0px;
       }

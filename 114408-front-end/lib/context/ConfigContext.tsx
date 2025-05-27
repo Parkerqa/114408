@@ -9,11 +9,13 @@ type Theme = 0 | 1;
 type ConfigContextType = {
   role: number;
   theme: number;
+  setTheme: (theme: Theme) => void;
 };
 
 const ConfigContext = createContext<ConfigContextType>({
   role: 0,
   theme: 0,
+  setTheme: () => {},
 });
 
 export const useConfig = () => useContext(ConfigContext);
@@ -27,10 +29,16 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const res = await userAPI.getConfig();
         setRole(res.data.priority);
-        setTheme(res.data.theme);
+        const theme = res.data.theme;
+        setTheme(theme);
+        document.body.setAttribute(
+          "data-theme",
+          theme === "1" ? "dark" : "light"
+        );
       } catch (err) {
         setRole(0);
         setTheme(0);
+        document.body.setAttribute("data-theme", "light");
       }
     };
 
@@ -38,7 +46,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <ConfigContext.Provider value={{ role, theme }}>
+    <ConfigContext.Provider value={{ role, theme, setTheme }}>
       {children}
     </ConfigContext.Provider>
   );
