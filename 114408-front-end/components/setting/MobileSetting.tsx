@@ -3,6 +3,7 @@ import { PencilLine } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import ThemeToggle from "@/components/common/ThemeToggle";
 import InputField from "@/components/common/InputField";
 import styles from "@/styles/app/SettingPage.module.scss";
 import userAPI from "@/services/userAPI";
@@ -102,6 +103,7 @@ export const MobileSetting = ({
             </>
           )}
         </div>
+        <ThemeToggle />
       </div>
     </div>
   );

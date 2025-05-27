@@ -11,7 +11,7 @@
 
   .hint {
     margin: 10px 0;
-    color: $point-red;
+    color: var(--point-red);
   }
 
   .operateBtn {
@@ -26,12 +26,12 @@
     }
 
     .reset {
-      border: 2px solid $medium-gray;
+      border: 2px solid var(--primary-color);
     }
 
     .shutter,
     .submit {
-      background-color: $medium-gray;
+      background-color: var(--primary-color);
       color: $main-white;
       font-size: $regular-size;
     }
@@ -39,7 +39,7 @@
     .close {
       padding: 2vw 3vw;
       border-radius: 5px;
-      background-color: $light-gray;
+      background-color: var(--second-color);
     }
   }
 }
@@ -47,11 +47,11 @@
 .enable {
   padding: 5vw;
   border-radius: 10px;
-  background-color: $light-gray;
+  background-color: var(--second-color);
   font-size: $regular-size;
 
   &:hover {
-    background-color: $medium-gray;
+    background-color: var(--primary-color);
     color: $main-white;
   }
 }
