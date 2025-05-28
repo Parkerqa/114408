@@ -1,0 +1,63 @@
+@use "@/styles/base/variables" as *;
+
+.detailBox,
+.partialBox {
+  margin: 2% 0;
+  padding: 5% 0;
+  display: flex;
+  justify-content: space-evenly;
+  background-color: $main-white;
+  box-shadow: 0px 4px 4px 1px rgba(0, 0, 0, 0.1);
+
+  .toggle {
+    color: $main-white;
+    font-weight: 500;
+    padding: 3%;
+    border-radius: 50%;
+  }
+
+  .detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 70%;
+    height: fit-content;
+
+    .item {
+      display: flex;
+
+      .info,
+      .partial {
+        max-width: 75%;
+      }
+    }
+  }
+}
+
+.detailBox {
+  .toggle {
+    background-color: var(--primary-color);
+  }
+
+  .item {
+    gap: 2rem;
+  }
+}
+
+.partialBox {
+  align-items: center;
+
+  .toggle {
+    background-color: var(--second-color);
+  }
+
+  .item {
+    gap: 1.2rem;
+  }
+
+  .partial {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
