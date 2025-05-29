@@ -4,8 +4,8 @@ from .db_utils import SessionLocal
 from .models import TicketDetail
 
 
-# save ocr output
-def save_ocr_result(catch_result):
+# save output
+def save_result(catch_result):
     db: Session = SessionLocal()
     try:
         result = TicketDetail(
