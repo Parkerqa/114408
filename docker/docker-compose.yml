@@ -15,6 +15,18 @@ services:
       - ./backend:/app
     restart: always
 
+  frontend:
+    build: ./frontend
+    image: tts_frontend
+    container_name: tts_frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - app-net
+    env_file:
+      frontend/.env
+    restart: always
+
   db:
     image: mysql:8.4.4
     networks:
