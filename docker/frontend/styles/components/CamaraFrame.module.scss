@@ -1,0 +1,57 @@
+@use "@/styles/base/variables" as *;
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+
+  :global(video) {
+    border-radius: 20px;
+  }
+
+  .hint {
+    margin: 10px 0;
+    color: var(--point-red);
+  }
+
+  .operateBtn {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 5%;
+    gap: 3%;
+
+    button {
+      padding: 2vw 6vw;
+      border-radius: 5px;
+    }
+
+    .reset {
+      border: 2px solid var(--primary-color);
+    }
+
+    .shutter,
+    .submit {
+      background-color: var(--primary-color);
+      color: $main-white;
+      font-size: $regular-size;
+    }
+
+    .close {
+      padding: 2vw 3vw;
+      border-radius: 5px;
+      background-color: var(--second-color);
+    }
+  }
+}
+
+.enable {
+  padding: 5vw;
+  border-radius: 10px;
+  background-color: var(--second-color);
+  font-size: $regular-size;
+
+  &:hover {
+    background-color: var(--primary-color);
+    color: $main-white;
+  }
+}

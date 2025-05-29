@@ -2,7 +2,7 @@ from core.response import make_response
 from dependencies import get_current_user, require_role
 from fastapi import APIRouter, Depends, File, Path, Query, UploadFile
 from schemas.ticket import TicketAuditRequest, TicketUpdate
-from views.ticket import (audit_ticket_service, change_ticket_logic,
+from views.ticket import (audit_ticket_logic, change_ticket_logic,
                           delete_ticket_logic, list_class_logic,
                           list_date_logic, list_ticket_logic,
                           not_write_off_logic, search_ticket_logic,
@@ -79,5 +79,5 @@ def audit_ticket(
     payload: TicketAuditRequest = ...,
     current_user = Depends(require_role(1))  # 僅限管理員
 ):
-    message, state, status_code = audit_ticket_service(tid, payload.status)
+    message, state, status_code = audit_ticket_logic(tid, payload.status)
     return make_response(message, state, status_code)

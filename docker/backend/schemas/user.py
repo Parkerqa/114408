@@ -17,11 +17,6 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-# update password
-class PasswordChange(BaseModel):
-    old_password: str
-    new_password: str
-
 # forget password
 class PasswordForget(BaseModel):
     email: EmailStr

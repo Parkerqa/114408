@@ -1,10 +1,9 @@
 from core.response import make_response
 from dependencies import require_role
 from fastapi import APIRouter, Depends, File, UploadFile
-from schemas.user import (ModifyUserInfo, PasswordChange, PasswordForget,
-                          UserCreate, UserLogin)
-from views.user import (change_password_logic, change_user_info_logic,
-                        forget_password_logic, get_current_user_info_logic,
+from schemas.user import ModifyUserInfo, PasswordForget, UserCreate, UserLogin
+from views.user import (change_user_info_logic, forget_password_logic,
+                        get_current_user_info_logic,
                         get_current_user_settings_logic, login_logic,
                         register_logic, upload_user_photo_logic)
 
@@ -19,14 +18,6 @@ def register(payload: UserCreate):
 def login(payload: UserLogin):
     message, state, status_code, data = login_logic(payload)
     return make_response(message, state, status_code, data)
-
-@user_router.post("/change_password", summary="修改密碼")
-def change_password(
-    payload: PasswordChange,
-    current_user=Depends(require_role(0, 1))
-):
-    message, state, status_code = change_password_logic(current_user, payload)
-    return make_response(message, state, status_code)
 
 @user_router.post("/forget_password", summary="忘記密碼")
 async def forget_password(payload: PasswordForget):
@@ -58,8 +49,3 @@ def get_current_user_info(current_user=Depends(require_role(0, 1))):
 def get_current_user_settings(current_user=Depends(require_role(0, 1))):
     message, state, status_code, data = get_current_user_settings_logic(current_user.uid)
     return make_response(message, state, status_code, data)
-
-@user_router.post("/logout", summary="登出")
-def logout(current_user=Depends(require_role(0, 1))):
-    # JWT 無狀態，通常不需伺服器端處理
-    return make_response("登出成功", "success", status_code=200)

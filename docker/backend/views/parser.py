@@ -4,7 +4,7 @@ import tempfile
 
 import opencc
 from core.upload_utils import is_valid_image
-from model.ocr_model import save_ocr_result
+from model.parser_model import save_result
 from paddleocr import PaddleOCR
 
 # 初始化模型
@@ -13,17 +13,24 @@ ocr_model = PaddleOCR(lang='ch', use_gpu=False)
 # 初始化語言轉換器
 converter = opencc.OpenCC('s2t')
 
-async def ocr_logic(image):
+async def snn_logic(image):
     img_bytes = await image.read()
     # 格式檢查
     is_valid, reason = is_valid_image(image, img_bytes)
     if not is_valid:
-        return reason, "error", 400
+        return reason, "error", 400, None
+    try:
+        print("snn running")
+        return 0, "success", 200, img_bytes
+    except Exception as e:
+        print(e)
+        return "SNN 分類錯誤", "error", 500, None
 
+async def ocr_logic(image, snn_result: int):
     try:
         # 建立暫存圖片檔案
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-            tmp.write(img_bytes)
+            tmp.write(image)
             img_path = tmp.name
 
         try:
@@ -32,7 +39,7 @@ async def ocr_logic(image):
 
         except Exception as e:
             print(e)
-            return "OCR 辨識錯誤", "error", 500
+            return "OCR 辨識錯誤", "error", 500, None
 
         finally:
             os.remove(img_path)
@@ -71,7 +78,7 @@ async def ocr_logic(image):
                 print(f"OCR 行處理錯誤：{line_err}")
 
         # save ocr result
-        if save_ocr_result(extracted_info):
+        if save_result(extracted_info):
             return "已存入資料庫", "success", 200
 
         return "資料儲存失敗", "error", 500
@@ -79,3 +86,8 @@ async def ocr_logic(image):
     except Exception as e:
         print(e)
         return "伺服器錯誤", "error", 500
+
+async def qrcode_decoder_logic(image):
+    img = Image.open(image_path)
+    qrcodes = decode(img)
+    return [qr.data.decode('utf-8') for qr in qrcodes]

@@ -1,0 +1,30 @@
+// RWD setting
+@mixin X-Large {
+  @media (max-width: 1440px) {
+    @content;
+  }
+}
+
+@mixin Large {
+  @media (max-width: 1200px) {
+    @content;
+  }
+}
+
+@mixin Medium {
+  @media (max-width: 1024px) {
+    @content;
+  }
+}
+
+@mixin Small {
+  @media (max-width: 768px) {
+    @content;
+  }
+}
+
+@mixin X-Small {
+  @media (max-width: 480px) {
+    @content;
+  }
+}

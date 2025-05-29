@@ -18,13 +18,13 @@ def change_theme_logic(uid: int, theme: int):
 def change_color_logic(uid: int, payload):
     try:
         # 驗證邏輯條件
-        if not (payload.red_but <= payload.red_top and
-                payload.yellow_but <= payload.yellow_top and
-                payload.green_but <= payload.green_top):
-            return "but 值不能大於 top", "error", 400
+        if not (payload.red_bot <= payload.red_top and
+                payload.yellow_bot <= payload.yellow_top and
+                payload.green_bot <= payload.green_top):
+            return "bot 值不能大於 top", "error", 400
 
-        if not (payload.red_top <= payload.yellow_but and
-                payload.yellow_top <= payload.green_but):
+        if not (payload.red_top <= payload.yellow_bot and
+                payload.yellow_top <= payload.green_bot):
             return "red 不可超過 yellow，yellow 不可超過 green", "error", 400
 
         success = update_or_insert_color_setting(uid, payload)
