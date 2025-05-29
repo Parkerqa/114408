@@ -1,3 +1,4 @@
+import io
 import os
 import re
 import tempfile
@@ -6,6 +7,8 @@ import opencc
 from core.upload_utils import is_valid_image
 from model.parser_model import save_result
 from paddleocr import PaddleOCR
+from pyzbar.pyzbar import decode
+from PIL import Image
 
 # 初始化模型
 ocr_model = PaddleOCR(lang='ch', use_gpu=False)
@@ -87,7 +90,74 @@ async def ocr_logic(image, snn_result: int):
         print(e)
         return "伺服器錯誤", "error", 500
 
-async def qrcode_decoder_logic(image):
-    img = Image.open(image_path)
+def extract_qrcodes(image):
+    img = Image.open(io.BytesIO(image))
     qrcodes = decode(img)
-    return [qr.data.decode('utf-8') for qr in qrcodes]
+    if len(qrcodes) != 2:
+        raise ValueError("QRCode 數量錯誤")
+    sorted_qrcodes = sorted(qrcodes, key=lambda q: q.rect.left)
+    return [qr.data.decode('utf-8') for qr in sorted_qrcodes]
+
+def convert_date(tw_date: str) -> str:
+    year = int(tw_date[:3]) + 1911
+    month = tw_date[3:5]
+    day = tw_date[5:7]
+    return f"{year}/{month}/{day}"
+
+def decode_item_name(name, encoding):
+    try:
+        if encoding == '0':
+            return name.encode('latin1').decode('big5')
+        elif encoding == '2':
+            return base64.b64decode(name).decode('utf-8')
+        return name
+    except Exception as e:
+        print(e)
+        raise ValueError(f"錯誤的編碼設定:{name}")
+
+def parse_invoice_qrcodes(left_data, right_data):
+    result = {
+        'invoice_number': left_data[0:10],
+        'date': left_data[10:17],
+        # '隨機碼': left_data[17:21],
+        # '銷售額': left_data[21:29],
+        # '總計額': left_data[29:37],
+        # '買方統一編號': left_data[37:45],
+        # '賣方統一編號': left_data[45:53],
+    }
+
+    remaining = left_data[77:] + right_data[2:]
+    fields = remaining.split(':')
+    del fields[0]
+
+    try:
+        # result.update({
+        #     '營業人自行使用區': fields[0],
+        #     '二維條碼記載完整品目筆數': int(fields[1]),
+        #     '該張發票交易品目總筆數': int(fields[2]),
+        #     'encoding': fields[3],
+        # })
+        encoding = fields[3]
+        items_raw = fields[4:]
+        items = []
+        for i in range(0, len(items_raw), 3):
+            if i + 2 >= len(items_raw): break
+            name = decode_item_name(items_raw[i], encoding)
+            quantity = int(items_raw[i+1])
+            price = int(items_raw[i+2])
+            items.append({
+                'title': name,
+                # '數量': quantity,
+                'money': price
+            })
+        result['items'] = items
+    except Exception as e:
+        result['items'] = []
+        result['error'] = f'解析品項時錯誤: {e}'
+    return result
+
+def qrcode_decoder_logic(image, snn_result: int):
+    left_data, right_data = extract_qrcodes(image)
+    result = parse_invoice_qrcodes(left_data, right_data)
+    for key, value in result.items():
+        print(f"{key}: {value}")

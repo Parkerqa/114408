@@ -15,7 +15,7 @@ async def parse_invoice(image: UploadFile = File(...)):
 
         if snn_message == 1:
             # 執行 QRCode 解析（電子發票）
-            message, state, status_code = await qrcode_decoder_logic(data, snn_message)
+            message, state, status_code = qrcode_decoder_logic(data, snn_message)
         else:
             # 執行 OCR 處理
             message, state, status_code = await ocr_logic(data, snn_message)
