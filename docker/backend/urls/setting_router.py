@@ -8,10 +8,10 @@ setting_router = APIRouter()
 
 @setting_router.patch("/change_theme", summary="修改黑白主題")
 def change_theme(payload: ThemeUpdate, current_user=Depends(get_current_user)):
-    message, state, status_code, data = change_theme_logic(current_user.uid, payload.theme)
-    return make_response(message, state, status_code, data)
+    message, data = change_theme_logic(current_user.user_id, payload.theme)
+    return make_response(message, data=data)
 
 @setting_router.patch("/change_color", summary="更新顏色設定")
 def change_color(payload: ColorSetting, current_user=Depends(get_current_user)):
-    message, state, status_code = change_color_logic(current_user.uid, payload)
-    return make_response(message, state, status_code)
+    message = change_color_logic(current_user.user_id, payload)
+    return make_response(message)

@@ -11,6 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+from core.upload_utils import USER_IMAGE_UPLOAD_FOLDER, INVOICE_UPLOAD_FOLDER
 
 load_dotenv()
 
@@ -18,6 +21,17 @@ logging.basicConfig(filename="docs_access.log", level=logging.INFO)
 
 app = FastAPI(title="TicketTransformer", description="整合 LINE Bot 與 OpenAI 的智慧服務", version="1.0",
               docs_url=None, redoc_url=None, openapi_url=None)
+
+# === 掛載靜態資源 ===
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# === 自動重建資料夾的中介層 ===
+@app.middleware("http")
+async def ensure_static_dirs(request: Request, call_next):
+    for folder in [Path("static"), USER_IMAGE_UPLOAD_FOLDER, INVOICE_UPLOAD_FOLDER]:
+        if not folder.exists():
+            folder.mkdir(parents=True, exist_ok=True)
+    return await call_next(request)
 
 # === CORS setting ===
 app.add_middleware(
@@ -111,6 +125,6 @@ from urls.openai_router import openai_router
 app.include_router(openai_router, tags=["ChatGPT"], prefix="/services")
 
 # Parse Invoice
-from urls.parser_router import parser_router
-
-app.include_router(parser_router, tags=["Parse Invoice"], prefix="/services")
+# from urls.parser_router import parser_router
+#
+# app.include_router(parser_router, tags=["Parse Invoice"], prefix="/services")
