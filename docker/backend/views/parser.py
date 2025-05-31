@@ -1,97 +1,36 @@
 import io
-import os
 import re
-import tempfile
+import os
+from starlette.exceptions import HTTPException
 
 import opencc
-from core.upload_utils import is_valid_image
-from model.parser_model import save_result
 from paddleocr import PaddleOCR
 from pyzbar.pyzbar import decode
 from PIL import Image
+from core.upload_utils import INVOICE_UPLOAD_FOLDER
+from model.parser_model import save_error, save_qrcode_result, save_ocr_result
+from pathlib import Path
 
 # 初始化模型
-ocr_model = PaddleOCR(lang='ch', use_gpu=False)
+ocr_model = PaddleOCR(lang='ch', use_angle_cls=True, use_gpu=False)
 
 # 初始化語言轉換器
 converter = opencc.OpenCC('s2t')
 
-async def snn_logic(image):
-    img_bytes = await image.read()
-    # 格式檢查
-    is_valid, reason = is_valid_image(image, img_bytes)
-    if not is_valid:
-        return reason, "error", 400, None
+async def snn_logic(image_path) -> int:
     try:
-        print("snn running")
-        return 0, "success", 200, img_bytes
+        # 要改
+        print(f"snn running file: {image_path}")
+        return 3
     except Exception as e:
         print(e)
-        return "SNN 分類錯誤", "error", 500, None
+        return 0
 
-async def ocr_logic(image, snn_result: int):
-    try:
-        # 建立暫存圖片檔案
-        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-            tmp.write(image)
-            img_path = tmp.name
+def extract_qrcodes(image_path):
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
 
-        try:
-            # 執行 OCR
-            ocr_result = ocr_model.ocr(img_path)
-
-        except Exception as e:
-            print(e)
-            return "OCR 辨識錯誤", "error", 500, None
-
-        finally:
-            os.remove(img_path)
-
-        extracted_info = {
-            "TID": None,
-            "No": None,
-            "time": None,
-            "title": "test",
-            "money": None
-        }
-
-        for item in ocr_result[0]:
-            try:
-                coordinates, (text, confidence) = item
-                text = converter.convert(text)
-
-                if re.match(r"[A-Z]{2}\d{8}", text):
-                    extracted_info["TID"] = text
-
-                elif "統一編號：" in text or re.match(r"\d{8}", text):
-                    match = re.search(r"\d{8}", text)
-                    if match:
-                        extracted_info["No"] = match.group()
-
-                elif re.match(r"\d{4}/\d{2}/\d{2}\d{2}:\d{2}:\d{2}", text):
-                    fixed_date = text[:10].replace("/", "-") + " " + text[10:]
-                    extracted_info["time"] = fixed_date
-
-                elif "現金費" in text:
-                    amount = re.search(r"\d+", text)
-                    if amount:
-                        extracted_info["money"] = amount.group()
-            except Exception as line_err:
-                # 記錄錯誤，但繼續處理其他
-                print(f"OCR 行處理錯誤：{line_err}")
-
-        # save ocr result
-        if save_result(extracted_info):
-            return "已存入資料庫", "success", 200
-
-        return "資料儲存失敗", "error", 500
-
-    except Exception as e:
-        print(e)
-        return "伺服器錯誤", "error", 500
-
-def extract_qrcodes(image):
-    img = Image.open(io.BytesIO(image))
+    img = Image.open(io.BytesIO(image_bytes))
     qrcodes = decode(img)
     if len(qrcodes) != 2:
         raise ValueError("QRCode 數量錯誤")
@@ -153,11 +92,150 @@ def parse_invoice_qrcodes(left_data, right_data):
         result['items'] = items
     except Exception as e:
         result['items'] = []
-        result['error'] = f'解析品項時錯誤: {e}'
+        raise Exception("明細解析錯誤")
     return result
 
-def qrcode_decoder_logic(image, snn_result: int):
-    left_data, right_data = extract_qrcodes(image)
-    result = parse_invoice_qrcodes(left_data, right_data)
-    for key, value in result.items():
-        print(f"{key}: {value}")
+async def qrcode_decoder_logic(image_path, ticket_id, invoice_type):
+    try:
+        # 解析 QRCode
+        left_data, right_data = extract_qrcodes(image_path)
+        result = parse_invoice_qrcodes(left_data, right_data)
+
+        invoice_number = result.get("invoice_number")
+        raw_date = result.get("date")
+        items = result.get("items", [])
+
+        # 轉換民國 → 西元
+        if re.match(r"\d{7}", raw_date):
+            year = int(raw_date[:3]) + 1911
+            month = raw_date[3:5]
+            day = raw_date[5:]
+            formatted_date = f"{year}-{month}-{day}"
+        else:
+            formatted_date = None
+
+        if save_qrcode_result(
+                ticket_id,
+                invoice_type,
+                {
+                    "invoice_number": invoice_number,
+                    "date": formatted_date,
+                    "total_money": sum(item["money"] for item in items)
+                },
+                items
+        ):
+            return
+
+        save_error(ticket_id)
+    except Exception as e:
+        print(e)
+        save_error(ticket_id)
+        return
+
+async def ocr_logic(image_path, ticket_id, invoice_type):
+    try:
+        # 執行 OCR
+        ocr_result = ocr_model.ocr(str(image_path))
+    except Exception as e:
+        print(e)
+        save_error(ticket_id)
+        return
+
+    extracted_info = {
+        "invoice_number": None,
+        "No": None,
+        "date": None,
+        "title": None,
+        "total_money": None
+    }
+
+    for item in ocr_result[0]:
+        try:
+            coordinates, (text, confidence) = item
+            text = converter.convert(text)
+
+            if re.match(r"[A-Z]{2}\d{8}", text):
+                extracted_info["invoice_number"] = text
+
+            elif "統一編號：" in text or re.match(r"\d{8}", text):
+                match = re.search(r"\d{8}", text)
+                if match:
+                    extracted_info["No"] = match.group()
+
+
+            elif re.match(r"\d{4}/\d{2}/\d{2}\d{2}:\d{2}:\d{2}", text):
+                try:
+                    raw_date = text[:10]  # yyyy/mm/dd
+                    raw_time = text[10:]  # hh:mm:ss
+                    year, month, day = raw_date.split("/")
+                    # 嘗試修正錯誤的 8 → 0
+                    year = int(year)
+                    month = int(month)
+                    day = int(day)
+
+                    if year > 2100:
+                        year = int(str(year).replace("8", "0"))
+
+                    if month == 0 or month > 12:
+                        month = int(str(month).replace("8", "0"))
+                        if month == 0:
+                            month = 8
+
+                    if day == 0 or day > 31:
+                        day = int(str(day).replace("8", "0"))
+
+                    if month == 0 or month > 12:
+                        month = 1
+
+                    if day == 0 or day > 31:
+                        day = 1
+
+                    fixed_date = f"{year:04d}-{month:02d}-{day:02d} {raw_time}"
+                    extracted_info["date"] = fixed_date
+                except Exception as err:
+                    print(f"[錯誤] 日期修正失敗: {text} -> {err}")
+
+            elif "費用" in text:
+                text = text.replace("：", ":")  # 處理全形冒號
+                title = text.split(":")[0] if ":" in text else text
+                extracted_info["title"] = title.strip()
+
+            elif "現金費" in text:
+                amount_match = re.search(r"\d+", text)
+                if amount_match:
+                    raw_amount = amount_match.group()
+                    # 嘗試修正錯誤的 8 → 0
+                    fixed_amount = re.sub(r"8", "0", raw_amount)
+                    extracted_info["total_money"] = fixed_amount
+        except Exception as line_err:
+            # 記錄錯誤，但繼續處理其他
+            print(f"OCR 行處理錯誤：{line_err}")
+
+    # save ocr result
+    if save_ocr_result(ticket_id, invoice_type, extracted_info):
+        return
+
+    save_error(ticket_id)
+    return
+
+async def invoice_parser(filename, ticket_id):
+    try:
+        BASE_DIR = Path(__file__).resolve().parent.parent  # /app
+        image_path = BASE_DIR / INVOICE_UPLOAD_FOLDER / filename  # /app/static/invoice/filename
+
+        # 執行 SNN 處理
+        invoice_type = await snn_logic(image_path)
+
+        if invoice_type == 0:
+            save_error(ticket_id)
+        elif invoice_type == 3:
+            # 執行 QRCode 解析（電子發票）
+            await qrcode_decoder_logic(image_path, ticket_id, invoice_type)
+        else:
+            # 執行 OCR 處理
+            await ocr_logic(image_path, ticket_id, invoice_type)
+        return
+    except Exception as e:
+        save_error(ticket_id)
+        print(e)
+        return

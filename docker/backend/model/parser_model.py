@@ -1,24 +1,73 @@
 from sqlalchemy.orm import Session
 
 from .db_utils import SessionLocal
-from .models import TicketDetail
+from .models import Ticket, TicketDetail
 
+def save_error(ticket_id):
+    db: SessionLocal = SessionLocal()
+    try:
+        db.query(Ticket).filter(Ticket.ticket_id == ticket_id).update({
+            Ticket.type: 0,
+            Ticket.status: 0
+        })
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(e)
+    finally:
+        db.close()
 
-# save output
-def save_result(catch_result):
+# save ocr output
+def save_ocr_result(ticket_id, invoice_type, catch_result):
     db: Session = SessionLocal()
     try:
-        result = TicketDetail(
-            tid=catch_result["TID"],
+        ticket = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).one_or_none()
+        ticket.type = invoice_type
+        ticket.invoice_number = catch_result["invoice_number"]
+        ticket.date = catch_result["date"]
+        ticket.total_money = catch_result["total_money"]
+        ticket.status = 2
+        ticket.modify_id = 0
+
+        ticket_detail = TicketDetail(
+            ticket_id=ticket_id,
             title=catch_result["title"],
-            money=catch_result["money"]
+            money=catch_result["total_money"],
         )
-        db.add(result)
+
+        db.add(ticket_detail)
         db.commit()
-        db.refresh(result)
         return True
     except Exception as e:
         print(f"[ERROR] 儲存 OCR 結果失敗：{e}")
+        db.rollback()
+        return False
+    finally:
+        db.close()
+
+# save qrcode decoder output
+def save_qrcode_result(ticket_id, invoice_type, catch_result, items):
+    db: Session = SessionLocal()
+    try:
+        ticket = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).one_or_none()
+        ticket.type = invoice_type
+        ticket.invoice_number = catch_result["invoice_number"]
+        ticket.date = catch_result["date"]
+        ticket.total_money = catch_result["total_money"]
+        ticket.status = 2
+        ticket.modify_id = 0
+
+        for item in items:
+            detail = TicketDetail(
+                ticket_id=ticket_id,
+                title=item["title"],
+                money=item["money"]
+            )
+            db.add(detail)
+        db.commit()
+        return True
+    except Exception as e:
+        print(f"[ERROR] 儲存 QRcode Decorder 結果失敗：{e}")
         db.rollback()
         return False
     finally:

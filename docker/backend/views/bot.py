@@ -19,10 +19,10 @@ def get_reply_text(msg: str):
 
         if msg.startswith("查詢:"):
             try:
-                uid = int(msg.split(":")[1])
-                return get_ticket_by_uid(uid)
+                user_id = int(msg.split(":")[1])
+                return get_ticket_by_uid(user_id)
             except ValueError:
-                return "請提供正確的 uid 數字格式"
+                return "請提供正確的 user_id 數字格式"
 
         if msg.startswith("ai:"):
             prompt = msg[3:].strip()

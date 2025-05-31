@@ -1,10 +1,15 @@
-from typing import Optional
+from typing import Optional, List
 
-from sqlalchemy import CHAR, DECIMAL, DateTime, Enum, Integer, String, Text
+from sqlalchemy import CHAR, DECIMAL, DateTime, Enum, Integer, String, Text, Boolean, func, ForeignKey
 from sqlalchemy.dialects.mysql import DATETIME, TINYINT
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-import datetime
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from datetime import timezone, timedelta, datetime
 import decimal
+
+TW_TZ = timezone(timedelta(hours=8))
+
+def now_tw():
+    return datetime.now(TW_TZ)
 
 class Base(DeclarativeBase):
     pass
@@ -15,12 +20,15 @@ class Accounting(Base):
 
     accounting_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     class_info_id: Mapped[str] = mapped_column(Enum('傳統', '1'))
-    create_id: Mapped[str] = mapped_column(String(150))
-    create_date: Mapped[datetime.datetime] = mapped_column(DATETIME(fsp=6))
+
+    create_id: Mapped[Optional[str]] = mapped_column(String(150))
+    create_date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6), default=now_tw)
+
+    modify_id: Mapped[Optional[str]] = mapped_column(String(150))
+    modify_date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6), default=now_tw, onupdate=now_tw)
+
     avaible: Mapped[int] = mapped_column(TINYINT)
     account_class: Mapped[Optional[str]] = mapped_column(String(150))
-    modify_id: Mapped[Optional[str]] = mapped_column(String(150))
-    modify_date: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
 
 
 class AiLog(Base):
@@ -29,7 +37,7 @@ class AiLog(Base):
     ai_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     log: Mapped[str] = mapped_column(Text)
     create_id: Mapped[str] = mapped_column(String(150))
-    create_date: Mapped[datetime.datetime] = mapped_column(DATETIME(fsp=6))
+    create_date: Mapped[datetime] = mapped_column(DATETIME(fsp=6))
 
 
 class ClassInfo(Base):
@@ -38,11 +46,14 @@ class ClassInfo(Base):
     class_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     money_limit: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2))
     class_info_id: Mapped[str] = mapped_column(Enum('交通'))
-    create_id: Mapped[str] = mapped_column(String(150))
-    create_date: Mapped[datetime.datetime] = mapped_column(DATETIME(fsp=6))
-    available: Mapped[int] = mapped_column(TINYINT)
+
+    create_id: Mapped[Optional[str]] = mapped_column(String(150))
+    create_date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6), default=now_tw)
+
     modify_id: Mapped[Optional[str]] = mapped_column(String(150))
-    modify_date: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
+    modify_date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6), default=now_tw, onupdate=now_tw)
+
+    available: Mapped[int] = mapped_column(TINYINT)
 
 
 class OtherSetting(Base):
@@ -50,11 +61,11 @@ class OtherSetting(Base):
 
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     theme: Mapped[int] = mapped_column(Integer)
-    red_but: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2))
+    red_bot: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2))
     red_top: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2))
-    green_but: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2))
+    green_bot: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2))
     green_top: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2))
-    yellow_but: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2))
+    yellow_bot: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2))
     yellow_top: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2))
 
 
@@ -69,37 +80,47 @@ class Request(Base):
     http_status_code: Mapped[str] = mapped_column(CHAR(45))
     request_ip_from: Mapped[str] = mapped_column(String(150))
     priority: Mapped[int] = mapped_column(TINYINT)
-    request_time: Mapped[datetime.datetime] = mapped_column(DateTime)
+    request_time: Mapped[datetime] = mapped_column(DateTime)
 
 
 class Ticket(Base):
     __tablename__ = 'ticket'
 
     ticket_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    type: Mapped[Optional[int]] = mapped_column(Integer)
+    invoice_number: Mapped[Optional[str]] = mapped_column(String(10))
     class_info_id: Mapped[Optional[str]] = mapped_column(Enum('a'))
     user_id: Mapped[Optional[int]] = mapped_column(Integer)
     check_man: Mapped[Optional[str]] = mapped_column(String(150))
-    check_date: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
+    check_date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6))
     img: Mapped[Optional[str]] = mapped_column(String(255))
-    date: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
+    date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6))
+    total_money: Mapped[Optional[decimal.Decimal]] = mapped_column(DECIMAL(10, 2))
     status: Mapped[Optional[int]] = mapped_column(Integer)
+
     create_id: Mapped[Optional[str]] = mapped_column(String(150))
-    create_date: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
+    create_date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6), default=now_tw)
+
     modify_id: Mapped[Optional[str]] = mapped_column(String(150))
-    modify_date: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
+    modify_date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6), default=now_tw, onupdate=now_tw)
+
     available: Mapped[Optional[int]] = mapped_column(TINYINT)
-    writeoff_date: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
-    type: Mapped[Optional[str]] = mapped_column(Enum('電子'))
-    invoice_number: Mapped[Optional[str]] = mapped_column(String(255))
+    writeoff_date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6))
+
+    ticket_details: Mapped[List["TicketDetail"]] = relationship(
+        back_populates="ticket", cascade="all, delete-orphan"
+    )
 
 
 class TicketDetail(Base):
     __tablename__ = 'ticket_detail'
 
     td_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    invoice_number: Mapped[str] = mapped_column(String(150))
+    ticket_id: Mapped[int] = mapped_column(Integer, ForeignKey('ticket.ticket_id', ondelete='CASCADE'), nullable=False)
     title: Mapped[Optional[str]] = mapped_column(String(128))
     money: Mapped[Optional[decimal.Decimal]] = mapped_column(DECIMAL(10, 2))
+
+    ticket: Mapped["Ticket"] = relationship(back_populates="ticket_details")
 
 
 class User(Base):
@@ -111,8 +132,11 @@ class User(Base):
     username: Mapped[Optional[str]] = mapped_column(String(150))
     priority: Mapped[Optional[int]] = mapped_column(Integer)
     img: Mapped[Optional[str]] = mapped_column(String(255))
+
     create_id: Mapped[Optional[str]] = mapped_column(String(150))
-    create_date: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
+    create_date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6), default=now_tw)
+
     modify_id: Mapped[Optional[str]] = mapped_column(String(150))
-    modify_date: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
+    modify_date: Mapped[Optional[datetime]] = mapped_column(DATETIME(fsp=6), default=now_tw, onupdate=now_tw)
+
     available: Mapped[Optional[int]] = mapped_column(TINYINT)

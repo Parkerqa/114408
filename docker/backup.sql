@@ -1,4 +1,6 @@
--- MySQL dump 10.13  Distrib 8.0.42, for macos15 (arm64)
+CREATE DATABASE  IF NOT EXISTS `114-408` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `114-408`;
+-- MySQL dump 10.13  Distrib 8.0.42, for Win64 (x86_64)
 --
 -- Host: 140.131.114.242    Database: 114-408
 -- ------------------------------------------------------
@@ -27,7 +29,7 @@ CREATE TABLE `accounting` (
   `class_info_id` enum('傳統','1') NOT NULL,
   `account_class` varchar(150) DEFAULT NULL,
   `create_id` varchar(150) NOT NULL,
-  `create_date` datetime(6) NOT NULL,
+  `create_date` datetime NOT NULL,
   `modify_id` varchar(150) DEFAULT NULL,
   `modify_date` datetime(6) DEFAULT NULL,
   `avaible` tinyint NOT NULL,
@@ -41,7 +43,7 @@ CREATE TABLE `accounting` (
 
 LOCK TABLES `accounting` WRITE;
 /*!40000 ALTER TABLE `accounting` DISABLE KEYS */;
-INSERT INTO `accounting` VALUES (1,'傳統','12351','1','2004-10-15 00:00:00.000000',NULL,NULL,1),(2,'1','12354684','1','2001-12-22 00:00:00.000000',NULL,NULL,1);
+INSERT INTO `accounting` VALUES (1,'傳統','12351','1','2004-10-15 00:00:00',NULL,NULL,1),(2,'1','12354684','1','2001-12-22 00:00:00',NULL,NULL,1);
 /*!40000 ALTER TABLE `accounting` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -54,6 +56,7 @@ DROP TABLE IF EXISTS `ai_log`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `ai_log` (
   `ai_id` int NOT NULL AUTO_INCREMENT,
+  `prompt` text NOT NULL,
   `log` text NOT NULL,
   `create_id` varchar(150) NOT NULL,
   `create_date` datetime(6) NOT NULL,
@@ -67,7 +70,7 @@ CREATE TABLE `ai_log` (
 
 LOCK TABLES `ai_log` WRITE;
 /*!40000 ALTER TABLE `ai_log` DISABLE KEYS */;
-INSERT INTO `ai_log` VALUES (1,'asdasd','1','2001-10-11 00:00:00.000000');
+INSERT INTO `ai_log` VALUES (1,'','asdasd','1','2001-10-11 00:00:00.000000');
 /*!40000 ALTER TABLE `ai_log` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -111,11 +114,11 @@ DROP TABLE IF EXISTS `other_setting`;
 CREATE TABLE `other_setting` (
   `user_id` int NOT NULL,
   `theme` int NOT NULL,
-  `red_but` decimal(10,2) NOT NULL,
+  `red_bot` decimal(10,2) NOT NULL,
   `red_top` decimal(10,2) NOT NULL,
-  `green_but` decimal(10,2) NOT NULL,
+  `green_bot` decimal(10,2) NOT NULL,
   `green_top` decimal(10,2) NOT NULL,
-  `yellow_but` decimal(10,2) NOT NULL,
+  `yellow_bot` decimal(10,2) NOT NULL,
   `yellow_top` decimal(10,2) NOT NULL,
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -170,21 +173,21 @@ DROP TABLE IF EXISTS `ticket`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `ticket` (
   `ticket_id` int NOT NULL AUTO_INCREMENT,
+  `invoice_number` varchar(10) DEFAULT NULL,
   `class_info_id` enum('a') DEFAULT NULL,
   `user_id` int DEFAULT NULL,
   `check_man` varchar(150) DEFAULT NULL,
-  `check_date` datetime(6) DEFAULT NULL,
+  `check_date` datetime DEFAULT NULL,
   `img` varchar(255) DEFAULT NULL,
-  `date` datetime(6) DEFAULT NULL,
+  `date` datetime DEFAULT NULL,
   `status` int DEFAULT NULL,
   `create_id` varchar(150) DEFAULT NULL,
-  `create_date` datetime(6) DEFAULT NULL,
+  `create_date` datetime DEFAULT NULL,
   `modify_id` varchar(150) DEFAULT NULL,
-  `modify_date` datetime(6) DEFAULT NULL,
+  `modify_date` datetime DEFAULT NULL,
   `available` tinyint DEFAULT NULL,
-  `writeoff_date` datetime(6) DEFAULT NULL,
+  `writeoff_date` datetime DEFAULT NULL,
   `type` enum('電子') DEFAULT NULL,
-  `invoice_number` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ticket_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -195,7 +198,7 @@ CREATE TABLE `ticket` (
 
 LOCK TABLES `ticket` WRITE;
 /*!40000 ALTER TABLE `ticket` DISABLE KEYS */;
-INSERT INTO `ticket` VALUES (24,'a',52,'1','2000-10-11 00:00:00.000000','74bb41972c974fc18bfec6b5264ca630.jpeg',NULL,1,NULL,'2204-09-10 00:00:00.000000','','1999-10-05 00:00:00.000000',1,'2204-09-10 00:00:00.000000','電子','13165153'),(32,'a',58,NULL,'1999-10-05 00:00:00.000000','74bb41972c974fc18bfec6b5264ca630.jpeg',NULL,0,NULL,'2000-10-11 00:00:00.000000',NULL,'1999-10-05 00:00:00.000000',1,'2204-09-10 00:00:00.000000',NULL,NULL),(33,'a',60,NULL,'1234-10-11 00:00:00.000000','39bd00ea4daa4825bbb9b654d310addb.jpeg',NULL,0,NULL,'2000-10-11 00:00:00.000000',NULL,'1999-10-05 00:00:00.000000',1,'2204-09-10 00:00:00.000000',NULL,NULL),(34,'a',62,NULL,'1987-11-04 00:00:00.000000','27dd3e5e311f411db69c9a50d8c42901.jpeg',NULL,2,NULL,'2000-10-11 00:00:00.000000',NULL,'1999-10-05 00:00:00.000000',1,'2204-09-10 00:00:00.000000',NULL,NULL);
+INSERT INTO `ticket` VALUES (24,'13165153','a',52,'1','2000-10-11 00:00:00','74bb41972c974fc18bfec6b5264ca630.jpeg',NULL,1,NULL,'2204-09-10 00:00:00','','1999-10-05 00:00:00',1,'2204-09-10 00:00:00','電子'),(32,NULL,'a',58,NULL,'1999-10-05 00:00:00','74bb41972c974fc18bfec6b5264ca630.jpeg',NULL,0,NULL,'2000-10-11 00:00:00',NULL,'1999-10-05 00:00:00',1,'2204-09-10 00:00:00',NULL),(33,NULL,'a',60,NULL,'1234-10-11 00:00:00','39bd00ea4daa4825bbb9b654d310addb.jpeg',NULL,0,NULL,'2000-10-11 00:00:00',NULL,'1999-10-05 00:00:00',1,'2204-09-10 00:00:00',NULL),(34,NULL,'a',62,NULL,'1987-11-04 00:00:00','27dd3e5e311f411db69c9a50d8c42901.jpeg',NULL,2,NULL,'2000-10-11 00:00:00',NULL,'1999-10-05 00:00:00',1,'2204-09-10 00:00:00',NULL);
 /*!40000 ALTER TABLE `ticket` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -240,9 +243,9 @@ CREATE TABLE `user` (
   `priority` int DEFAULT NULL,
   `img` varchar(255) DEFAULT NULL,
   `create_id` varchar(150) DEFAULT NULL,
-  `create_date` datetime(6) DEFAULT NULL,
+  `create_date` datetime DEFAULT NULL,
   `modify_id` varchar(150) DEFAULT NULL,
-  `modify_date` datetime(6) DEFAULT NULL,
+  `modify_date` datetime DEFAULT CURRENT_TIMESTAMP,
   `available` tinyint DEFAULT NULL,
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=65 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -275,4 +278,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-05-13 15:36:30
+-- Dump completed on 2025-05-30 19:03:05

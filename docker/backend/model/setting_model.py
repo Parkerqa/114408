@@ -4,14 +4,14 @@ from .db_utils import SessionLocal
 from .models import OtherSetting
 
 
-def update_or_insert_theme(uid: int, theme: int) -> bool:
+def update_or_insert_theme(user_id: int, theme: int) -> bool:
     db: Session = SessionLocal()
     try:
-        setting = db.query(OtherSetting).filter(OtherSetting.uid == uid).first()
+        setting = db.query(OtherSetting).filter(OtherSetting.user_id == user_id).first()
         if setting:
             setting.theme = theme
         else:
-            new_setting = OtherSetting(uid=uid, theme=theme)
+            new_setting = OtherSetting(user_id=user_id, theme=theme)
             db.add(new_setting)
 
         db.commit()
@@ -22,10 +22,10 @@ def update_or_insert_theme(uid: int, theme: int) -> bool:
     finally:
         db.close()
 
-def update_or_insert_color_setting(uid: int, payload) -> bool:
+def update_or_insert_color_setting(user_id: int, payload) -> bool:
     db: Session = SessionLocal()
     try:
-        setting = db.query(OtherSetting).filter(OtherSetting.uid == uid).first()
+        setting = db.query(OtherSetting).filter(OtherSetting.user_id == user_id).first()
         if setting:
             setting.red_bot = payload.red_bot
             setting.red_top = payload.red_top
@@ -35,7 +35,7 @@ def update_or_insert_color_setting(uid: int, payload) -> bool:
             setting.green_top = payload.green_top
         else:
             new_setting = OtherSetting(
-                uid=uid,
+                user_id=user_id,
                 red_bot=payload.red_bot,
                 red_top=payload.red_top,
                 yellow_bot=payload.yellow_bot,
