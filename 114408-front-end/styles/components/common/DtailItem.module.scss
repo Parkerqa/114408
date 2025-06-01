@@ -1,0 +1,34 @@
+@use "@/styles/base/variables" as *;
+
+.inputWrap{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.operateBtn {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5%;
+  gap: 10px;
+
+  button {
+    padding: 2vw 6vw;
+    border-radius: 10px;
+    width: fit-content;
+  }
+
+  .submit {
+    padding: 10px 25px;
+    background-color: var(--primary-color);
+    color: $main-white;
+    font-weight: bold;
+    font-size: $regular-size;
+    display: flex;
+  }
+
+  .close {
+    border: 1px var(--primary-color) solid;
+    color: var(--text-color);
+  }
+}

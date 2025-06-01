@@ -9,12 +9,16 @@ import { UserRound } from "lucide-react";
 import { LockKeyhole } from "lucide-react";
 
 import { useLoading } from "@/lib/context/LoadingContext";
+import { useConfig } from "@/lib/context/ConfigContext";
 import InputField from "@/components/common/InputField";
 import userAPI from "@/services/userAPI";
 import styles from "@/styles/app/auth/AuthPage.module.scss";
 import { AuthFormData } from "@/lib/types/UserAPIType";
 
 const Login = ({ register }: { register: any }) => {
+  const { theme } = useConfig();
+  const iconColor = theme === 0 ? "#3f4360" : "#f0f0f5";
+
   return (
     <div className={styles.loginFrame}>
       <InputField
@@ -22,7 +26,7 @@ const Login = ({ register }: { register: any }) => {
         type="text"
         isCornerRadius={true}
         style={{ width: "80vw" }}
-        icon={<Mail size={24} color="#3f3f3f" />}
+        icon={<Mail size={24} color={iconColor} />}
         register={register("email", { required: true })}
         showIcon={true}
       />
@@ -31,7 +35,7 @@ const Login = ({ register }: { register: any }) => {
         type="password"
         isCornerRadius={true}
         style={{ width: "80vw" }}
-        icon={<LockKeyhole size={24} color="#3f3f3f" />}
+        icon={<LockKeyhole size={24} color={iconColor} />}
         register={register("password", { required: true })}
         showIcon={true}
       />
@@ -41,6 +45,9 @@ const Login = ({ register }: { register: any }) => {
 };
 
 const SignUp = ({ register }: { register: any }) => {
+  const { theme } = useConfig();
+  const iconColor = theme === 0 ? "#3f4360" : "#f0f0f5";
+
   return (
     <div className={styles.loginFrame}>
       <InputField
@@ -48,7 +55,7 @@ const SignUp = ({ register }: { register: any }) => {
         type="text"
         isCornerRadius={true}
         style={{ width: "80vw" }}
-        icon={<UserRound size={24} color="#3f3f3f" />}
+        icon={<UserRound size={24} color={iconColor} />}
         register={register("username", { required: true })}
         showIcon={true}
       />
@@ -57,7 +64,7 @@ const SignUp = ({ register }: { register: any }) => {
         type="text"
         isCornerRadius={true}
         style={{ width: "80vw" }}
-        icon={<Mail size={24} color="#3f3f3f" />}
+        icon={<Mail size={24} color={iconColor} />}
         register={register("email", { required: true })}
         showIcon={true}
       />
@@ -66,7 +73,7 @@ const SignUp = ({ register }: { register: any }) => {
         type="password"
         isCornerRadius={true}
         style={{ width: "80vw" }}
-        icon={<LockKeyhole size={24} color="#3f3f3f" />}
+        icon={<LockKeyhole size={24} color={iconColor} />}
         register={register("password", { required: true })}
         showIcon={true}
       />

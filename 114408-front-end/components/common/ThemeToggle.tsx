@@ -2,19 +2,28 @@ import { Sun } from "lucide-react";
 import { Moon } from "lucide-react";
 
 import { useConfig } from "@/lib/context/ConfigContext";
+import settingAPI from "@/services/settingAPI";
 import styles from "@/styles/components/common/ThemeToggle.module.scss";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useConfig();
   const isLight = theme === 0 ? true : false;
 
-  const handleToggle = () => {
+  const handleToggle = async () => {
     if (isLight) {
       document.body.setAttribute("data-theme", "dark");
       setTheme(1);
+      try {
+        await settingAPI.editTheme({ theme: 1 });
+        localStorage.setItem("theme", "1");
+      } catch {}
     } else {
       document.body.setAttribute("data-theme", "light");
       setTheme(0);
+      try {
+        await settingAPI.editTheme({ theme: 0 });
+        localStorage.setItem("theme", "0");
+      } catch {}
     }
   };
 
