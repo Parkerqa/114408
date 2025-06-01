@@ -1,3 +1,4 @@
+import os
 import random
 import string
 from typing import Optional
@@ -81,7 +82,7 @@ def get_current_user_info_logic(user_id: int):
     if not user:
         raise HTTPException(status_code=404, detail="找不到使用者")
 
-    img_url = f"https://devapi.micky.codes/static/users/{user.img}" if user.img else None
+    img_url = f'{os.getenv("BASE_USER_IMAGE_URL")}{user.img}' if user.img else None
 
     user_info = {
         "username": user.username,
