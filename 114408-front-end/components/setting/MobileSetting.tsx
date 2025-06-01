@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { PencilLine } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import ThemeToggle from "@/components/common/ThemeToggle";
@@ -45,7 +45,6 @@ export const MobileSetting = ({
           src={"/bottomNavIcon/user.png"}
           style={{ borderRadius: "50%" }}
         />
-        <p>使用者</p>
       </div>
       <div className={styles.detail}>
         <p className={styles.detailTitle}>個人資訊</p>
