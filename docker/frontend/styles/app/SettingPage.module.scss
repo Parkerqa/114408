@@ -8,16 +8,26 @@
   height: 100%;
   gap: 5vh;
 
-  .userTitle {
+  .user {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 5%;
     margin-top: 10%;
-    width: 100%;
+    position: relative;
 
-    p {
-      font-size: $large-size;
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
     }
   }
 

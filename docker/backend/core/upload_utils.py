@@ -1,16 +1,14 @@
-from typing import Tuple
-
 from fastapi import UploadFile
 
 import os
 import uuid
-import shutil
 from pathlib import Path
 from starlette.exceptions import HTTPException
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
 MAX_FILE_SIZE_MB = 5  # 最大 5MB
 
+BASE_DIR = Path(__file__).resolve().parent.parent  # /app
 USER_IMAGE_UPLOAD_FOLDER = Path(os.getenv("USER_IMAGE_UPLOAD_FOLDER"))
 INVOICE_UPLOAD_FOLDER = Path(os.getenv("INVOICE_UPLOAD_FOLDER"))
 

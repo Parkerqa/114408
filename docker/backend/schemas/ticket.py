@@ -9,7 +9,6 @@ class TicketDetailUpdate(BaseModel):
     money: str
 
 class TicketUpdate(BaseModel):
-    class_: str
     detail: List[TicketDetailUpdate]
 
 class TicketAuditRequest(BaseModel):
