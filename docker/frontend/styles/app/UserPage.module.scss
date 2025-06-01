@@ -11,7 +11,7 @@
 
     .searchBtn {
       color: $main-white;
-      background-color: var(--second-color);
+      background-color: var(--primary-color);
       padding: 10px;
       border-radius: 5px;
     }
@@ -29,7 +29,7 @@
 }
 
 .addBtn {
-  background-color: var(--text-color);
+  background-color: var(--primary-color);
   color: $main-white;
   border-radius: 50%;
   padding: 0.95rem;

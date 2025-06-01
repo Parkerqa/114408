@@ -6,7 +6,7 @@
   padding: 5% 0;
   display: flex;
   justify-content: space-evenly;
-  background-color: $main-white;
+  background-color: var(--list-bg);
   box-shadow: 0px 4px 4px 1px rgba(0, 0, 0, 0.1);
 
   .toggle {
@@ -25,6 +25,28 @@
 
     .item {
       display: flex;
+      align-items: center;
+
+      p {
+        color: var(--text-color);
+      }
+
+      .edit,
+      .delete {
+        padding: 5px;
+        border-radius: 50%;
+      }
+
+      .edit {
+        margin-right: 10px;
+        border: 1px var(--point-yellow) solid;
+        color: var(--point-yellow);
+      }
+
+      .delete {
+        border: 1px var(--point-red) solid;
+        color: var(--point-red);
+      }
 
       .info,
       .partial {

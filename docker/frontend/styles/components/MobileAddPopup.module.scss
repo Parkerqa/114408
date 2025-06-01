@@ -20,7 +20,7 @@
     padding: 30px 35px;
     margin-bottom: 5rem;
     border-radius: 50%;
-    background-color: $main-white;
+    background-color: var(--list-bg);
     box-shadow: 0 2 2 rgba($color: #000000, $alpha: 0.25);
 
     .icon {
