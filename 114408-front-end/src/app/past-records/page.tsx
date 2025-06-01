@@ -20,7 +20,7 @@ export default function PastRecords() {
 
   const getList = async () => {
     try {
-      const res = await ticketAPI.getList();
+      const res = await ticketAPI.getList(1);
       if (res.data) {
         setData(res.data);
       }
