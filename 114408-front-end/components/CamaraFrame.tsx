@@ -21,7 +21,6 @@ export default function CameraFrame({
   ...props
 }: HtmlDivPropsType & { setIsAdd: (state: boolean) => void }) {
   const webcamRef = useRef<Webcam>(null);
-  const route = useRouter();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   const handleCapture = useCallback(() => {

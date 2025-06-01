@@ -1,6 +1,6 @@
 import API from "@/lib/api/api";
 import { Response } from "@/lib/types/ResponseType";
-import { AuthFormData, EditUser, Login } from "@/lib/types/UserAPIType";
+import { AuthFormData, Login } from "@/lib/types/UserAPIType";
 
 const BASE_URL = "user";
 
@@ -17,9 +17,9 @@ const userAPI = {
     }),
   getConfig: (): Promise<Response<any>> => API.get(`${BASE_URL}/me_config`),
   getUser: (): Promise<Response<any>> => API.get(`${BASE_URL}/me`),
-  editUser: (data: EditUser): Promise<Response<any>> =>
+  editUser: (data: FormData): Promise<Response<any>> =>
     API.patch(`${BASE_URL}/change_user_info`, data, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "multipart/form-data" },
       toast: true,
     }),
 };

@@ -15,3 +15,9 @@ export type EditUser = {
   username?: string;
   img?: File;
 };
+
+export type UserInfo = {
+  email: string;
+  username: string;
+  img: string;
+};
