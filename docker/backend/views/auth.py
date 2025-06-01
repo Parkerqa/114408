@@ -20,11 +20,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 # create JWT
-def create_access_token(uid: int, expires_minutes: int = ACCESS_TOKEN_EXPIRE_MINUTES) -> str:
+def create_access_token(user_id: int, expires_minutes: int = ACCESS_TOKEN_EXPIRE_MINUTES) -> str:
     tzone = timezone(timedelta(hours=8))
     expire = datetime.now(tz=tzone) + timedelta(minutes=expires_minutes)
     payload = {
-        "sub": str(uid),
+        "sub": str(user_id),
         "exp": expire
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)

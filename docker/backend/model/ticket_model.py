@@ -13,28 +13,31 @@ def get_all_tickets():
         print(e)
         return None
 
-def get_tickets_by_user(uid: int):
+
+def get_tickets_by_user(user_id: int):
     db: Session = SessionLocal()
     try:
-        return db.query(Ticket).filter(Ticket.uid == uid).all()
+        return db.query(Ticket).filter(Ticket.user_id == user_id).all()
     except Exception as e:
         print(e)
         return None
 
-def get_ticket_by_id(tid: int):
+
+def get_ticket_by_id(ticket_id: int):
     db: Session = SessionLocal()
     try:
-        return db.query(Ticket).filter(Ticket.tid == tid).first()
+        return db.query(Ticket).filter(Ticket.ticket_id == ticket_id).first()
     except Exception as e:
         print(e)
         return None
     finally:
         db.close()
 
-def delete_ticket_by_id(tid: int) -> bool:
+
+def delete_ticket_by_id(ticket_id: int) -> bool:
     db: Session = SessionLocal()
     try:
-        ticket = db.query(Ticket).filter(Ticket.tid == tid).first()
+        ticket = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).first()
         if not ticket:
             return False
         db.delete(ticket)  # 因為關聯已設 cascade delete，細節也會一起刪
@@ -47,10 +50,11 @@ def delete_ticket_by_id(tid: int) -> bool:
     finally:
         db.close()
 
-def update_ticket_class(tid: int, new_class: str) -> bool:
+
+def update_ticket_class(ticket_id: int, new_class: str) -> bool:
     db: Session = SessionLocal()
     try:
-        result = db.query(Ticket).filter(Ticket.tid == tid).update({Ticket.class_: new_class})
+        result = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).update({Ticket.class_: new_class})
         db.commit()
         return result > 0
     except Exception as e:
@@ -60,22 +64,24 @@ def update_ticket_class(tid: int, new_class: str) -> bool:
     finally:
         db.close()
 
-def get_detail_ids_by_tid(tid: int):
+
+def get_detail_ids_by_tid(ticket_id: int):
     db: Session = SessionLocal()
     try:
-        return [d.td_id for d in db.query(TicketDetail.td_id).filter(TicketDetail.tid == tid).all()]
+        return [d.td_id for d in db.query(TicketDetail.td_id).filter(TicketDetail.ticket_id == ticket_id).all()]
     except Exception as e:
         print(e)
         return None
     finally:
         db.close()
 
-def update_ticket_detail(td_id: int, tid: int, title: str, money: str) -> bool:
+
+def update_ticket_detail(td_id: int, ticket_id: int, title: str, money: str) -> bool:
     db: Session = SessionLocal()
     try:
         result = db.query(TicketDetail).filter(
             TicketDetail.td_id == td_id,
-            TicketDetail.tid == tid
+            TicketDetail.ticket_id == ticket_id
         ).update({
             TicketDetail.title: title,
             TicketDetail.money: money
@@ -89,10 +95,11 @@ def update_ticket_detail(td_id: int, tid: int, title: str, money: str) -> bool:
     finally:
         db.close()
 
-def create_ticket_detail(tid: int, title: str, money: str) -> bool:
+
+def create_ticket_detail(ticket_id: int, title: str, money: str) -> bool:
     db: Session = SessionLocal()
     try:
-        new_detail = TicketDetail(tid=tid, title=title, money=money)
+        new_detail = TicketDetail(ticket_id=ticket_id, title=title, money=money)
         db.add(new_detail)
         db.commit()
         return True
@@ -102,6 +109,7 @@ def create_ticket_detail(tid: int, title: str, money: str) -> bool:
         return False
     finally:
         db.close()
+
 
 def delete_ticket_details_by_ids(td_ids: set) -> bool:
     db: Session = SessionLocal()
@@ -116,6 +124,7 @@ def delete_ticket_details_by_ids(td_ids: set) -> bool:
     finally:
         db.close()
 
+
 def search_tickets_by_keyword(keyword: str):
     db: Session = SessionLocal()
     try:
@@ -123,31 +132,31 @@ def search_tickets_by_keyword(keyword: str):
         t = aliased(Ticket)
         td = aliased(TicketDetail)
 
-        return db.query(t, t.uid, td.title, td.money)\
-            .outerjoin(td, t.tid == td.tid)\
+        return db.query(t, t.user_id, td.title, td.money) \
+            .outerjoin(td, t.ticket_id == td.ticket_id) \
             .filter(
-                or_(
-                    t.createdate.like(f"%{keyword}%"),
-                    t.class_.like(f"%{keyword}%"),
-                    t.invoice_number.like(f"%{keyword}%"),
-                    td.title.like(f"%{keyword}%"),
-                    cast(td.money, String).like(f"%{keyword}%")
-                )
-            ).all()
+            or_(
+                t.createdate.like(f"%{keyword}%"),
+                t.class_.like(f"%{keyword}%"),
+                t.invoice_number.like(f"%{keyword}%"),
+                td.title.like(f"%{keyword}%"),
+                cast(td.money, String).like(f"%{keyword}%")
+            )
+        ).all()
     except Exception as e:
         print(e)
         return None
     finally:
         db.close()
 
-def create_ticket(uid: int, img_filename: str) -> int | None:
+
+def create_ticket(user_id: int, img_filename: str) -> int | None:
     db: Session = SessionLocal()
     try:
-        ticket = Ticket(uid=uid, img=img_filename, status=0)
+        ticket = Ticket(user_id=user_id, img=img_filename, status=1, create_id=user_id, modify_id=user_id, available=True)
         db.add(ticket)
         db.commit()
-        db.refresh(ticket)
-        return ticket.tid
+        return ticket.ticket_id
     except Exception as e:
         db.rollback()
         print(e)
@@ -155,13 +164,14 @@ def create_ticket(uid: int, img_filename: str) -> int | None:
     finally:
         db.close()
 
+
 def get_total_money(current_user) -> int | None:
     db: Session = SessionLocal()
     try:
         query = db.query(func.sum(TicketDetail.money))
         if current_user.priority == 0:
             # 一般用戶只能查自己的發票
-            query = query.join(Ticket, Ticket.tid == TicketDetail.tid).filter(Ticket.uid == current_user.uid)
+            query = query.join(Ticket, Ticket.ticket_id == TicketDetail.ticket_id).filter(Ticket.user_id == current_user.user_id)
         total = query.scalar()
         return total if total is not None else 0
     except Exception as e:
@@ -169,6 +179,7 @@ def get_total_money(current_user) -> int | None:
         return None
     finally:
         db.close()
+
 
 def get_distinct_classes() -> list[str] or None:
     db: Session = SessionLocal()
@@ -180,6 +191,7 @@ def get_distinct_classes() -> list[str] or None:
         return None
     finally:
         db.close()
+
 
 def get_distinct_dates() -> list[str] or None:
     db: Session = SessionLocal()
@@ -194,6 +206,7 @@ def get_distinct_dates() -> list[str] or None:
     finally:
         db.close()
 
+
 def count_status_1() -> int or None:
     db: Session = SessionLocal()
     try:
@@ -204,6 +217,7 @@ def count_status_1() -> int or None:
         return None
     finally:
         db.close()
+
 
 def count_by_status(status: int) -> int or None:
     db: Session = SessionLocal()
@@ -216,11 +230,12 @@ def count_by_status(status: int) -> int or None:
     finally:
         db.close()
 
+
 def sum_money_by_status(status: int) -> int or None:
     db: Session = SessionLocal()
     try:
-        result = db.query(func.sum(TicketDetail.money))\
-            .join(Ticket, TicketDetail.tid == Ticket.tid)\
+        result = db.query(func.sum(TicketDetail.money)) \
+            .join(Ticket, TicketDetail.ticket_id == Ticket.ticket_id) \
             .filter(Ticket.status == status).scalar()
         return result or 0
     except Exception as e:
@@ -229,14 +244,14 @@ def sum_money_by_status(status: int) -> int or None:
     finally:
         db.close()
 
-def update_ticket_status(tid: int, status: int):
+
+def update_ticket_status(ticket_id: int, status: int) -> bool:
     db: Session = SessionLocal()
     try:
-        ticket = db.query(Ticket).filter(Ticket.tid == tid).first()
+        ticket = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).first()
         if ticket:
             ticket.status = status
             db.commit()
-            db.refresh(ticket)
             return True
         return False
     except Exception as e:

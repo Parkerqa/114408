@@ -13,6 +13,19 @@ services:
       - .env
     volumes:
       - ./backend:/app
+      - ./static:/app/static
+    restart: always
+
+  frontend:
+    build: ./frontend
+    image: tts_frontend
+    container_name: tts_frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - app-net
+    env_file:
+      frontend/.env
     restart: always
 
   db:

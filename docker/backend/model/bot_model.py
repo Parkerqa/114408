@@ -5,10 +5,10 @@ from .models import Ticket
 
 
 # get ticket (test)
-def get_ticket_by_uid(uid: int):
+def get_ticket_by_uid(user_id: int):
     db: Session = SessionLocal()
     try:
-        result = db.query(Ticket).filter(Ticket.uid == uid).first()
+        result = db.query(Ticket).filter(Ticket.user_id == user_id).first()
         if result:
             return f"您最新的票據：{result.invoice_number}，狀態：{result.status}"
         else:

@@ -7,6 +7,8 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from views.bot import register_events_logic
 
+from starlette.exceptions import HTTPException
+
 logger = logging.getLogger(__name__)
 
 linebot_router = APIRouter()
@@ -23,7 +25,7 @@ async def callback(request: Request, x_line_signature: str = Header(...)):
         handler.handle(body.decode("utf-8"), x_line_signature)
     except InvalidSignatureError:
         logger.warning("[LINE BOT] Invalid signature.")
-        return make_response("Invalid Signature", "error", 400)
+        raise HTTPException(status_code=400, detail="Invalid")
 
     logger.info("[LINE BOT] Callback received.")
-    return make_response("OK", "success", 200)
+    return make_response("OK")
