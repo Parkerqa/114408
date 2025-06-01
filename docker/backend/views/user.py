@@ -1,16 +1,16 @@
-import os
 import random
 import string
+from typing import Optional
+from fastapi import UploadFile
 from starlette.exceptions import HTTPException
 
-from core.upload_utils import is_valid_image
+from core.upload_utils import BASE_DIR, USER_IMAGE_UPLOAD_FOLDER, upload_image
 from model.user_model import (create_user, get_user_by_email, get_user_by_uid,
                               get_user_settings, update_password,
-                              update_user_img, update_user_info)
+                              update_user_info)
 from schemas.user import ModifyUserInfo, UserCreate, UserLogin
 from views.auth import create_access_token, hash_password, verify_password
 from views.email import send_email
-from pathlib import Path
 
 
 def register_logic(user: UserCreate):
@@ -53,55 +53,40 @@ async def forget_password_logic(email: str):
         return f"已寄送密碼重設連結到 {email}。"
     raise HTTPException(status_code=500, detail="寄送失敗")
 
-def change_user_info_logic(user, payload: ModifyUserInfo):
-
+async def change_user_info_logic(user, payload: ModifyUserInfo, avatar: Optional[UploadFile]):
     if user.email != payload.email and get_user_by_email(payload.email):
         raise HTTPException(status_code=409, detail="此電子郵件已被其他帳戶使用")
 
-    if payload.new_password:
-        stored_password = hash_password(payload.new_password)
-    else:
-        stored_password = user.password
+    stored_password = hash_password(payload.new_password) if payload.new_password else user.password
+
+    filename = user.img
+
+    old_avatar_path = BASE_DIR / USER_IMAGE_UPLOAD_FOLDER / filename
+    if avatar:
+        if old_avatar_path.exists():
+            try:
+                old_avatar_path.unlink()
+            except Exception as e:
+                print(f"⚠️ 刪除舊頭像失敗：{e}")
+
+        image_bytes = await avatar.read()
+        filename = upload_image(avatar, image_bytes, 0)
 
     # 更新 user 資訊
-    if update_user_info(user.user_id, payload.username, payload.email, stored_password):
+    if update_user_info(user.user_id, payload.username, payload.email, stored_password, filename):
         return "資料更新成功"
-
-async def upload_user_photo_logic(photo, user_id: int):
-    content = await photo.read()
-    try:
-        # 格式檢查
-        filename = is_valid_image(photo, content, 0)
-
-        user = get_user_by_uid(user_id)
-        if not user:
-            raise HTTPException(status_code=404, detail="找不到使用者")
-
-        old_img = user.img
-        if not update_user_img(user_id, filename):
-            raise HTTPException(status_code=500, detail="圖片更新失敗")
-
-        # 刪除舊照片
-        if old_img:
-            old_path = Path(os.getenv("USER_IMAGE_UPLOAD_FOLDER")) / old_img
-            if old_path.exists():
-                old_path.unlink()
-
-        return "大頭貼上傳成功"
-
-    except Exception as e:
-        print(f"[ERROR] 上傳大頭貼失敗：{e}")
-        raise HTTPException(status_code=500, detail="伺服器錯誤")
 
 def get_current_user_info_logic(user_id: int):
     user = get_user_by_uid(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="找不到使用者")
 
+    img_url = f"https://devapi.micky.codes/static/users/{user.img}" if user.img else None
+
     user_info = {
         "username": user.username,
         "email": user.email,
-        "img": user.img
+        "img": img_url
     }
     return "取得使用者成功", user_info
 

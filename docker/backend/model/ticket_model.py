@@ -1,23 +1,37 @@
 from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Session, aliased
+from typing import Optional, List
 
 from .db_utils import SessionLocal
 from .models import Ticket, TicketDetail
 
 
-def get_all_tickets():
+def get_all_tickets(status: Optional[List[int]]):
     db: Session = SessionLocal()
     try:
+        if status:
+            return db.query(Ticket).filter(Ticket.status.in_(status)).all()
         return db.query(Ticket).all()
     except Exception as e:
         print(e)
         return None
 
 
-def get_tickets_by_user(user_id: int):
+def get_tickets_by_user(user_id: int, status: Optional[List[int]]):
     db: Session = SessionLocal()
     try:
+        if status:
+            return db.query(Ticket).filter(Ticket.user_id == user_id, Ticket.status.in_(status)).all()
         return db.query(Ticket).filter(Ticket.user_id == user_id).all()
+    except Exception as e:
+        print(e)
+        return None
+
+
+def get_specify_ticket(user_id: int, ticket_id: int):
+    db: Session = SessionLocal()
+    try:
+        return db.query(Ticket).filter(Ticket.user_id == user_id, Ticket.ticket_id == ticket_id).one()
     except Exception as e:
         print(e)
         return None

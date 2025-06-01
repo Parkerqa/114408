@@ -2,7 +2,7 @@ from core.response import make_response
 from dependencies import get_current_user, require_role
 from fastapi import APIRouter, Depends, File, Path, Query, UploadFile, BackgroundTasks
 from schemas.ticket import TicketAuditRequest, TicketUpdate
-from views.ticket import (audit_ticket_logic, change_ticket_logic,
+from views.ticket import (audit_ticket_logic, change_ticket_logic, list_specify_ticket_logic,
                           delete_ticket_logic, list_class_logic,
                           list_date_logic, list_ticket_logic,
                           not_write_off_logic, search_ticket_logic,
@@ -10,12 +10,18 @@ from views.ticket import (audit_ticket_logic, change_ticket_logic,
                           upload_ticket_logic, write_off_logic)
 
 from views.parser import invoice_parser
+from typing import Optional
 
 ticket_router = APIRouter()
 
-@ticket_router.get("/list", summary="查詢發票")
-def list_ticket(current_user=Depends(get_current_user)):
-    message, data = list_ticket_logic(current_user)
+@ticket_router.get("/list", summary="列出發票")
+def list_ticket(mode: Optional[int] = Query(None, ge=0, le=1), current_user=Depends(get_current_user)):
+    message, data = list_ticket_logic(mode, current_user)
+    return make_response(message, data=data)
+
+@ticket_router.get("/list/{ticket_id}", summary="查詢單筆發票")
+def list_specify_ticket(ticket_id: int, current_user=Depends(get_current_user)):
+    message, data = list_specify_ticket_logic(ticket_id, current_user)
     return make_response(message, data=data)
 
 @ticket_router.delete("/delete/{ticket_id}", summary="刪除發票")

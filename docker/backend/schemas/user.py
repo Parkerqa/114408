@@ -1,7 +1,6 @@
 from typing import Optional
-
+from fastapi import Form, File, UploadFile
 from pydantic import BaseModel, EmailStr
-
 
 # user base
 class UserBase(BaseModel):
@@ -25,3 +24,17 @@ class ModifyUserInfo(BaseModel):
     username: str
     email: EmailStr
     new_password: Optional[str] = None  # 若提供才改密碼
+
+
+def ModifyUserInfoForm(
+    username: str = Form(...),
+    email: EmailStr = Form(...),
+    new_password: Optional[str] = Form(None),
+    avatar: Optional[UploadFile] = File(None)
+):
+    data = ModifyUserInfo(
+        username=username,
+        email=email,
+        new_password=new_password
+    )
+    return data, avatar

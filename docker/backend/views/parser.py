@@ -1,15 +1,15 @@
 import io
 import re
-import os
-from starlette.exceptions import HTTPException
 
 import opencc
 from paddleocr import PaddleOCR
 from pyzbar.pyzbar import decode
 from PIL import Image
-from core.upload_utils import INVOICE_UPLOAD_FOLDER
+from core.upload_utils import BASE_DIR, INVOICE_UPLOAD_FOLDER
 from model.parser_model import save_error, save_qrcode_result, save_ocr_result
-from pathlib import Path
+
+from keras.models import load_model
+import numpy as np
 
 # 初始化模型
 ocr_model = PaddleOCR(lang='ch', use_angle_cls=True, use_gpu=False)
@@ -19,9 +19,27 @@ converter = opencc.OpenCC('s2t')
 
 async def snn_logic(image_path) -> int:
     try:
-        # 要改
-        print(f"snn running file: {image_path}")
-        return 3
+        # 路徑
+        model_path = BASE_DIR / "invoice_single_classifier_siamese.keras"
+
+        # 載入模型
+        model = load_model(model_path)
+
+        # 處理圖片
+        img = Image.open(image_path).convert("RGB")
+        img = img.resize((128, 128))
+        img_array = np.array(img) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
+
+        # 預測
+        pred = model.predict(img_array)
+        score = float(pred[0][0])
+
+        # 根據預測分數判斷類別
+        if score > 0.5:
+            return 2  # 傳統發票
+        else:
+            return 3  # 電子發票
     except Exception as e:
         print(e)
         return 0
@@ -220,7 +238,6 @@ async def ocr_logic(image_path, ticket_id, invoice_type):
 
 async def invoice_parser(filename, ticket_id):
     try:
-        BASE_DIR = Path(__file__).resolve().parent.parent  # /app
         image_path = BASE_DIR / INVOICE_UPLOAD_FOLDER / filename  # /app/static/invoice/filename
 
         # 執行 SNN 處理
