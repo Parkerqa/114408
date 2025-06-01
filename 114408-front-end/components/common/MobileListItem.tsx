@@ -51,10 +51,7 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
         setDetail(res.data);
       }
       setIsDetail(true);
-    } catch {
-    } finally {
-      window.location.reload();
-    }
+    } catch {}
   };
 
   const deleteBilling = async (id: number) => {

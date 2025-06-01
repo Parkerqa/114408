@@ -59,6 +59,7 @@ export default function BottomNav() {
         })}
         {user?.img && (
           <Image
+            unoptimized
             width={32}
             height={32}
             src={user?.img}
