@@ -52,8 +52,6 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
       }
       setIsDetail(true);
     } catch {
-    } finally {
-      window.location.reload();
     }
   };
 

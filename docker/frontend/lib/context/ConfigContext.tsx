@@ -56,8 +56,6 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
         setRole(0);
         setTheme(0);
         document.body.setAttribute("data-theme", "light");
-        // route.push("/auth");
-        toast.error("登入期限過期，請重新登入");
       }
     };
 

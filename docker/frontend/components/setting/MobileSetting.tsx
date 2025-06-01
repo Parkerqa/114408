@@ -96,6 +96,7 @@ export const MobileSetting = () => {
             alt="頭貼"
             width={110}
             height={110}
+            unoptimized
             src={newImg || user?.img!}
             style={{ borderRadius: "50%" }}
             className={styles.userImg}
@@ -144,6 +145,7 @@ export const MobileSetting = () => {
                 onClick={() => {
                   route.push("/auth");
                   localStorage.clear();
+                  document.body.setAttribute("data-theme", "light");
                 }}
               >
                 登出

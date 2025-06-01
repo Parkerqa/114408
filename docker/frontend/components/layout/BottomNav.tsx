@@ -61,6 +61,7 @@ export default function BottomNav() {
           <Image
             width={32}
             height={32}
+            unoptimized
             src={user?.img}
             alt={"user"}
             style={{ borderRadius: "50%", marginBottom: "2%" }}
