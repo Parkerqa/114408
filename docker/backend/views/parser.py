@@ -153,84 +153,6 @@ def qrcode_decoder_logic(image_path, ticket_id, invoice_type):
         return
 
 
-# def ocr_logic(image_path, ticket_id, invoice_type):
-#     try:
-#         # 執行 OCR
-#         ocr_result = ocr_model.ocr(str(image_path))
-#     except Exception as e:
-#         print(e)
-#         save_error(ticket_id)
-#         return
-#
-#     extracted_info = {
-#         "invoice_number": None,
-#         "date": None,
-#         "title": [],
-#         "money": [],
-#         "total_money": None
-#     }
-#
-#     for item in ocr_result[0]:
-#         try:
-#             coordinates, (text, confidence) = item
-#             text = converter.convert(text).strip()
-#
-#             # 發票號碼
-#             if re.match(r"[A-Z]{2}\d{8}", text):
-#                 extracted_info["invoice_number"] = text
-#
-#             # 日期時間
-#             elif re.match(r"\d{4}[-/]\d{2}[-/]\d{2}\s?\d{2}:\d{2}:\d{2}", text):
-#                 try:
-#                     raw_date = text[:10]
-#                     raw_time = text[10:].strip()
-#                     year, month, day = raw_date.split("/")
-#                     year = int(year)
-#                     month = int(month)
-#                     day = int(day)
-#
-#                     if year > 2100:
-#                         year = int(str(year).replace("8", "0"))
-#                     if month == 0 or month > 12:
-#                         month = int(str(month).replace("8", "0")) or 1
-#                     if day == 0 or day > 31:
-#                         day = int(str(day).replace("8", "0")) or 1
-#
-#                     fixed_date = f"{year:04d}-{month:02d}-{day:02d} {raw_time}"
-#                     extracted_info["date"] = fixed_date
-#                 except Exception as err:
-#                     print(f"[錯誤] 日期修正失敗: {text} -> {err}")
-#
-#             # 合計金額
-#             elif "合計" in text:
-#                 amount_match = re.search(r"\d+", text)
-#                 if amount_match:
-#                     raw_amount = amount_match.group()
-#                     fixed_amount = re.sub(r"8", "0", raw_amount)
-#                     extracted_info["total_money"] = fixed_amount
-#
-#             # 商品名稱與金額（如 xxx 20 TX）
-#             elif re.search(r"\d+\s*TX$", text):
-#                 match = re.search(r"(.+?)\s+(\d+)\s*TX$", text)
-#                 if match:
-#                     item_name = match.group(1).strip()
-#                     item_price = int(match.group(2).strip())
-#                     extracted_info["title"].append(item_name)
-#                     extracted_info["money"].append(item_price)
-#
-#         except Exception as line_err:
-#             print(f"OCR 行處理錯誤：{line_err}")
-#
-#     # 僅當商品明細非空時才儲存
-#     if extracted_info["title"] and extracted_info["money"]:
-#         if save_ocr_result(ticket_id, invoice_type, extracted_info):
-#             return
-#     else:
-#         print(f"[警告] 無有效商品明細，略過 ticket_id={ticket_id}")
-#
-#     save_error(ticket_id)
-#     return
-
 def extract_clean_json(content: str) -> str:
     match = re.search(r"\{[\s\S]*?\}", content)
     if match:
@@ -256,7 +178,6 @@ def ocr_logic(image_path, ticket_id, invoice_type):
             text_lines.append(converter.convert(text).strip())
 
         raw_ocr_text = "\n".join(text_lines)
-        print(raw_ocr_text)
 
         prompt = f"""
         請從以下發票文字中擷取欄位，回傳 JSON 格式（五個欄位皆需輸出）：
@@ -278,7 +199,6 @@ def ocr_logic(image_path, ticket_id, invoice_type):
         """
 
         gpt_response_str = ocr_correction_logic(prompt)
-        print(gpt_response_str)
         if not gpt_response_str:
             raise ValueError("GPT 回傳為空")
 
