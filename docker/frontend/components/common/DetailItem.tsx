@@ -22,7 +22,7 @@ export default function DetailItem({
         time: data.time,
         type: data.type,
         title: data.title,
-        number: data.number,
+        invoice_number: data.invoice_number,
         money: data.money,
         state: data.state,
       });
@@ -58,7 +58,7 @@ export default function DetailItem({
               style={{ width: 250 }}
               label="編號"
               type="text"
-              register={register("number")}
+              register={register("invoice_number")}
             />
             <InputField
               style={{ width: 250 }}
