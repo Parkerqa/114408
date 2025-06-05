@@ -4,6 +4,7 @@ from pydantic import BaseModel
 class ThemeUpdate(BaseModel):
     theme: int
 
+
 class ColorSetting(BaseModel):
     red_bot: int
     red_top: int

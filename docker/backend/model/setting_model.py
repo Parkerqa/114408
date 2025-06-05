@@ -22,6 +22,7 @@ def update_or_insert_theme(user_id: int, theme: int) -> bool:
     finally:
         db.close()
 
+
 def update_or_insert_color_setting(user_id: int, payload) -> bool:
     db: Session = SessionLocal()
     try:

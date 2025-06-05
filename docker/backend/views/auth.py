@@ -11,13 +11,16 @@ FORGET_PASSWORD_TOKEN_EXPIRE_MINUTES = 3
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 # plain to hash
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
+
 # verify user
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
 
 # create JWT
 def create_access_token(user_id: int, expires_minutes: int = ACCESS_TOKEN_EXPIRE_MINUTES) -> str:
@@ -28,6 +31,7 @@ def create_access_token(user_id: int, expires_minutes: int = ACCESS_TOKEN_EXPIRE
         "exp": expire
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
 
 # check current JWT
 def decode_access_token(token: str):

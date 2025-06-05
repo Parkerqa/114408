@@ -36,7 +36,7 @@ export default function FileFrame({
     } catch {
     } finally {
       setIsAdd(false);
-      route.replace("/user");
+      window.location.reload();
     }
   };
 

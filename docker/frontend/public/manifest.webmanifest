@@ -18,7 +18,7 @@
       "type": "image/png"
     }
   ],
-  "start_url": "/user",
+  "start_url": "/auth",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",

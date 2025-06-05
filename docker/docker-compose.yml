@@ -25,7 +25,7 @@ services:
     networks:
       - app-net
     env_file:
-      frontend/.env
+      - ./frontend/.env
     restart: always
 
   db:

@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { Pencil } from "lucide-react";
 import { Search } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 
 import MobileAddPopup from "@/components/MobileAddPopup";
 import MobileListItem from "@/components/common/MobileListItem";
@@ -14,6 +15,7 @@ import ticketAPI from "@/services/ticketAPI";
 import styles from "@/styles/app/UserPage.module.scss";
 
 export default function User() {
+  const route = useRouter();
   const [isAdd, setIsAdd] = useState<boolean>(false);
   const [data, setData] = useState<ticketListType[]>([]);
   const { register, watch } = useForm();
@@ -23,11 +25,13 @@ export default function User() {
 
   const getList = async () => {
     try {
-      const res = await ticketAPI.getList();
+      const res = await ticketAPI.getList(0);
       if (res.data) {
         setData(res.data);
       }
-    } catch {}
+    } catch {
+      route.push("/auth");
+    }
   };
 
   useEffect(() => {

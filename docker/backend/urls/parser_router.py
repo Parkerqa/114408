@@ -1,14 +1,14 @@
 import os
-
-from core.response import make_response
-from fastapi import APIRouter, File, UploadFile
-from views.parser import snn_logic, ocr_logic, qrcode_decoder_logic
-
-from starlette.exceptions import HTTPException
-from core.upload_utils import upload_image
 from pathlib import Path
 
+from core.response import make_response
+from core.upload_utils import upload_image
+from fastapi import APIRouter, File, UploadFile
+from starlette.exceptions import HTTPException
+from views.parser import ocr_logic, qrcode_decoder_logic, snn_logic
+
 parser_router = APIRouter()
+
 
 @parser_router.post("/parse_invoice", summary="Parse Invoice", description="上傳發票並存入資料庫")
 async def parse_invoice(image: UploadFile = File(...)):
