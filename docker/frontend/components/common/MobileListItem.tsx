@@ -20,7 +20,7 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
     time: "123",
     type: "string",
     title: "string",
-    number: "string",
+    invoice_number: "string",
     money: 123,
     state: "string",
   });
@@ -39,7 +39,7 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
     data.time,
     data.type,
     data.title,
-    data.number,
+    data.invoice_number,
     data.money,
     data.state,
   ];
@@ -115,7 +115,7 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
             ))
           ) : (
             <div className={styles.item}>
-              <p>{data.time}</p>
+              <p style={{'whiteSpace':'nowrap'}}>{data.time}</p>
               <p className={styles.partial}>{data.title}</p>
             </div>
           )}
