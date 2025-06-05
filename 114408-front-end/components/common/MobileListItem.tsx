@@ -114,7 +114,7 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
             ))
           ) : (
             <div className={styles.item}>
-              <p>{data.time}</p>
+              <p style={{'whiteSpace':'nowrap'}}>{data.time}</p>
               <p className={styles.partial}>{data.title}</p>
             </div>
           )}
