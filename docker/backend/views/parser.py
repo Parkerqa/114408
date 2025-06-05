@@ -1,23 +1,23 @@
 import io
+import json
 import re
 
-import opencc
-from paddleocr import PaddleOCR
-from pyzbar.pyzbar import decode
-from PIL import Image
-from core.upload_utils import BASE_DIR, INVOICE_UPLOAD_FOLDER
-from model.parser_model import save_error, save_qrcode_result, save_ocr_result
-from views.openai import ocr_correction_logic
-
-from keras.models import load_model
 import numpy as np
-import json
+import opencc
+from core.upload_utils import BASE_DIR, INVOICE_UPLOAD_FOLDER
+from keras.models import load_model
+from model.parser_model import save_error, save_ocr_result, save_qrcode_result
+from paddleocr import PaddleOCR
+from PIL import Image
+from pyzbar.pyzbar import decode
+from views.openai import ocr_correction_logic
 
 # 初始化模型
 ocr_model = PaddleOCR(lang='ch', use_angle_cls=True, use_gpu=False)
 
 # 初始化語言轉換器
 converter = opencc.OpenCC('s2t')
+
 
 def snn_logic(image_path) -> int:
     try:
@@ -46,6 +46,7 @@ def snn_logic(image_path) -> int:
         print(e)
         return 0
 
+
 def extract_qrcodes(image_path):
     with open(image_path, "rb") as f:
         image_bytes = f.read()
@@ -57,11 +58,13 @@ def extract_qrcodes(image_path):
     sorted_qrcodes = sorted(qrcodes, key=lambda q: q.rect.left)
     return [qr.data.decode('utf-8') for qr in sorted_qrcodes]
 
+
 def convert_date(tw_date: str) -> str:
     year = int(tw_date[:3]) + 1911
     month = tw_date[3:5]
     day = tw_date[5:7]
     return f"{year}/{month}/{day}"
+
 
 def decode_item_name(name, encoding):
     try:
@@ -73,6 +76,7 @@ def decode_item_name(name, encoding):
     except Exception as e:
         print(e)
         raise ValueError(f"錯誤的編碼設定:{name}")
+
 
 def parse_invoice_qrcodes(left_data, right_data):
     result = {
@@ -102,8 +106,8 @@ def parse_invoice_qrcodes(left_data, right_data):
         for i in range(0, len(items_raw), 3):
             if i + 2 >= len(items_raw): break
             name = decode_item_name(items_raw[i], encoding)
-            quantity = int(items_raw[i+1])
-            price = int(items_raw[i+2])
+            quantity = int(items_raw[i + 1])
+            price = int(items_raw[i + 2])
             items.append({
                 'title': name,
                 # '數量': quantity,
@@ -114,6 +118,7 @@ def parse_invoice_qrcodes(left_data, right_data):
         result['items'] = []
         raise Exception("明細解析錯誤")
     return result
+
 
 def qrcode_decoder_logic(image_path, ticket_id, invoice_type):
     try:

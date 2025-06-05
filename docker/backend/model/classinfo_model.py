@@ -14,6 +14,7 @@ def class_exists(class_name: str) -> bool:
     finally:
         db.close()
 
+
 def create_class(class_: str, money_limit: str) -> bool:
     db: Session = SessionLocal()
     try:
@@ -28,6 +29,7 @@ def create_class(class_: str, money_limit: str) -> bool:
     finally:
         db.close()
 
+
 def get_class_by_id(cid: int):
     db: Session = SessionLocal()
     try:
@@ -37,6 +39,7 @@ def get_class_by_id(cid: int):
         return None
     finally:
         db.close()
+
 
 def update_class_by_id(cid: int, new_class: str, new_money_limit: str) -> bool:
     db: Session = SessionLocal()
@@ -53,6 +56,7 @@ def update_class_by_id(cid: int, new_class: str, new_money_limit: str) -> bool:
         return False
     finally:
         db.close()
+
 
 def delete_class_by_id(cid: int) -> bool:
     db: Session = SessionLocal()

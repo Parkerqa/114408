@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+
 def chat_with_gpt_logic(prompt: str):
     try:
         response = openai.ChatCompletion.create(
@@ -17,7 +18,7 @@ def chat_with_gpt_logic(prompt: str):
             ],
             temperature=0.7,
             max_tokens=30,
-            timeout = 10
+            timeout=10
         )
         return response['choices'][0]['message']['content']
     except openai.error.OpenAIError as e:
@@ -27,6 +28,7 @@ def chat_with_gpt_logic(prompt: str):
     except Exception as e:
         logger.error(f"[OpenAI] 未知錯誤：{e}")
         return False
+
 
 def ocr_correction_logic(prompt: str):
     try:

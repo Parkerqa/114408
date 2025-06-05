@@ -8,8 +8,10 @@ class TicketDetailUpdate(BaseModel):
     title: str
     money: str
 
+
 class TicketUpdate(BaseModel):
     detail: List[TicketDetailUpdate]
+
 
 class TicketAuditRequest(BaseModel):
     status: int

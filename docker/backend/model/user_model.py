@@ -25,6 +25,7 @@ def get_user_by_email(email: str) -> Optional[User]:
     finally:
         db.close()
 
+
 # 建立使用者
 def create_user(username: str, email: str, password: str) -> bool:
     db: Session = SessionLocal()
@@ -49,6 +50,7 @@ def create_user(username: str, email: str, password: str) -> bool:
     finally:
         db.close()
 
+
 # 更新密碼
 def update_password(email: str, new_pwd: str) -> bool:
     db: Session = SessionLocal()
@@ -65,6 +67,7 @@ def update_password(email: str, new_pwd: str) -> bool:
         return False
     finally:
         db.close()
+
 
 # 更新使用者資料
 def update_user_info(user_id: int, username: str, email: str, password: str, img: str) -> bool:
@@ -87,6 +90,7 @@ def update_user_info(user_id: int, username: str, email: str, password: str, img
     finally:
         db.close()
 
+
 # 給 views 使用的查詢函式
 def get_user_by_uid(user_id: int) -> Optional[User]:
     db: Session = SessionLocal()
@@ -107,9 +111,9 @@ def get_user_settings(user_id: int):
             return None
         user = aliased(User)
         settings = aliased(OtherSetting)
-        return db.query(user.priority, settings.theme)\
-            .outerjoin(settings, user.user_id == settings.user_id)\
-            .filter(user.user_id == user_id)\
+        return db.query(user.priority, settings.theme) \
+            .outerjoin(settings, user.user_id == settings.user_id) \
+            .filter(user.user_id == user_id) \
             .one_or_none()
     except Exception as e:
         print(f"[ERROR] get_user_settings: {e}")

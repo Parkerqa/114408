@@ -15,6 +15,7 @@ engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 # FastAPI 依賴注入函數
 def get_db():
     db = SessionLocal()
@@ -22,5 +23,6 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 Base = declarative_base()

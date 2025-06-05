@@ -1,15 +1,18 @@
-from typing import Optional, List
+import decimal
+from datetime import datetime, timedelta, timezone
+from typing import List, Optional
 
-from sqlalchemy import CHAR, DECIMAL, DateTime, Enum, Integer, String, Text, Boolean, func, ForeignKey
+from sqlalchemy import (CHAR, DECIMAL, Boolean, DateTime, Enum, ForeignKey,
+                        Integer, String, Text, func)
 from sqlalchemy.dialects.mysql import DATETIME, TINYINT
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from datetime import timezone, timedelta, datetime
-import decimal
 
 TW_TZ = timezone(timedelta(hours=8))
 
+
 def now_tw():
     return datetime.now(TW_TZ)
+
 
 class Base(DeclarativeBase):
     pass

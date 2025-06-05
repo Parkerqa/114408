@@ -16,6 +16,7 @@ def change_theme_logic(user_id: int, theme: int):
         print(f"[ERROR] 修改主題模式失敗：{e}")
         raise HTTPException(status_code=500, detail="修改主題模式失敗")
 
+
 def change_color_logic(user_id: int, payload) -> str:
     try:
         # 驗證邏輯條件

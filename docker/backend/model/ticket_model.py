@@ -1,6 +1,7 @@
+from typing import List, Optional
+
 from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Session, aliased
-from typing import Optional, List
 
 from .db_utils import SessionLocal
 from .models import Ticket, TicketDetail
@@ -167,7 +168,8 @@ def search_tickets_by_keyword(keyword: str):
 def create_ticket(user_id: int, img_filename: str) -> int | None:
     db: Session = SessionLocal()
     try:
-        ticket = Ticket(user_id=user_id, img=img_filename, status=1, create_id=user_id, modify_id=user_id, available=True)
+        ticket = Ticket(user_id=user_id, img=img_filename, status=1, create_id=user_id, modify_id=user_id,
+                        available=True)
         db.add(ticket)
         db.commit()
         return ticket.ticket_id
@@ -185,7 +187,8 @@ def get_total_money(current_user) -> int | None:
         query = db.query(func.sum(TicketDetail.money))
         if current_user.priority == 0:
             # 一般用戶只能查自己的發票
-            query = query.join(Ticket, Ticket.ticket_id == TicketDetail.ticket_id).filter(Ticket.user_id == current_user.user_id)
+            query = query.join(Ticket, Ticket.ticket_id == TicketDetail.ticket_id).filter(
+                Ticket.user_id == current_user.user_id)
         total = query.scalar()
         return total if total is not None else 0
     except Exception as e:
