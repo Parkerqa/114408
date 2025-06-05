@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from .db_utils import SessionLocal
 from .models import Ticket, TicketDetail
 
+
 def save_error(ticket_id):
     db: SessionLocal = SessionLocal()
     try:
@@ -16,6 +17,7 @@ def save_error(ticket_id):
         print(e)
     finally:
         db.close()
+
 
 # save ocr output
 def save_ocr_result(ticket_id, invoice_type, catch_result):
@@ -53,6 +55,7 @@ def save_ocr_result(ticket_id, invoice_type, catch_result):
         return False
     finally:
         db.close()
+
 
 # save qrcode decoder output
 def save_qrcode_result(ticket_id, invoice_type, catch_result, items):

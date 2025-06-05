@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+
 def check_type(type: str) -> str:
     if type == 0:
         return "系統辨識失敗"
@@ -16,6 +17,7 @@ def check_type(type: str) -> str:
     elif type == 6:
         return "收據"
 
+
 def check_status(status: int) -> str:
     if status == 0:
         return "系統辨識失敗"
@@ -28,7 +30,8 @@ def check_status(status: int) -> str:
     elif status == 4:
         return "審核未通過"
 
-def check_mode(mode: Optional[int]) ->  Optional[List[int]]:
+
+def check_mode(mode: Optional[int]) -> Optional[List[int]]:
     if mode is None:
         return None
     elif mode == 0:

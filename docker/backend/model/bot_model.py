@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
+from views.checker import check_status
 
 from .db_utils import SessionLocal
-from views.checker import check_status
 from .models import Ticket
 
 
@@ -41,7 +41,7 @@ def get_awaiting_ticket_info_by_uid(user_id: int, ticket_id: int):
 
         if ticket.ticket_details:
             detail_lines = [
-                f"{idx+1}. 項目：{td.title}，金額：{int(td.money)} 元"
+                f"{idx + 1}. 項目：{td.title}，金額：{int(td.money)} 元"
                 for idx, td in enumerate(ticket.ticket_details)
             ]
             detail_text = "\n\n".join(detail_lines)
@@ -68,7 +68,7 @@ def get_awaiting_list_by_uid(user_id: int):
         if results:
             header = f"您有 {len(results)} 筆待處理發票：\n\n"
             messages = [
-                f"{idx+1}. 申請日期：{t.create_date.strftime('%Y-%m-%d')}\n    發票號碼：{t.invoice_number}\n    狀態：{check_status(t.status)}"
+                f"{idx + 1}. 申請日期：{t.create_date.strftime('%Y-%m-%d')}\n    發票號碼：{t.invoice_number}\n    狀態：{check_status(t.status)}"
                 for idx, t in enumerate(results)
             ]
             return header + "\n\n".join(messages)

@@ -5,6 +5,7 @@ from views.accounting import list_accounting_logic
 
 accounting_router = APIRouter()
 
+
 @accounting_router.get("/list_accounting", summary="依種類查詢會計科目")
 def list_accounting(class_: str = Query(..., alias="class"), current_user=Depends(get_current_user)):
     message, data = list_accounting_logic(class_)

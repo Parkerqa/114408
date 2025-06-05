@@ -1,9 +1,11 @@
 import logging
 
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageSendMessage
-from model.bot_model import get_awaiting_ticket_by_uid, get_awaiting_list_by_uid, get_awaiting_ticket_info_by_uid
+from linebot.models import (ImageSendMessage, MessageEvent, TextMessage,
+                            TextSendMessage)
+from model.bot_model import (get_awaiting_list_by_uid,
+                             get_awaiting_ticket_by_uid,
+                             get_awaiting_ticket_info_by_uid)
 from views.openai import chat_with_gpt_logic
-
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +17,7 @@ PREDEFINED_RESPONSES = {
     "我想要知道一般報帳走流程的天數大概是多少": "報帳流程所需的天數大概在3–7 天內",
     "我想知道為甚麼這個月的活動費開銷這麼多": "依據圖表來看，您的活動費用有一大部分被使用於臨時團建"
 }
+
 
 # 訊息回覆
 def get_reply_text(msg: str):
@@ -47,7 +50,6 @@ def get_reply_text(msg: str):
             prompt = msg[3:].strip()
             return TextSendMessage(text=chat_with_gpt_logic(prompt))
 
-
         response = PREDEFINED_RESPONSES.get(msg)
 
         if response == "awaiting":
@@ -63,6 +65,7 @@ def get_reply_text(msg: str):
     except Exception as e:
         logger.warning(f"[LINE BOT] 回覆錯誤：{e}")
         return TextSendMessage(text="處理過程中發生錯誤，請稍後再試")
+
 
 def register_events_logic(handler, line_bot_api):
     @handler.add(MessageEvent, message=TextMessage)

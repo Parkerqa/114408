@@ -1,24 +1,30 @@
 from typing import Optional
-from fastapi import Form, File, UploadFile
+
+from fastapi import File, Form, UploadFile
 from pydantic import BaseModel, EmailStr
+
 
 # user base
 class UserBase(BaseModel):
     username: str
     email: EmailStr
 
+
 # register
 class UserCreate(UserBase):
     password: str
+
 
 # login
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+
 # forget password
 class PasswordForget(BaseModel):
     email: EmailStr
+
 
 class ModifyUserInfo(BaseModel):
     username: str
@@ -27,10 +33,10 @@ class ModifyUserInfo(BaseModel):
 
 
 def ModifyUserInfoForm(
-    username: str = Form(...),
-    email: EmailStr = Form(...),
-    new_password: Optional[str] = Form(None),
-    avatar: Optional[UploadFile] = File(None)
+        username: str = Form(...),
+        email: EmailStr = Form(...),
+        new_password: Optional[str] = Form(None),
+        avatar: Optional[UploadFile] = File(None)
 ):
     data = ModifyUserInfo(
         username=username,

@@ -1,10 +1,11 @@
 from core.response import make_response
 from fastapi import APIRouter
 from schemas.openai import ChatRequest
-from views.openai import chat_with_gpt_logic
 from starlette.exceptions import HTTPException
+from views.openai import chat_with_gpt_logic
 
 openai_router = APIRouter()
+
 
 @openai_router.post("/chat", summary="Chat with ChatGPT", description="輸入 prompt，取得 ChatGPT 回覆")
 async def chat_api(request: ChatRequest):

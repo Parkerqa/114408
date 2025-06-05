@@ -10,8 +10,10 @@ from starlette.status import (HTTP_404_NOT_FOUND, HTTP_405_METHOD_NOT_ALLOWED,
 
 response_router = APIRouter()
 
+
 # 統一回傳格式函數
-def make_response(message: str = "OK", state: str = "success", status_code: int = 200, data: Optional[Any] = None) -> JSONResponse:
+def make_response(message: str = "OK", state: str = "success", status_code: int = 200,
+                  data: Optional[Any] = None) -> JSONResponse:
     response = {
         "message": message,
         "state": state,
@@ -20,6 +22,7 @@ def make_response(message: str = "OK", state: str = "success", status_code: int 
     if data is not None:
         response["data"] = data
     return JSONResponse(content=response, status_code=status_code)
+
 
 # 全域錯誤處理註冊函數
 
