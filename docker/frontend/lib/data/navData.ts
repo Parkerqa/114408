@@ -9,7 +9,7 @@ type NavItem = {
   url: string;
 };
 
-export const bottomNavData: NavItem[] = [
+export const navData: NavItem[] = [
   { icon: House, title: "待核銷報帳", url: "/user" },
   {
     icon: AlignLeft,

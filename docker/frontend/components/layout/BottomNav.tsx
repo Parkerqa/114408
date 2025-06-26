@@ -5,14 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useConfig } from "@/lib/context/ConfigContext";
-import { bottomNavData } from "@/lib/data/bottomNavData";
+import { navData } from "@/lib/data/navData";
 import styles from "@/styles/components/layout/BottomNav.module.scss";
 
 export default function BottomNav() {
   const { user } = useConfig();
   const pathname = usePathname();
   const isAuthPage = pathname === "/auth";
-  const currentItem = bottomNavData.find((item) =>
+  const currentItem = navData.find((item) =>
     pathname.startsWith(item.url)
   );
 
@@ -31,7 +31,7 @@ export default function BottomNav() {
         )}
       </div>
       <div className={styles.navWrap}>
-        {bottomNavData.map((item, index) => {
+        {navData.map((item, index) => {
           const Icon = item.icon;
           return (
             <div className={styles.itemWrap} key={index}>
