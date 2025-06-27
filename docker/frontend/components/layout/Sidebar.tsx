@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 
 import { useConfig } from "@/lib/context/ConfigContext";
