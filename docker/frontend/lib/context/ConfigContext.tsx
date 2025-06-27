@@ -15,7 +15,7 @@ type ConfigContextType = {
   theme: number;
   setTheme: (theme: Theme) => void;
   fetchUser: () => void;
-  user?: UserInfo;
+  user?: UserInfo | null | undefined;
 };
 
 const ConfigContext = createContext<ConfigContextType>({
@@ -32,13 +32,15 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
   const route = useRouter();
   const [role, setRole] = useState<Role>(0);
   const [theme, setTheme] = useState<Theme>(0);
-  const [user, setUser] = useState<UserInfo>();
+  const [user, setUser] = useState<UserInfo | null | undefined>(undefined);
 
   const fetchUser = async () => {
     try {
       const res = await userAPI.getUser();
       setUser(res.data);
-    } catch {}
+    } catch {
+      setUser(null);
+    }
   };
 
   useEffect(() => {
