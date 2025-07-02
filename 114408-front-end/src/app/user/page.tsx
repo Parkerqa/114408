@@ -27,7 +27,9 @@ export default function User() {
       if (res.data) {
         setData(res.data);
       }
-    } catch {}
+    } catch {
+      
+    }
   };
 
   useEffect(() => {

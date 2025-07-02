@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 import { UserInfo } from "@/lib/types/UserAPIType";
@@ -52,12 +51,13 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
           "data-theme",
           theme === 1 ? "dark" : "light"
         );
+        if (res.state === "success") {
+          route.push("/user");
+        }
       } catch (err) {
         setRole(0);
         setTheme(0);
         document.body.setAttribute("data-theme", "light");
-        // route.push("/auth");
-        toast.error("登入期限過期，請重新登入");
       }
     };
 

@@ -4,7 +4,7 @@ import { Toaster } from "sonner";
 
 import { ConfigProvider } from "@/lib/context/ConfigContext";
 import { LoadingProvider } from "@/lib/context/LoadingContext";
-import BottomNav from "@/components/layout/BottomNav";
+import NavSelector from "@/components/layout/NavSelector";
 
 export const metadata: Metadata = {
   title: "Ｅ筆勾銷",
@@ -29,7 +29,7 @@ export default function RootLayout({
         <Toaster richColors position="top-center" />
         <LoadingProvider>
           <ConfigProvider>
-            <BottomNav />
+            <NavSelector />
             {children}
           </ConfigProvider>
         </LoadingProvider>
