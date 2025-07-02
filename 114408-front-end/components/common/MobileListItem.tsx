@@ -51,10 +51,7 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
         setDetail(res.data);
       }
       setIsDetail(true);
-    } catch {
-    } finally {
-      window.location.reload();
-    }
+    } catch {}
   };
 
   const deleteBilling = async (id: number) => {
@@ -117,7 +114,7 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
             ))
           ) : (
             <div className={styles.item}>
-              <p>{data.time}</p>
+              <p style={{'whiteSpace':'nowrap'}}>{data.time}</p>
               <p className={styles.partial}>{data.title}</p>
             </div>
           )}

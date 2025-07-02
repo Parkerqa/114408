@@ -93,6 +93,7 @@ export const MobileSetting = () => {
         {isEdit && <input {...getInputProps()} />}
         {(newImg || user?.img) && (
           <Image
+            unoptimized
             alt="頭貼"
             width={110}
             height={110}
