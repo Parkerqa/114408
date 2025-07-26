@@ -1,6 +1,8 @@
 @use "@/styles/base/variables" as *;
 
 .wrap {
+  position: absolute;
+  top: 0;
   display: flex;
   flex-direction: column;
   align-items: center;

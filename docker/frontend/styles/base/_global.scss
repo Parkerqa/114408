@@ -5,7 +5,8 @@
 /* Light Theme - Default */
 :root {
   --background-color: #f5f6f7;
-  --background-light-color: #fff;
+  --background-light-color: #fdfeff;
+  --background-light-more-color: #f0f0f0;
   --text-color: #3f4360;
   --text-light-color: #8a8c9d;
   --text-light-more-color: #c6c6cd;
@@ -21,6 +22,7 @@
 [data-theme="dark"] {
   --background-color: #1e1e2f;
   --background-light-color: #3a3a4a;
+  --background-light-more-color: #535364;
   --text-color: #f0f0f5;
   --text-light-color: #8a8c9d;
   --text-light-more-color: #86868c;
