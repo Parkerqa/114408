@@ -1,0 +1,33 @@
+.wrap {
+  display: flex;
+  margin: 14vh 2vw 0 22vw;
+
+  .searchBar {
+    display: flex;
+    align-items: center;
+    gap: 1.5vw;
+
+    .searchBtn {
+      background-color: var(--second-color);
+      color: var(--background-light-more-color);
+      padding: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .operateBar {
+      display: flex;
+      justify-content: space-between;
+      
+      .verifyBtn {
+        background-color: var(--primary-color);
+        color: var(--background-light-more-color);
+        padding: 0 5px;
+        display: flex;
+        align-items: center;
+      }
+    }
+  }
+}
