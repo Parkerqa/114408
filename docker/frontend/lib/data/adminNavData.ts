@@ -12,11 +12,11 @@ type NavItem = {
 
 export const navData: NavItem[] = [
   { icon: House, title: "主頁", url: "/admin" },
-  { icon: SquareCheckBig, title: "核銷報帳", url: "/" },
+  { icon: SquareCheckBig, title: "核銷報帳", url: "/verify" },
   {
     icon: ChartLine,
     title: "報表專區",
-    url: "/",
+    url: "/chart",
   },
   {
     icon: Bot,
