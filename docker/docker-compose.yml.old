@@ -1,17 +1,4 @@
-version: "3.8"
-
 services:
-  n8n:
-    image: n8nio/n8n:latest
-    restart: always
-    networks:
-      - app-net
-    env_file:
-      - .env
-    ports:
-      - "5678:5678"
-    volumes:
-      - n8n_storage:/home/node/.n8n
   backend:
     build: ./backend
     image: tts_backend
@@ -82,7 +69,6 @@ services:
       LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
 
 volumes:
-  n8n_storage:
   mysql-data:
 
 networks:
