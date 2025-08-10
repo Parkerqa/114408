@@ -51,7 +51,7 @@ export const MobileSetting = () => {
 
     try {
       await userAPI.editUser(formData);
-      await fetchUser();
+      fetchUser();
     } catch {
     } finally {
       setIsEdit(false);
