@@ -1,8 +1,12 @@
 "use client";
 
-import Table from "@/components/Table";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Bot } from "lucide-react";
+
+import Table from "@/components/Table";
 import Chart from "@/components/chart/Chart";
+import ticketAPI from "@/services/ticketAPI";
 import styles from "@/styles/app/AdminPage.module.scss";
 
 const chartData = {
@@ -17,6 +21,21 @@ const chartData = {
 };
 
 export default function Admin() {
+  const [count, setCount] = useState();
+
+  useEffect(() => {
+    const getCount = async () => {
+      try {
+        const res = await ticketAPI.getUnVerifyCount();
+        if (res.data) {
+          setCount(res.data.status_1_count);
+        }
+      } catch {}
+    };
+
+    getCount();
+  }, []);
+
   return (
     <div className={styles.wrap}>
       <div className={styles.rightArea}>
@@ -47,9 +66,11 @@ export default function Admin() {
         <div className={styles.pending}>
           <div className={styles.guide}>
             <p>
-              您尚有<span>**</span>筆報帳待審核
+              您尚有<span>&nbsp;{count}&nbsp;</span>筆報帳待審核
             </p>
-            <button>去審核</button>
+            <Link href={"/verify"}>
+              <button>去審核</button>
+            </Link>
           </div>
           <p
             style={{ fontWeight: "bold", fontSize: "28px", margin: "10px 0px" }}
