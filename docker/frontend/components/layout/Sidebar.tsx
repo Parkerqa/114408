@@ -14,9 +14,9 @@ const navItem = (
   title: string,
   url: string,
   key: number,
-  currentItem: any
+  currentUrl?: string
 ) => {
-  const current = currentItem.url === url ? true : false;
+  const current = currentUrl === url;
   return (
     <Link key={key} href={url} className={styles.navItem}>
       {current && <div className={styles.point} />}
@@ -32,6 +32,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useConfig();
   const currentItem = navData.find((item) => pathname.startsWith(item.url));
+  const currentUrl = currentItem?.url;
 
   return (
     <div className={styles.wrap}>
@@ -47,9 +48,8 @@ export default function Sidebar() {
         )}
         {user?.username}
       </div>
-
       {navData.map((item, index) =>
-        navItem(<item.icon />, item.title, item.url, index, currentItem)
+        navItem(<item.icon />, item.title, item.url, index, currentUrl)
       )}
       <ThemeToggle />
     </div>
