@@ -16,6 +16,7 @@ def get_ngrok_url():
         print("❌ 無法取得 ngrok URL:", e)
     return None
 
+
 def set_line_webhook(public_url):
     webhook_url = f"{public_url}/callback"
     access_token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
@@ -40,12 +41,14 @@ def set_line_webhook(public_url):
         print(f"❌ 設定 webhook 失敗，狀態碼: {response.status_code}")
         print(response.text)
 
+
 def set_webhook():
     public_url = get_ngrok_url()
     if public_url:
         set_line_webhook(public_url)
     else:
         print("❌ 無法取得 ngrok 公開網址，請確認 ngrok 是否有開啟")
+
 
 if __name__ == "__main__":
     set_webhook()

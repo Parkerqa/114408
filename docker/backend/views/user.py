@@ -1,14 +1,15 @@
+import os
 import random
-import shutil
 import string
-import uuid
-from pathlib import Path
+from typing import Optional
 
-from core.upload_utils import is_valid_image
+from core.upload_utils import BASE_DIR, USER_IMAGE_UPLOAD_FOLDER, upload_image
+from fastapi import UploadFile
 from model.user_model import (create_user, get_user_by_email, get_user_by_uid,
                               get_user_settings, update_password,
-                              update_user_img, update_user_info)
-from schemas.user import ModifyUserInfo, PasswordChange, UserCreate, UserLogin
+                              update_user_info)
+from schemas.user import ModifyUserInfo, UserCreate, UserLogin
+from starlette.exceptions import HTTPException
 from views.auth import create_access_token, hash_password, verify_password
 from views.email import send_email
 
@@ -18,135 +19,90 @@ def register_logic(user: UserCreate):
         user.password = hash_password(user.password)
         tracker = create_user(user.username, user.email, user.password)
         if tracker:
-            return "創建成功", "success", 200
-        return "創建失敗", "error", 500
-    return "使用者已存在", "error", 400
+            return "創建成功"
+        raise HTTPException(status_code=400, detail="創建失敗")
+    raise HTTPException(status_code=400, detail="使用者已存在")
+
 
 def login_logic(payload: UserLogin):
     user = get_user_by_email(payload.email)
 
     if not user:
-        return "查無使用者", "error", 404, None
+        raise HTTPException(status_code=404, detail="查無使用者")
 
     if not verify_password(payload.password, user.password):
-        return "帳號或密碼錯誤", "error", 401, None
+        raise HTTPException(status_code=401, detail="帳號或密碼錯誤")
 
-    # 建立 token，sub 為 uid（與 get_current_user 對應）
-    token = create_access_token(user.uid)
+    # 建立 token，sub 為 user_id（與 get_current_user 對應）
+    token = create_access_token(user.user_id)
 
-    return "登入成功", "success", 200, {
+    return "登入成功", {
         "access_token": token
     }
 
-def change_password_logic(user, payload: PasswordChange):
-    if not verify_password(payload.old_password, user.password):
-        return "舊密碼錯誤", "error", 401
-    email = user.email
-    if update_password(email, hash_password(payload.new_password)):
-        return "密碼已更新成功", "success", 200
-    return "更新資料庫失敗", "error", 500
 
 async def forget_password_logic(email: str):
     user = get_user_by_email(email)
     if not user:
-        return "找不到對應的帳號", "error", 404
+        raise HTTPException(status_code=404, detail="找不到對應的帳號")
 
     # 產生任意新密碼
     chars = string.ascii_letters + string.digits
-    new_password =  ''.join(random.choices(chars, k=10))
+    new_password = ''.join(random.choices(chars, k=10))
     # 更新資料庫密碼為新密碼
     update_password(email, hash_password(new_password))
 
     if await send_email(email, new_password):
-        return f"已寄送密碼重設連結到 {email}。", "success", 200
-    return "寄送失敗", "error", 500
+        return f"已寄送密碼重設連結到 {email}。"
+    raise HTTPException(status_code=500, detail="寄送失敗")
 
-def change_user_info_logic(user, payload: ModifyUserInfo):
 
+async def change_user_info_logic(user, payload: ModifyUserInfo, avatar: Optional[UploadFile]):
     if user.email != payload.email and get_user_by_email(payload.email):
-        return "此電子郵件已被其他帳戶使用", "error", 409
+        raise HTTPException(status_code=409, detail="此電子郵件已被其他帳戶使用")
 
-    if payload.new_password:
-        stored_password = hash_password(payload.new_password)
-    else:
-        stored_password = user.password
+    stored_password = hash_password(payload.new_password) if payload.new_password else user.password
+
+    filename = user.img
+
+    old_avatar_path = BASE_DIR / USER_IMAGE_UPLOAD_FOLDER / filename
+    if avatar:
+        if old_avatar_path.exists() and filename != "user.png":
+            try:
+                old_avatar_path.unlink()
+            except Exception as e:
+                print(f"⚠️ 刪除舊頭像失敗：{e}")
+
+        image_bytes = await avatar.read()
+        filename = upload_image(avatar, image_bytes, 0)
 
     # 更新 user 資訊
-    if update_user_info(user.uid, payload.username, payload.email, stored_password):
-        return "資料更新成功", "success", 200
+    if update_user_info(user.user_id, payload.username, payload.email, stored_password, filename):
+        return "資料更新成功"
 
-    return "更新資料時發生錯誤", "error", 500
 
-async def upload_user_photo_logic(photo, uid: int):
-    content = await photo.read()
-    # 格式檢查
-    is_valid, reason = is_valid_image(photo, content)
-    if not is_valid:
-        return reason, "error", 400, None
+def get_current_user_info_logic(user_id: int):
+    user = get_user_by_uid(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="找不到使用者")
 
-    try:
-        ext = photo.filename.rsplit(".", 1)[-1].lower()
-        if ext not in ["jpg", "jpeg", "png", "gif", "webp"]:
-            return "不支援的檔案格式", "error", 400, None
+    img_url = f'{os.getenv("BASE_USER_IMAGE_URL")}{user.img}' if user.img else None
 
-        new_filename = f"{uuid.uuid4().hex}.{ext}"
-        upload_folder = Path("user_photo")
-        upload_folder.mkdir(parents=True, exist_ok=True)
-        save_path = upload_folder / new_filename
+    user_info = {
+        "username": user.username,
+        "email": user.email,
+        "img": img_url
+    }
+    return "取得使用者成功", user_info
 
-        # 儲存新照片
-        with open(save_path, "wb") as buffer:
-            shutil.copyfileobj(photo.file, buffer)
 
-        user = get_user_by_uid(uid)
-        if not user:
-            return "找不到使用者", "error", 404, None
+def get_current_user_settings_logic(user_id: int):
+    user = get_user_settings(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="找不到使用者")
 
-        old_img = user.img
-        if not update_user_img(uid, new_filename):
-            return "圖片更新失敗", "error", 500, None
-
-        # 刪除舊照片
-        if old_img:
-            old_path = upload_folder / old_img
-            if old_path.exists():
-                old_path.unlink()
-
-        return "大頭貼上傳成功", "success", 200, {"filename": new_filename}
-
-    except Exception as e:
-        print(f"[ERROR] 上傳大頭貼失敗：{e}")
-        return "伺服器錯誤", "error", 500, None
-
-def get_current_user_info_logic(uid: int):
-    try:
-        user = get_user_by_uid(uid)
-        if not user:
-            return "找不到使用者", "error", 404, None
-
-        user_info = {
-            "username": user.username,
-            "email": user.email,
-            "img": user.img
-        }
-        return "取得使用者成功", "success", 200, user_info
-
-    except Exception as e:
-        print(f"[ERROR] 取得使用者資料失敗：{e}")
-        return "伺服器錯誤", "error", 500, None
-
-def get_current_user_settings_logic(uid: int):
-    try:
-        user = get_user_settings(uid)
-        if not user:
-            return "找不到使用者", "error", 404, None
-
-        user_info = {
-            "priority": user.priority,
-            "theme": user.theme
-        }
-        return "取得使用者成功", "success", 200, user_info
-
-    except Exception as e:
-        print(f"[ERROR] 取得使用者資料失敗：{e}")
-        return "伺服器錯誤", "error", 500, None
+    user_info = {
+        "priority": user.priority,
+        "theme": user.theme
+    }
+    return "取得使用者成功", user_info

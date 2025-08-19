@@ -1,4 +1,17 @@
+version: "3.8"
+
 services:
+  n8n:
+    image: n8nio/n8n:latest
+    restart: always
+    networks:
+      - app-net
+    env_file:
+      - .env
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_storage:/home/node/.n8n
   backend:
     build: ./backend
     image: tts_backend
@@ -13,6 +26,19 @@ services:
       - .env
     volumes:
       - ./backend:/app
+      - ./static:/app/static
+    restart: always
+
+  frontend:
+    build: ./frontend
+    image: tts_frontend
+    container_name: tts_frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - app-net
+    env_file:
+      - ./frontend/.env
     restart: always
 
   db:
@@ -56,6 +82,7 @@ services:
       LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
 
 volumes:
+  n8n_storage:
   mysql-data:
 
 networks:

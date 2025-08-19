@@ -23,11 +23,13 @@ export default function User() {
 
   const getList = async () => {
     try {
-      const res = await ticketAPI.getList();
+      const res = await ticketAPI.getList(0);
       if (res.data) {
         setData(res.data);
       }
-    } catch {}
+    } catch {
+      
+    }
   };
 
   useEffect(() => {

@@ -10,8 +10,10 @@ from starlette.status import (HTTP_404_NOT_FOUND, HTTP_405_METHOD_NOT_ALLOWED,
 
 response_router = APIRouter()
 
+
 # 統一回傳格式函數
-def make_response(message: str, state: str, status_code: int = 200, data: Optional[Any] = None) -> JSONResponse:
+def make_response(message: str = "OK", state: str = "success", status_code: int = 200,
+                  data: Optional[Any] = None) -> JSONResponse:
     response = {
         "message": message,
         "state": state,
@@ -20,6 +22,7 @@ def make_response(message: str, state: str, status_code: int = 200, data: Option
     if data is not None:
         response["data"] = data
     return JSONResponse(content=response, status_code=status_code)
+
 
 # 全域錯誤處理註冊函數
 
@@ -41,11 +44,6 @@ def register_exception_handlers(app: FastAPI):
             return make_response("無配置認證", "error", 401)
         # 其餘 HTTP 錯誤
         return make_response(str(exc.detail), "error", exc.status_code)
-
-    # 可選：404/405 自訂
-    @app.exception_handler(HTTP_404_NOT_FOUND)
-    async def not_found_handler(request: Request, exc):
-        return make_response("找不到資源", "error", HTTP_404_NOT_FOUND)
 
     @app.exception_handler(HTTP_405_METHOD_NOT_ALLOWED)
     async def method_not_allowed_handler(request: Request, exc):
