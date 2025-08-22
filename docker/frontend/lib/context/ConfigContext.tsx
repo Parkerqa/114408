@@ -40,6 +40,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(res.data);
     } catch {
       setUser(null);
+      route.push("/auth");
     }
   };
 

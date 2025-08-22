@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["devapi.micky.codes"],
+    domains: ["devapi.micky.codes", "localhost"],
   },
 };
 

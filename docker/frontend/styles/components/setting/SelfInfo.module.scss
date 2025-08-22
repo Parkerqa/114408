@@ -1,0 +1,67 @@
+@use "@/styles/base/variables" as *;
+
+.settingWrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  gap: 5vh;
+
+  .user {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5%;
+    margin-top: 10%;
+    position: relative;
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+    }
+  }
+
+  .detail {
+    display: flex;
+    flex-direction: column;
+    gap: 3vh;
+    justify-content: center;
+  }
+
+  .button {
+    display: flex;
+    gap: 5%;
+
+    .edit,
+    .editSure,
+    .cancel {
+      text-wrap: nowrap;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: $regular-size;
+      color: var(--text-color);
+    }
+
+    .cancel,
+    .edit {
+      background-color: var(--background-color);
+      border: solid 2px var(--second-color);
+    }
+
+    .editSure {
+      border: solid 2px rgba($color: #000000, $alpha: 0);
+      background-color: var(--primary-color);
+      color: $main-white;
+    }
+  }
+}

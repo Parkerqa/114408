@@ -21,6 +21,8 @@ const ticketAPI = {
     }),
   deleteBilling: (id: number): Promise<Response<any>> =>
     API.delete(`${BASE_URL}/delete/${id}`, { toast: true }),
+  getUnVerifyCount: (): Promise<Response<any>> =>
+    API.get(`${BASE_URL}/unaudited_invoices`),
 };
 
 export default ticketAPI;
