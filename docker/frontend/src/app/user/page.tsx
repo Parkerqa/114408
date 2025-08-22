@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
-import { Pencil } from "lucide-react";
-import { Search } from "lucide-react";
+import { Plus, Pencil, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 

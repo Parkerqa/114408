@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search } from "lucide-react";
-import { ListChecks } from "lucide-react";
+import { Search, ListChecks } from "lucide-react";
 
 import InputField from "@/components/common/InputField";
 import LargeTable from "@/components/LargeTable";
