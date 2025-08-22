@@ -45,11 +45,11 @@ export default function Admin() {
             <Chart data={chartData} title="總預算" />
           </div>
           <div className={styles.topThree}>
-            <p>前三支出種類</p>
+            <p>前三支出會計科目</p>
             <div className={styles.charts}>
-              <Chart data={chartData} title="交通類" />
-              <Chart data={chartData} title="交通類" />
-              <Chart data={chartData} title="交通類" />
+              <Chart data={chartData} title="旅費" />
+              <Chart data={chartData} title="雜支" />
+              <Chart data={chartData} title="交際費 " />
             </div>
           </div>
         </div>

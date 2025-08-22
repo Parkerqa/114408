@@ -16,7 +16,7 @@ export const navData: NavItem[] = [
   {
     icon: ChartLine,
     title: "報表專區",
-    url: "/chart",
+    url: "/report",
   },
   {
     icon: Bot,

@@ -6,7 +6,6 @@ import { useConfig } from "@/lib/context/ConfigContext";
 
 export default function Setting() {
   const { role } = useConfig();
-  console.log(role);
   return (
     <>
       {role === 0 && <MobileSetting />}
