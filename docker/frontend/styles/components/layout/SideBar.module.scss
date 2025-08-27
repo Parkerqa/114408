@@ -1,0 +1,73 @@
+@use "@/styles/base/variables" as *;
+
+.wrap {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 20vw;
+  height: 100vh;
+  background-color: var(--background-light-color);
+
+  .userInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 10% 0;
+
+    .user {
+      border-radius: 50%;
+    }
+  }
+
+  .navItem {
+    display: flex;
+    width: 100%;
+    margin: 6% 0;
+    position: relative;
+
+    .point {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 12px;
+      border-radius: 0 20px 20px 0;
+      background-color: var(--second-color);
+    }
+
+    .item {
+      width: 50%;
+      height: 9vh;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: $regular-size;
+      color: var(--text-light-more-color);
+      transition: ease-in-out 0.1s;
+
+      p {
+        color: var(--text-light-more-color);
+      }
+
+      &:hover {
+        color: var(--text-color);
+
+        p {
+          color: var(--text-color);
+        }
+      }
+    }
+
+    .focus {
+      color: var(--text-color);
+
+      p {
+        color: var(--text-color);
+      }
+    }
+  }
+}

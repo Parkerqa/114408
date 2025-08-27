@@ -1,0 +1,33 @@
+@use "@/styles/base/variables" as *;
+
+.table {
+  border-collapse: separate;
+  border: 2px var(--text-light-color) solid;
+  border-radius: 10px;
+  overflow: hidden;
+
+  .tableHead {
+    background-color: var(--background-light-more-color);
+    line-height: 50px;
+    font-weight: bold;
+    text-align: left;
+
+    .item {
+      padding: 0 11px;
+    }
+  }
+
+  .tableBody {
+    background-color: var(--background-light-color);
+    text-align: left;
+
+    .line {
+      line-height: 50px;
+
+      .item {
+        padding: 0 11px;
+        font-size: $small-size;
+      }
+    }
+  }
+}

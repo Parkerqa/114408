@@ -3,13 +3,13 @@ import { PencilLine } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
+import { useForm } from "react-hook-form";
 
 import { useConfig } from "@/lib/context/ConfigContext";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import InputField from "@/components/common/InputField";
-import styles from "@/styles/app/SettingPage.module.scss";
 import userAPI from "@/services/userAPI";
-import { useForm } from "react-hook-form";
+import styles from "@/styles/components/setting/MobileSetting.module.scss";
 
 export const MobileSetting = () => {
   const { user, fetchUser } = useConfig();
@@ -51,7 +51,7 @@ export const MobileSetting = () => {
 
     try {
       await userAPI.editUser(formData);
-      await fetchUser();
+      fetchUser();
     } catch {
     } finally {
       setIsEdit(false);

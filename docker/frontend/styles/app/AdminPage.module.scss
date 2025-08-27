@@ -1,0 +1,106 @@
+@use "@/styles/base/variables" as *;
+
+.wrap {
+  display: flex;
+  margin: 14vh 2vw 0 22vw;
+  gap: 20px;
+
+  .rightArea {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .chartArea {
+    display: flex;
+    gap: 20px;
+
+    .title {
+      position: absolute;
+      top: 8vh;
+      font-weight: bold;
+      font-size: $large-size;
+      letter-spacing: 1px;
+    }
+
+    .total {
+      width: fit-content;
+      background-color: var(--background-light-color);
+      display: flex;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: var(--second-color) 0px 3px 3px;
+      align-items: center;
+    }
+
+    .topThree {
+      width: fit-content;
+      background-color: var(--background-light-color);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: var(--second-color) 0px 3px 3px;
+      gap: 10px;
+
+      .charts {
+        gap: 20px;
+        display: flex;
+      }
+    }
+  }
+
+  .budget {
+    width: 21vw;
+    background-color: var(--background-light-color);
+    height: 100%;
+    border-radius: 20px;
+    box-shadow: var(--second-color) 0px 3px 3px;
+  }
+
+  .aiSuggest {
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    background-color: var(--background-light-color);
+    width: 15.5vw;
+    border-radius: 20px;
+    box-shadow: var(--second-color) 0px 3px 3px;
+
+    .aiMessage {
+      margin-top: 20px;
+      background-color: var(--background-light-more-color);
+      padding: 30px 25px;
+      letter-spacing: 2px;
+      line-height: 25px;
+      font-size: $medium-size;
+      border-radius: 20px;
+    }
+  }
+
+  .pending {
+    background-color: var(--background-light-color);
+    border-radius: 20px;
+    padding: 50px 20px 0px;
+    box-shadow: var(--second-color) 0px 3px 3px;
+
+    .guide {
+      display: flex;
+      align-items: center;
+
+      p {
+        font-size: $large-size;
+        letter-spacing: 1px;
+      }
+
+      button {
+        background-color: var(--primary-color);
+        color: var(--background-light-color);
+        font-size: $large-size;
+        padding: 5px 15px;
+        border-radius: 50px;
+        margin-left: 10px;
+      }
+    }
+  }
+}

@@ -12,15 +12,19 @@ from PIL import Image
 from pyzbar.pyzbar import decode
 from views.openai import ocr_correction_logic
 
+
 # 初始化模型
-ocr_model = PaddleOCR(
-    use_doc_orientation_classify=False,
-    use_doc_unwarping=False,
-    use_textline_orientation=False,
-    lang='ch')
+def get_ocr():
+    return PaddleOCR(
+        use_doc_orientation_classify=False,
+        use_doc_unwarping=False,
+        use_textline_orientation=False,
+        lang="ch",
+    )
+
 
 # 初始化語言轉換器
-converter = opencc.OpenCC('s2t')
+converter = opencc.OpenCC("s2t")
 
 
 def snn_logic(image_path) -> int:
@@ -60,7 +64,7 @@ def extract_qrcodes(image_path):
     if len(qrcodes) != 2:
         raise ValueError("QRCode 數量錯誤")
     sorted_qrcodes = sorted(qrcodes, key=lambda q: q.rect.left)
-    return [qr.data.decode('utf-8') for qr in sorted_qrcodes]
+    return [qr.data.decode("utf-8") for qr in sorted_qrcodes]
 
 
 def convert_date(tw_date: str) -> str:
@@ -72,10 +76,10 @@ def convert_date(tw_date: str) -> str:
 
 def decode_item_name(name, encoding):
     try:
-        if encoding == '0':
-            return name.encode('latin1').decode('big5')
-        elif encoding == '2':
-            return base64.b64decode(name).decode('utf-8')
+        if encoding == "0":
+            return name.encode("latin1").decode("big5")
+        elif encoding == "2":
+            return base64.b64decode(name).decode("utf-8")
         return name
     except Exception as e:
         print(e)
@@ -84,8 +88,8 @@ def decode_item_name(name, encoding):
 
 def parse_invoice_qrcodes(left_data, right_data):
     result = {
-        'invoice_number': left_data[0:10],
-        'date': left_data[10:17],
+        "invoice_number": left_data[0:10],
+        "date": left_data[10:17],
         # '隨機碼': left_data[17:21],
         # '銷售額': left_data[21:29],
         # '總計額': left_data[29:37],
@@ -94,7 +98,7 @@ def parse_invoice_qrcodes(left_data, right_data):
     }
 
     remaining = left_data[77:] + right_data[2:]
-    fields = remaining.split(':')
+    fields = remaining.split(":")
     del fields[0]
 
     try:
@@ -108,18 +112,21 @@ def parse_invoice_qrcodes(left_data, right_data):
         items_raw = fields[4:]
         items = []
         for i in range(0, len(items_raw), 3):
-            if i + 2 >= len(items_raw): break
+            if i + 2 >= len(items_raw):
+                break
             name = decode_item_name(items_raw[i], encoding)
             quantity = int(items_raw[i + 1])
             price = int(items_raw[i + 2])
-            items.append({
-                'title': name,
-                # '數量': quantity,
-                'money': price
-            })
-        result['items'] = items
+            items.append(
+                {
+                    "title": name,
+                    # '數量': quantity,
+                    "money": price,
+                }
+            )
+        result["items"] = items
     except Exception as e:
-        result['items'] = []
+        result["items"] = []
         raise Exception("明細解析錯誤")
     return result
 
@@ -144,14 +151,14 @@ def qrcode_decoder_logic(image_path, ticket_id, invoice_type):
             formatted_date = None
 
         if save_qrcode_result(
-                ticket_id,
-                invoice_type,
-                {
-                    "invoice_number": invoice_number,
-                    "date": formatted_date,
-                    "total_money": sum(item["money"] for item in items)
-                },
-                items
+            ticket_id,
+            invoice_type,
+            {
+                "invoice_number": invoice_number,
+                "date": formatted_date,
+                "total_money": sum(item["money"] for item in items),
+            },
+            items,
         ):
             return
 
@@ -172,6 +179,7 @@ def extract_clean_json(content: str) -> str:
 def ocr_logic(image_path, ticket_id, invoice_type):
     try:
         # 步驟 1：執行 OCR，得到原始文字塊
+        ocr_model = get_ocr()
         ocr_result = ocr_model.ocr(str(image_path))
     except Exception as e:
         print(f"[OCR 錯誤] ticket_id={ticket_id}：{e}")
@@ -230,7 +238,9 @@ def ocr_logic(image_path, ticket_id, invoice_type):
 
 def invoice_parser(filename, ticket_id):
     try:
-        image_path = BASE_DIR / INVOICE_UPLOAD_FOLDER / filename  # /app/static/invoice/filename
+        image_path = (
+            BASE_DIR / INVOICE_UPLOAD_FOLDER / filename
+        )  # /app/static/invoice/filename
 
         # 執行 SNN 處理
         invoice_type = snn_logic(image_path)
