@@ -4,14 +4,9 @@ import { PencilLine, Plus, CircleMinus } from "lucide-react";
 import ShadowPopup from "@/components/common/ShadowPopup";
 import InputField from "@/components/common/InputField";
 import SelectField from "@/components/common/SelectField";
-import styles from "@/styles/components/AddBudgetPopup.module.scss";
+import { FormValues } from "@/lib/types/BudgetType";
 
-type BudgetRow = {
-  department: string;
-  account: string;
-  limit: number | string;
-};
-type FormValues = { budgets: BudgetRow[] };
+import styles from "@/styles/components/AddBudgetPopup.module.scss";
 
 export default function AddBudgetPopup({
   setIsPopup,
