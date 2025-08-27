@@ -13,7 +13,11 @@ from pyzbar.pyzbar import decode
 from views.openai import ocr_correction_logic
 
 # 初始化模型
-ocr_model = PaddleOCR(lang='ch', use_angle_cls=True, use_gpu=False)
+ocr_model = PaddleOCR(
+    use_doc_orientation_classify=False,
+    use_doc_unwarping=False,
+    use_textline_orientation=False,
+    lang='ch')
 
 # 初始化語言轉換器
 converter = opencc.OpenCC('s2t')
