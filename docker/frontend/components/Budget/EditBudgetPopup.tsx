@@ -1,31 +1,41 @@
+import { useEffect } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { PencilLine, Plus, CircleMinus } from "lucide-react";
 
 import ShadowPopup from "@/components/common/ShadowPopup";
 import InputField from "@/components/common/InputField";
 import SelectField from "@/components/common/SelectField";
-import { FormValues } from "@/lib/types/BudgetType";
+import { FormValues, BudgetRow } from "@/lib/types/BudgetType";
+import styles from "@/styles/components/EditBudgetPopup.module.scss";
 
-import styles from "@/styles/components/AddBudgetPopup.module.scss";
-
-export default function AddBudgetPopup({
+export default function EditBudgetPopup({
+  department,
   setIsPopup,
+  budgetData,
 }: {
+  department: string;
   setIsPopup: (boolean: boolean) => void;
+  budgetData: BudgetRow[];
 }) {
   const {
     control,
     register,
     handleSubmit,
+    reset,
     formState: { isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: { budgets: [{ department: "", account: "", limit: 0 }] },
+    defaultValues: { budgets: [] },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control,
     name: "budgets",
   });
+
+  useEffect(() => {
+    reset({ budgets: budgetData });
+    replace(budgetData);
+  }, []);
 
   const onSubmit = async (values: FormValues) => {
     // const payload = values.budgets
@@ -47,30 +57,11 @@ export default function AddBudgetPopup({
   };
 
   return (
-    <ShadowPopup setIsPopup={setIsPopup} title="新增預算">
+    <ShadowPopup setIsPopup={setIsPopup} title={`編輯預算 一 ${department}`}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className={styles.wrap}>
           {fields.map((field, index) => (
             <div className={styles.fieldWrap} key={field.id}>
-              <Controller
-                control={control}
-                name={`budgets.${index}.department`}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <SelectField
-                    style={{ width: "200px" }}
-                    title="部門"
-                    value={field.value}
-                    onChange={field.onChange}
-                    optionData={[
-                      { value: "銷售部門" },
-                      { value: "技術部門" },
-                      { value: "研發部門" },
-                      { value: "人事部門" },
-                    ]}
-                  />
-                )}
-              />
               <Controller
                 control={control}
                 name={`budgets.${index}.account`}
@@ -128,7 +119,7 @@ export default function AddBudgetPopup({
               className={styles.add}
               disabled={isSubmitting}
             >
-              新增
+              更新
             </button>
           </div>
         </div>
