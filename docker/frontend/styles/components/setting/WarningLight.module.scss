@@ -28,15 +28,15 @@
       }
 
       .green {
-        background-color: #9eb978;
+        background-color: var(--point-green);
       }
 
       .yellow {
-        background-color: #f8be41;
+        background-color: var(--point-yellow);
       }
 
       .red {
-        background-color: #d47272;
+        background-color: var(--point-red);
       }
     }
   }
