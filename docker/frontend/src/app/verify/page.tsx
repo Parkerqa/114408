@@ -3,12 +3,59 @@
 import { useState } from "react";
 import { Search, ListChecks } from "lucide-react";
 
+import VerifyPopup from "@/components/VerifyPopup";
 import InputField from "@/components/common/InputField";
 import LargeTable from "@/components/LargeTable";
+import { ApplyType } from "@/lib/types/ApplyType";
 import styles from "@/styles/app/VerifyPage.module.scss";
 
 export default function Verify() {
   const [isPast, setIsPast] = useState<boolean>(false);
+  const [isVerify, setIsVerify] = useState<boolean>(true);
+
+  const verifyData: ApplyType[] = [
+    {
+      Details: [
+        { title: "測資1標題1", money: 150 },
+        { title: "測資1標題2", money: 300 },
+      ],
+      time: "2025/8/20",
+      type: "電子發票",
+      applicant: "員工A",
+      status: 0,
+    },
+    {
+      Details: [
+        { title: "測資2標題1", money: 150 },
+        { title: "測資2標題2", money: 300 },
+      ],
+      time: "2025/8/20",
+      type: "電子發票",
+      applicant: "員工B",
+      status: 0,
+    },
+    {
+      Details: [
+        { title: "測資3標題1", money: 150 },
+        { title: "測資3標題2", money: 300 },
+      ],
+      time: "2025/8/20",
+      type: "電子發票",
+      applicant: "員工C",
+      status: 0,
+    },
+    {
+      Details: [
+        { title: "測資4標題1", money: 150 },
+        { title: "測資4標題2", money: 300 },
+      ],
+      time: "2025/8/20",
+      type: "電子發票",
+      applicant: "員工D",
+      status: 0,
+    },
+  ];
+
   return (
     <>
       <div className={styles.wrap}>
@@ -50,6 +97,7 @@ export default function Verify() {
         </div>
         <LargeTable />
       </div>
+      {isVerify && <VerifyPopup setIsPopup={setIsVerify} data={verifyData} />}
     </>
   );
 }
