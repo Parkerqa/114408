@@ -1,0 +1,13 @@
+.wrap {
+  background-color: var(--list-bg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-radius: 3px;
+  box-shadow: var(--background-light-color) 0px 3px 3px;
+}
+
+.contextWrap {
+  padding: 25px;
+}

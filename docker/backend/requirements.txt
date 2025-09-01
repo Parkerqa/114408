@@ -18,5 +18,5 @@ pyzbar
 opencc-python-reimplemented
 openai==0.28
 pyngrok
-paddleocr>=2.0.1
-paddlepaddle==3.0.0b2 -f https://www.paddlepaddle.org.cn/packages/stable/cpu
+paddlepaddle==3.1.0 -f https://www.paddlepaddle.org.cn/packages/stable/cpu/
+paddleocr
