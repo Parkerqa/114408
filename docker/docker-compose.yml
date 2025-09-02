@@ -27,8 +27,6 @@ services:
     volumes:
       - ./backend:/app
       - ./static:/app/static
-    environment:
-    - CHOKIDAR_USEPOLLING=true
     restart: always
 
   frontend:
@@ -36,7 +34,7 @@ services:
     image: tts_frontend
     container_name: tts_frontend
     ports:
-      - "3001:3001"
+      - "3000:3000"
     networks:
       - app-net
     env_file:
@@ -53,7 +51,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     restart: always
