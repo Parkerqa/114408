@@ -14,10 +14,12 @@ export default function AdminSetting() {
 
   return (
     <div className={styles.wrap}>
-      <MoreInfoBar title="個人資訊" context={<SelfInfo />} />
-      <MoreInfoBar title="編輯儀錶板警示燈" context={<WarningLight />} />
-      <MoreInfoBar title="編輯部門" context={<AddDepartment />} />
-      <MoreInfoBar title="編輯會計科目" context={<AddAccount />} />
+      <div className={styles.items}>
+        <MoreInfoBar title="個人資訊" context={<SelfInfo />} />
+        <MoreInfoBar title="編輯儀錶板警示燈" context={<WarningLight />} />
+        <MoreInfoBar title="編輯部門" context={<AddDepartment />} />
+        <MoreInfoBar title="編輯會計科目" context={<AddAccount />} />
+      </div>
       <button
         className={styles.logout}
         onClick={() => {
