@@ -1,6 +1,6 @@
 CREATE DATABASE  IF NOT EXISTS `114408` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `114408`;
--- MySQL dump 10.13  Distrib 8.0.42, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.42, for macos15 (arm64)
 --
 -- Host: 127.0.0.1    Database: 114408
 -- ------------------------------------------------------
@@ -18,32 +18,34 @@ USE `114408`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `accounting`
+-- Table structure for table `accounting_items`
 --
 
-DROP TABLE IF EXISTS `accounting`;
+DROP TABLE IF EXISTS `accounting_items`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `accounting` (
-  `accounting_id` int NOT NULL AUTO_INCREMENT,
-  `class_info_id` enum('傳統','1') NOT NULL,
+CREATE TABLE `accounting_items` (
+  `accounting_id` bigint NOT NULL AUTO_INCREMENT,
+  `account_code` varchar(50) NOT NULL,
+  `account_name` varchar(150) NOT NULL,
   `account_class` varchar(150) DEFAULT NULL,
-  `create_id` varchar(150) NOT NULL,
-  `create_date` datetime NOT NULL,
-  `modify_id` varchar(150) DEFAULT NULL,
-  `modify_date` datetime DEFAULT NULL,
-  `avaible` tinyint NOT NULL,
-  PRIMARY KEY (`accounting_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_by` varchar(150) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` varchar(150) DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`accounting_id`),
+  UNIQUE KEY `uk_accounting_code` (`account_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `accounting`
+-- Dumping data for table `accounting_items`
 --
 
-LOCK TABLES `accounting` WRITE;
-/*!40000 ALTER TABLE `accounting` DISABLE KEYS */;
-/*!40000 ALTER TABLE `accounting` ENABLE KEYS */;
+LOCK TABLES `accounting_items` WRITE;
+/*!40000 ALTER TABLE `accounting_items` DISABLE KEYS */;
+/*!40000 ALTER TABLE `accounting_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -57,8 +59,8 @@ CREATE TABLE `ai_log` (
   `ai_id` int NOT NULL AUTO_INCREMENT,
   `prompt` text NOT NULL,
   `log` text NOT NULL,
-  `create_id` varchar(150) NOT NULL,
-  `create_date` datetime DEFAULT NULL,
+  `created_by` varchar(150) NOT NULL,
+  `created_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`ai_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -73,32 +75,68 @@ LOCK TABLES `ai_log` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `class_info`
+-- Table structure for table `department_accounting`
 --
 
-DROP TABLE IF EXISTS `class_info`;
+DROP TABLE IF EXISTS `department_accounting`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `class_info` (
-  `class_id` int NOT NULL AUTO_INCREMENT,
-  `money_limit` decimal(10,2) NOT NULL,
-  `class_info_id` enum('交通') NOT NULL,
-  `create_id` varchar(150) NOT NULL,
-  `create_date` datetime NOT NULL,
-  `modify_id` varchar(150) DEFAULT NULL,
-  `modify_date` datetime DEFAULT NULL,
-  `available` tinyint NOT NULL,
-  PRIMARY KEY (`class_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE TABLE `department_accounting` (
+  `dept_accounting_id` bigint NOT NULL AUTO_INCREMENT,
+  `department_id` bigint NOT NULL,
+  `accounting_id` bigint NOT NULL,
+  `budget_limit` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_by` varchar(150) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` varchar(150) DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`dept_accounting_id`),
+  UNIQUE KEY `uk_da` (`department_id`,`accounting_id`),
+  KEY `fk_da_accounting` (`accounting_id`),
+  CONSTRAINT `fk_da_accounting` FOREIGN KEY (`accounting_id`) REFERENCES `accounting_items` (`accounting_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_da_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`department_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `class_info`
+-- Dumping data for table `department_accounting`
 --
 
-LOCK TABLES `class_info` WRITE;
-/*!40000 ALTER TABLE `class_info` DISABLE KEYS */;
-/*!40000 ALTER TABLE `class_info` ENABLE KEYS */;
+LOCK TABLES `department_accounting` WRITE;
+/*!40000 ALTER TABLE `department_accounting` DISABLE KEYS */;
+/*!40000 ALTER TABLE `department_accounting` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `departments`
+--
+
+DROP TABLE IF EXISTS `departments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `departments` (
+  `department_id` bigint NOT NULL AUTO_INCREMENT,
+  `dept_code` varchar(50) NOT NULL,
+  `dept_name` varchar(150) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_by` varchar(150) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` varchar(150) DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`department_id`),
+  UNIQUE KEY `uk_departments_code` (`dept_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `departments`
+--
+
+LOCK TABLES `departments` WRITE;
+/*!40000 ALTER TABLE `departments` DISABLE KEYS */;
+/*!40000 ALTER TABLE `departments` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -127,6 +165,7 @@ CREATE TABLE `other_setting` (
 
 LOCK TABLES `other_setting` WRITE;
 /*!40000 ALTER TABLE `other_setting` DISABLE KEYS */;
+INSERT INTO `other_setting` VALUES (1,0,0.00,50.00,51.00,70.00,71.00,100.00);
 /*!40000 ALTER TABLE `other_setting` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -138,7 +177,6 @@ DROP TABLE IF EXISTS `request`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `request` (
-  `request_id` int NOT NULL,
   `mappping` char(45) NOT NULL,
   `user_agent` varchar(255) NOT NULL,
   `url` varchar(255) NOT NULL,
@@ -146,8 +184,7 @@ CREATE TABLE `request` (
   `http_status_code` char(45) NOT NULL,
   `request_ip_from` varchar(150) NOT NULL,
   `priority` tinyint NOT NULL,
-  `request_time` datetime NOT NULL,
-  PRIMARY KEY (`request_id`)
+  `request_time` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -179,12 +216,12 @@ CREATE TABLE `ticket` (
   `date` datetime DEFAULT NULL,
   `total_money` decimal(10,2) DEFAULT NULL,
   `status` int DEFAULT NULL,
-  `create_id` varchar(150) DEFAULT NULL,
-  `create_date` datetime DEFAULT NULL,
-  `modify_id` varchar(150) DEFAULT NULL,
-  `modify_date` datetime DEFAULT NULL,
-  `available` tinyint DEFAULT NULL,
   `writeoff_date` datetime DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_by` varchar(150) NOT NULL,
+  `created_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` varchar(150) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`ticket_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -239,13 +276,13 @@ CREATE TABLE `user` (
   `password` varchar(128) NOT NULL,
   `priority` int DEFAULT NULL,
   `img` varchar(255) DEFAULT NULL,
-  `create_id` varchar(150) DEFAULT NULL,
-  `create_date` datetime DEFAULT NULL,
-  `modify_id` varchar(150) DEFAULT NULL,
-  `modify_date` datetime DEFAULT CURRENT_TIMESTAMP,
-  `available` tinyint DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_by` varchar(150) NOT NULL,
+  `created_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` varchar(150) DEFAULT NULL,
+  `updated_at` datetime(6) DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -254,6 +291,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
+INSERT INTO `user` VALUES (1,'user','user@example.com','$2b$12$l3bU0Xt8hwIQ6j8IszI.9OvqewE0znCsbSn.zB6QLDKJXjLPvx.rC',0,'user.png',1,'','2025-09-02 09:17:49.025654',NULL,NULL);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -264,6 +302,71 @@ UNLOCK TABLES;
 --
 -- Dumping routines for database '114408'
 --
+/*!50003 DROP PROCEDURE IF EXISTS `ensure_audit_columns` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = latin1 */ ;
+/*!50003 SET character_set_results = latin1 */ ;
+/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ensure_audit_columns`(IN in_schema VARCHAR(64), IN in_table VARCHAR(64))
+BEGIN
+  DECLARE col_exists INT;
+
+  -- is_active
+  SELECT COUNT(*) INTO col_exists FROM information_schema.columns
+   WHERE table_schema = in_schema AND table_name = in_table AND column_name = 'is_active';
+  IF col_exists = 0 THEN
+    SET @sql = CONCAT('ALTER TABLE `', in_schema, '`.`', in_table, '` ',
+                      'ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1');
+    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+  END IF;
+
+  -- created_by
+  SELECT COUNT(*) INTO col_exists FROM information_schema.columns
+   WHERE table_schema = in_schema AND table_name = in_table AND column_name = 'created_by';
+  IF col_exists = 0 THEN
+    SET @sql = CONCAT('ALTER TABLE `', in_schema, '`.`', in_table, '` ',
+                      'ADD COLUMN created_by VARCHAR(150) NOT NULL');
+    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+  END IF;
+
+  -- created_at
+  SELECT COUNT(*) INTO col_exists FROM information_schema.columns
+   WHERE table_schema = in_schema AND table_name = in_table AND column_name = 'created_at';
+  IF col_exists = 0 THEN
+    SET @sql = CONCAT('ALTER TABLE `', in_schema, '`.`', in_table, '` ',
+                      'ADD COLUMN created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)');
+    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+  END IF;
+
+  -- updated_by
+  SELECT COUNT(*) INTO col_exists FROM information_schema.columns
+   WHERE table_schema = in_schema AND table_name = in_table AND column_name = 'updated_by';
+  IF col_exists = 0 THEN
+    SET @sql = CONCAT('ALTER TABLE `', in_schema, '`.`', in_table, '` ',
+                      'ADD COLUMN updated_by VARCHAR(150) NULL');
+    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+  END IF;
+
+  -- updated_at
+  SELECT COUNT(*) INTO col_exists FROM information_schema.columns
+   WHERE table_schema = in_schema AND table_name = in_table AND column_name = 'updated_at';
+  IF col_exists = 0 THEN
+    SET @sql = CONCAT('ALTER TABLE `', in_schema, '`.`', in_table, '` ',
+                      'ADD COLUMN updated_at DATETIME(6) NULL ON UPDATE CURRENT_TIMESTAMP(6)');
+    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+  END IF;
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -274,4 +377,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-06-05 11:37:08
+-- Dump completed on 2025-09-02 17:29:29
