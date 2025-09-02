@@ -168,7 +168,7 @@ def search_tickets_by_keyword(keyword: str):
 def create_ticket(user_id: int, img_filename: str) -> int | None:
     db: Session = SessionLocal()
     try:
-        ticket = Ticket(user_id=user_id, img=img_filename, status=1, create_id=user_id, modify_id=user_id,
+        ticket = Ticket(user_id=user_id, img=img_filename, status=1, created_by=user_id, updated_by=user_id,
                         available=True)
         db.add(ticket)
         db.commit()

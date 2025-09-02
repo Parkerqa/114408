@@ -34,8 +34,8 @@ def create_user(username: str, email: str, password: str) -> bool:
         db.add(user)
         db.commit()
 
-        user.create_id = user.user_id
-        user.modify_id = user.user_id
+        user.created_by = user.user_id
+        user.updated_by = user.user_id
         other_setting = OtherSetting(user_id=user.user_id, theme=0,
                                      red_bot=0, red_top=50,
                                      green_bot=51, green_top=70,
@@ -80,7 +80,7 @@ def update_user_info(user_id: int, username: str, email: str, password: str, img
         user.email = email
         user.password = password
         user.img = img
-        user.modify_id = user_id
+        user.updated_by = user_id
         db.commit()
         return True
     except Exception as e:

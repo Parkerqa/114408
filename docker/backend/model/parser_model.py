@@ -32,7 +32,7 @@ def save_ocr_result(ticket_id, invoice_type, catch_result):
         ticket.date = catch_result["date"]
         ticket.total_money = catch_result["total_money"]
         ticket.status = 2
-        ticket.modify_id = 0
+        ticket.updated_by = 0
 
         titles = catch_result.get("title", [])
         moneys = catch_result.get("money", [])
@@ -67,7 +67,7 @@ def save_qrcode_result(ticket_id, invoice_type, catch_result, items):
         ticket.date = catch_result["date"]
         ticket.total_money = catch_result["total_money"]
         ticket.status = 2
-        ticket.modify_id = 0
+        ticket.updated_by = 0
 
         for item in items:
             detail = TicketDetail(

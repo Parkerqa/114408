@@ -3,7 +3,7 @@ from sqlalchemy.types import Numeric
 from sqlalchemy.orm import Session
 
 from .db_utils import SessionLocal
-from .models import Accounting, ClassInfo
+from .models import Accounting, Department
 
 
 def get_account_classes_by_class(class_: str) -> list[str] or None:
@@ -29,12 +29,12 @@ def get_all_classes_info() -> list[dict] | None:
         query = (
             db.query(
                 Accounting.account_class.label("account_class"),
-                func.coalesce(func.sum(ClassInfo.money_limit), 0).label("total_budget"),
+                func.coalesce(func.sum(Department.money_limit), 0).label("total_budget"),
                 cast(literal(0), Numeric(10, 2)).label("total_amount"),  # <<< 這行修正重點
             )
             .join(
-                ClassInfo,
-                Accounting.class_info_id == ClassInfo.class_info_id,
+                Department,
+                Accounting.class_info_id == Department.class_info_id,
                 isouter=True
             )
             # 若 avaible 可能為 NULL，建議改成 func.coalesce(Accounting.avaible, 1) == 1

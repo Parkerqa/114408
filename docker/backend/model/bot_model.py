@@ -9,7 +9,7 @@ from .models import Ticket
 def get_awaiting_ticket_by_uid(user_id: int, ticket_id: int):
     db: Session = SessionLocal()
     try:
-        result = db.query(Ticket).filter(Ticket.create_id == user_id, Ticket.ticket_id == ticket_id).first()
+        result = db.query(Ticket).filter(Ticket.create_by == user_id, Ticket.ticket_id == ticket_id).first()
         if result and result.img:
             return f"https://devapi.micky.codes/static/invoice/{result.img}"
         else:
@@ -26,7 +26,7 @@ def get_awaiting_ticket_info_by_uid(user_id: int, ticket_id: int):
     try:
         ticket = db.query(Ticket).filter(
             Ticket.ticket_id == ticket_id,
-            Ticket.create_id == user_id,
+            Ticket.create_by == user_id,
             Ticket.status == 2
         ).first()
 
@@ -62,7 +62,7 @@ def get_awaiting_list_by_uid(user_id: int):
     db: Session = SessionLocal()
     try:
         results = db.query(Ticket).filter(
-            Ticket.create_id == user_id, Ticket.status == 2
+            Ticket.create_by == user_id, Ticket.status == 2
         ).all()
 
         if results:
