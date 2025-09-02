@@ -21,6 +21,12 @@
     width: 100%;
   }
 
+  .detailWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
   .addBudget {
     background-color: var(--second-color);
     padding: 12px;
