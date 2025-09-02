@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
-import { ChevronRight } from "lucide-react";
-import { SquarePen } from "lucide-react";
-import { Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, SquarePen, Trash2 } from "lucide-react";
 
 import DetailItem from "@/components/common/DetailItem";
 import { ticketListType } from "@/lib/types/TicketType";
@@ -51,8 +48,7 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
         setDetail(res.data);
       }
       setIsDetail(true);
-    } catch {
-    }
+    } catch {}
   };
 
   const deleteBilling = async (id: number) => {
@@ -115,7 +111,7 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
             ))
           ) : (
             <div className={styles.item}>
-              <p style={{'whiteSpace':'nowrap'}}>{data.time}</p>
+              <p style={{ whiteSpace: "nowrap" }}>{data.time}</p>
               <p className={styles.partial}>{data.title}</p>
             </div>
           )}

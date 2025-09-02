@@ -51,11 +51,77 @@
   }
 
   .budget {
+    position: relative;
     width: 21vw;
     background-color: var(--background-light-color);
     height: 100%;
     border-radius: 20px;
     box-shadow: var(--second-color) 0px 3px 3px;
+    padding: 20px;
+    box-sizing: border-box;
+
+    .budgetTable {
+      width: 100%;
+
+      tr {
+        line-height: 2.5;
+      }
+
+      td svg {
+        vertical-align: middle;
+      }
+
+      .tableThead {
+        width: 100%;
+
+        th {
+          width: 33.3%;
+          font-weight: bold;
+        }
+      }
+
+      .tableTbody {
+        width: 100%;
+        text-align: center;
+
+        .edit,
+        .delete {
+          margin-right: 10px;
+          border-radius: 50%;
+          padding: 5px;
+          color: #fff;
+          transition: ease-in 0.1s;
+
+          &:hover {
+            transform: scale(1.1);
+          }
+        }
+
+        .edit {
+          background-color: var(--point-yellow);
+        }
+
+        .delete {
+          background-color: var(--point-red);
+        }
+      }
+    }
+
+    .addBudget {
+      background-color: var(--primary-color);
+      padding: 12px;
+      color: #fff;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 30px;
+      right: 30px;
+      transition: ease-in 0.1s;
+
+      &:hover {
+        background-color: var(--hover-color);
+        transform: scale(1.1);
+      }
+    }
   }
 
   .aiSuggest {
@@ -95,8 +161,8 @@
 
       button {
         background-color: var(--primary-color);
-        color: var(--background-light-color);
-        font-size: $large-size;
+        color: #fff;
+        font-size: $regular-size;
         padding: 5px 15px;
         border-radius: 50px;
         margin-left: 10px;

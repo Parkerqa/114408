@@ -1,0 +1,69 @@
+@use "@/styles/base/variables" as *;
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+  .fieldWrap {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+
+    .minus {
+      color: var(--point-red);
+    }
+  }
+
+  .hr {
+    border: 1px solid var(--second-light-color);
+    width: 100%;
+  }
+
+  .detailWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .addBudget {
+    background-color: var(--second-color);
+    padding: 12px;
+    color: #fff;
+    border-radius: 50%;
+    bottom: 30px;
+    right: 30px;
+    transition: ease-in 0.1s;
+
+    &:hover {
+      background-color: var(--hover-color);
+      transform: scale(1.1);
+    }
+  }
+
+  .buttonWrap {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+
+    .add,
+    .cancel {
+      text-wrap: nowrap;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: $regular-size;
+      color: var(--text-color);
+    }
+
+    .cancel {
+      background-color: var(--list-bg);
+      border: solid 2px var(--second-color);
+    }
+
+    .add {
+      background-color: var(--primary-color);
+      color: #fff;
+    }
+  }
+}

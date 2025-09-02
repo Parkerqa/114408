@@ -1,0 +1,90 @@
+@use "@/styles/base/variables" as *;
+
+.wrap {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  margin-left: 90vw;
+
+  .hr {
+    border: 2px solid var(--second-color);
+    width: 100%;
+    border-radius: 20px;
+  }
+
+  .itemWrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    gap: 10px;
+    padding: 5rem 3rem 2rem;
+    background-color: var(--list-bg);
+    border-radius: 8px;
+    box-shadow: 0 4 4 rgba($color: #000000, $alpha: 0.25);
+
+    .title {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      top: 2rem;
+      left: 0;
+      font-size: $large-size;
+      font-weight: bold;
+      letter-spacing: 2px;
+
+      .decoration {
+        display: block;
+        width: 15px;
+        height: 15px;
+        background-color: var(--primary-color);
+        margin: 0 1rem;
+        border-radius: 50%;
+      }
+    }
+
+    .file {
+      color: var(--text-light-color);
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+
+      .hint {
+        color: var(--point-red);
+        font-size: $small-size;
+      }
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      input[type="radio"] {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        width: 17px;
+        height: 17px;
+        border: 2px solid var(--text-color);
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
+
+      .agree:checked {
+        background-color: #94d685;
+      }
+
+      .disagree:checked {
+        background-color: var(--point-red);
+      }
+    }
+  }
+}
