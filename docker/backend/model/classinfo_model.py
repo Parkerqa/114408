@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Session
 
 from .db_utils import SessionLocal
-from .models import ClassInfo
+from .models import Departments
 
 
 def class_exists(class_name: str) -> bool:
     db: Session = SessionLocal()
     try:
-        return db.query(ClassInfo).filter(ClassInfo.class_ == class_name).first() is not None
+        return db.query(Departments).filter(Departments.class_ == class_name).first() is not None
     except Exception as e:
         print(e)
         return False
@@ -18,7 +18,7 @@ def class_exists(class_name: str) -> bool:
 def create_class(class_: str, money_limit: str) -> bool:
     db: Session = SessionLocal()
     try:
-        new_item = ClassInfo(class_=class_, money_limit=money_limit)
+        new_item = Departments(class_=class_, money_limit=money_limit)
         db.add(new_item)
         db.commit()
         return True
@@ -33,7 +33,7 @@ def create_class(class_: str, money_limit: str) -> bool:
 def get_class_by_id(cid: int):
     db: Session = SessionLocal()
     try:
-        return db.query(ClassInfo).filter(ClassInfo.cid == cid).first()
+        return db.query(Departments).filter(Departments.cid == cid).first()
     except Exception as e:
         print(e)
         return None
@@ -44,9 +44,9 @@ def get_class_by_id(cid: int):
 def update_class_by_id(cid: int, new_class: str, new_money_limit: str) -> bool:
     db: Session = SessionLocal()
     try:
-        result = db.query(ClassInfo).filter(ClassInfo.cid == cid).update({
-            ClassInfo.class_: new_class,
-            ClassInfo.money_limit: new_money_limit
+        result = db.query(Departments).filter(Departments.cid == cid).update({
+            Departments.class_: new_class,
+            Departments.money_limit: new_money_limit
         })
         db.commit()
         return result > 0
@@ -61,7 +61,7 @@ def update_class_by_id(cid: int, new_class: str, new_money_limit: str) -> bool:
 def delete_class_by_id(cid: int) -> bool:
     db: Session = SessionLocal()
     try:
-        obj = db.query(ClassInfo).filter(ClassInfo.cid == cid).first()
+        obj = db.query(Departments).filter(Departments.cid == cid).first()
         if not obj:
             return False
         db.delete(obj)

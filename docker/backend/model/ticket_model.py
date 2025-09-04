@@ -1,10 +1,12 @@
-from typing import List, Optional
+import os
 
-from sqlalchemy import String, cast, func, or_
+from typing import List, Dict, Optional, Any
+from sqlalchemy import String, desc, cast, func, or_, and_, Date
 from sqlalchemy.orm import Session, aliased
+from datetime import datetime, timedelta, date as date_cls
 
 from .db_utils import SessionLocal
-from .models import Ticket, TicketDetail
+from .models import User, Ticket, TicketDetail
 
 
 def get_all_tickets(status: Optional[List[int]]):
@@ -69,7 +71,7 @@ def delete_ticket_by_id(ticket_id: int) -> bool:
 def update_ticket_class(ticket_id: int, new_class: str) -> bool:
     db: Session = SessionLocal()
     try:
-        result = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).update({Ticket.class_: new_class})
+        result = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).update({Ticket.class_info_id: new_class})
         db.commit()
         return result > 0
     except Exception as e:
@@ -140,26 +142,59 @@ def delete_ticket_details_by_ids(td_ids: set) -> bool:
         db.close()
 
 
-def search_tickets_by_keyword(keyword: str):
+def search_tickets_combined(
+    keyword: Optional[str] = None,
+    class_info_id: Optional[str] = None,
+    date: Optional[date_cls] = None,
+    limit: int = 50,
+) -> Optional[List]:
     db: Session = SessionLocal()
     try:
-        # 為了 JOIN 與欄位存取一致，手動建立 alias
         t = aliased(Ticket)
         td = aliased(TicketDetail)
 
-        return db.query(t, t.user_id, td.title, td.money) \
-            .outerjoin(td, t.ticket_id == td.ticket_id) \
-            .filter(
-            or_(
-                t.createdate.like(f"%{keyword}%"),
-                t.class_.like(f"%{keyword}%"),
-                t.invoice_number.like(f"%{keyword}%"),
-                td.title.like(f"%{keyword}%"),
-                cast(td.money, String).like(f"%{keyword}%")
+        q = (
+            db.query(
+                t.ticket_id.label("ticket_id"),
+                t.class_info_id.label("class_info_id"),
+                t.user_id.label("user_id"),
+                t.status.label("status"),
+                t.invoice_number.label("invoice_number"),
+                t.created_at.label("created_at"),
+                td.title.label("title"),
+                td.money.label("money"),
             )
-        ).all()
+            .outerjoin(td, t.ticket_id == td.ticket_id)
+        )
+
+        filters = []
+
+        if keyword:
+            like = f"%{keyword}%"
+            filters.append(
+                or_(
+                    cast(t.created_at, String).ilike(like),
+                    cast(t.class_info_id, String).ilike(like),
+                    t.invoice_number.ilike(like),
+                    td.title.ilike(like),
+                    cast(td.money, String).ilike(like),
+                )
+            )
+
+        if class_info_id:
+            filters.append(t.class_info_id == class_info_id)
+
+        if date:
+            filters.append(cast(t.created_at, Date) == date)
+
+        if filters:
+            q = q.filter(and_(*filters))
+
+        q = q.order_by(desc(t.created_at)).limit(limit)
+        return q.all()
+
     except Exception as e:
-        print(e)
+        print(f"[ERROR] search_tickets_combined failed: {e}")
         return None
     finally:
         db.close()
@@ -168,8 +203,7 @@ def search_tickets_by_keyword(keyword: str):
 def create_ticket(user_id: int, img_filename: str) -> int | None:
     db: Session = SessionLocal()
     try:
-        ticket = Ticket(user_id=user_id, img=img_filename, status=1, create_id=user_id, modify_id=user_id,
-                        available=True)
+        ticket = Ticket(user_id=user_id, img=img_filename, status=1, created_by=user_id, updated_by=user_id)
         db.add(ticket)
         db.commit()
         return ticket.ticket_id
@@ -191,32 +225,6 @@ def get_total_money(current_user) -> int | None:
                 Ticket.user_id == current_user.user_id)
         total = query.scalar()
         return total if total is not None else 0
-    except Exception as e:
-        print(e)
-        return None
-    finally:
-        db.close()
-
-
-def get_distinct_classes() -> list[str] or None:
-    db: Session = SessionLocal()
-    try:
-        results = db.query(Ticket.class_).distinct().all()
-        return [r[0] for r in results if r[0] is not None]
-    except Exception as e:
-        print(e)
-        return None
-    finally:
-        db.close()
-
-
-def get_distinct_dates() -> list[str] or None:
-    db: Session = SessionLocal()
-    try:
-        results = db.query(
-            func.date_format(Ticket.createdate, "%Y/%m/%d")
-        ).distinct().all()
-        return [r[0] for r in results if r[0] is not None]
     except Exception as e:
         print(e)
         return None
@@ -262,18 +270,170 @@ def sum_money_by_status(status: int) -> int or None:
         db.close()
 
 
-def update_ticket_status(ticket_id: int, status: int) -> bool:
+def bulk_update_ticket_status(payload, checker_user_id: int) -> Dict[str, Any]:
     db: Session = SessionLocal()
     try:
-        ticket = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).first()
-        if ticket:
-            ticket.status = status
-            db.commit()
-            return True
-        return False
+        id_set: Set[int] = {int(item.ticket_id) for item in payload.items}
+        if not id_set:
+            return {"updated_count": 0, "updated_ids": [], "skipped": [], "not_found": []}
+
+        tickets: List[Ticket] = db.query(Ticket).filter(Ticket.ticket_id.in_(id_set)).all()
+        exists_map = {t.ticket_id: t for t in tickets}
+
+        not_found: List[int] = [tid for tid in id_set if tid not in exists_map]
+        skipped: List[Dict[str, Any]] = []
+        updated_ids: List[int] = []
+
+        now = datetime.utcnow()
+
+        for item in payload.items:
+            tid = int(item.ticket_id)
+            new_status = int(item.status)
+
+            t = exists_map.get(tid)
+            if t is None:
+                continue
+
+            if t.status == 3 or t.status == 4:
+                skipped.append({"ticket_id": tid, "reason": "該發票已完成，無法重新審核"})
+                continue
+
+            t.status = new_status
+
+            if new_status == STATUS_COMPLETED:
+                if hasattr(t, "check_man"):
+                    t.check_man = checker_user_id
+                if hasattr(t, "check_date"):
+                    t.check_date = now
+
+            updated_ids.append(tid)
+
+        db.commit()
+
+        return {
+            "updated_count": len(updated_ids),
+            "updated_ids": updated_ids,
+            "skipped": skipped,
+            "not_found": not_found,
+        }
+
     except Exception as e:
         db.rollback()
-        print(f"[ERROR] 更新發票狀態失敗：{e}")
-        return False
+        print(f"[ERROR] bulk_update_ticket_status: {e}")
+        raise
+    finally:
+        db.close()
+
+
+def get_latest_approved(limit: int = 4) -> Optional[List[Dict]]:
+    db: Session = SessionLocal()
+    try:
+        q = (
+            db.query(
+                Ticket.ticket_id,
+                Ticket.type,
+                Ticket.invoice_number,
+                Ticket.class_info_id,
+                Ticket.user_id,
+                Ticket.check_man,
+                Ticket.check_date,
+                Ticket.img,
+                Ticket.date,
+                Ticket.total_money,
+                Ticket.created_at,
+                TicketDetail.title.label("title"),
+            )
+            .join(TicketDetail, TicketDetail.ticket_id == Ticket.ticket_id, isouter=True)
+            .filter(Ticket.status == 3)
+            .order_by(desc(Ticket.check_date))
+            .limit(limit)
+        )
+
+        rows = q.all()
+        results = []
+        for r in rows:
+            results.append({
+                "upload_date": r.created_at.isoformat() if r.created_at else None,
+                "type": r.type,
+                "title": r.title,
+                "total_money": float(r.total_money) if r.total_money is not None else None,
+            })
+        return results
+
+    except Exception as e:
+        print(e)
+        return None
+    finally:
+        db.close()
+
+
+def get_pending_reimbursements(limit: int = 20):
+    db: Session = SessionLocal()
+    try:
+        q = (
+            db.query(
+                Ticket.created_at.label("upload_date"),
+                Ticket.type,
+                TicketDetail.title.label("title"),
+                Ticket.total_money,
+                User.username.label("creator_name"),
+                Ticket.img,
+            )
+            .join(TicketDetail, TicketDetail.ticket_id == Ticket.ticket_id, isouter=True)
+            .join(User, User.user_id == Ticket.created_by, isouter=True)
+            .filter(Ticket.status == 2)
+            .order_by(desc(Ticket.created_at))
+            .limit(limit)
+        )
+        rows = q.all()
+        return [
+            {
+                "upload_date": r.upload_date.isoformat() if r.upload_date else None,
+                "type": r.type,
+                "title": r.title,
+                "total_money": float(r.total_money) if r.total_money is not None else None,
+                "creator_name": r.creator_name,
+                "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}' if r.img else None,
+            }
+            for r in rows
+        ]
+    except Exception as e:
+        print(e)
+        return None
+    finally:
+        db.close()
+
+
+def get_approved_records(limit: int = 20):
+    db: Session = SessionLocal()
+    try:
+        q = (
+            db.query(
+                Ticket.created_at.label("upload_date"),
+                Ticket.type,
+                TicketDetail.title.label("title"),
+                Ticket.total_money,
+                User.username.label("creator_name"),
+            )
+            .join(TicketDetail, TicketDetail.ticket_id == Ticket.ticket_id, isouter=True)
+            .join(User, User.user_id == Ticket.created_by, isouter=True)
+            .filter(Ticket.status.in_([3, 4]))
+            .order_by(desc(Ticket.check_date))
+            .limit(limit)
+        )
+        rows = q.all()
+        return [
+            {
+                "upload_date": r.upload_date.isoformat() if r.upload_date else None,
+                "type": r.type,
+                "title": r.title,
+                "total_money": float(r.total_money) if r.total_money is not None else None,
+                "creator_name": r.creator_name,
+            }
+            for r in rows
+        ]
+    except Exception as e:
+        print(e)
+        return None
     finally:
         db.close()

@@ -1,17 +1,21 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 
 from core.upload_utils import upload_image
 from fastapi import UploadFile
 from model.ticket_model import (count_by_status, count_status_1, create_ticket,
                                 create_ticket_detail, delete_ticket_by_id,
                                 delete_ticket_details_by_ids, get_all_tickets,
-                                get_detail_ids_by_tid, get_distinct_classes,
-                                get_distinct_dates, get_specify_ticket,
+                                get_detail_ids_by_tid, get_specify_ticket,
                                 get_ticket_by_id, get_tickets_by_user,
-                                get_total_money, search_tickets_by_keyword,
+                                get_total_money, search_tickets_combined,
                                 sum_money_by_status, update_ticket_class,
-                                update_ticket_detail, update_ticket_status)
+                                update_ticket_detail, bulk_update_ticket_status,
+                                get_latest_approved, get_pending_reimbursements,
+                                get_approved_records)
+from schemas.ticket import TicketAuditBulkRequest
 from starlette.exceptions import HTTPException
+from datetime import date
+
 from views.checker import check_mode, check_status, check_type
 
 
@@ -142,38 +146,55 @@ def change_ticket_logic(ticket_id: int, payload, user) -> str:
     return "發票已成功修改"
 
 
-def search_ticket_logic(keyword: str, user) -> Tuple[str, List[Dict] or None]:
-    tickets = search_tickets_by_keyword(keyword)
+def search_ticket_logic(
+    keyword: Optional[str],
+    class_info_id: Optional[str],
+    date: Optional[date],
+    limit: int,
+    user,
+) -> Tuple[str, List[Dict] or None]:
 
-    if not tickets:
+    rows = search_tickets_combined(
+        keyword=keyword,
+        class_info_id=class_info_id,
+        date=date,
+        limit=limit,
+    )
+
+    if rows is None:
+        raise HTTPException(status_code=500, detail="查詢時發生錯誤")
+
+    if not rows:
         raise HTTPException(status_code=404, detail="查無資料")
 
     filtered = []
-
-    for row in tickets:
+    for row in rows:
         if user.priority == 0:
-            # 一般使用者只能看到自己的票
+            # 一般使用者：只能看到自己的票
             if row.user_id != user.user_id:
                 continue
             filtered.append({
-                "class": row.class_,
-                "ticket_create": row.createdate,
+                "class": row.class_info_id,
+                "ticket_create": row.created_at.strftime("%Y-%m-%d %H:%M:%S") if row.created_at else None,
                 "invoice_number": row.invoice_number,
                 "title": row.title,
-                "money": row.money
+                "money": row.money,
             })
         else:
             # 管理員：可看所有欄位
             filtered.append({
                 "ticket_id": row.ticket_id,
-                "class": row.class_,
+                "class": row.class_info_id,
                 "user_id": row.user_id,
                 "status": row.status,
                 "invoice_number": row.invoice_number,
-                "createdate": row.createdate,
+                "createdate": row.created_at.strftime("%Y-%m-%d %H:%M:%S") if row.created_at else None,
                 "title": row.title,
-                "money": row.money
+                "money": row.money,
             })
+
+    if not filtered:
+        raise HTTPException(status_code=403, detail="沒有權限查看資料")
 
     return "查詢成功", filtered
 
@@ -201,24 +222,6 @@ def total_money_logic(user) -> Tuple[str, List[Dict] or None]:
     except Exception as e:
         print(f"[ERROR] 加總 money 失敗：{e}")
         raise HTTPException(status_code=500, detail="加總時發生錯誤")
-
-
-def list_class_logic() -> Tuple[str, List[Dict] or None]:
-    try:
-        classes = get_distinct_classes()
-        return "查詢成功", {"classes": classes}
-    except Exception as e:
-        print(f"[ERROR] 查詢類別失敗：{e}")
-        raise HTTPException(status_code=500, detail="查詢類別時發生錯誤")
-
-
-def list_date_logic() -> Tuple[str, List[Dict] or None]:
-    try:
-        dates = get_distinct_dates()
-        return "查詢成功", {"dates": dates}
-    except Exception as e:
-        print(f"[ERROR] 查詢日期失敗：{e}")
-        raise HTTPException(status_code=500, detail="查詢日期時發生錯誤")
 
 
 def unaudited_invoices_logic() -> Tuple[str, List[Dict] or None]:
@@ -256,15 +259,30 @@ def write_off_logic() -> Tuple[str, List[Dict] or None]:
         raise HTTPException(status_code=500, detail="統計失敗")
 
 
-def audit_ticket_logic(ticket_id: int, status: int):
-    ticket = get_ticket_by_id(ticket_id)
-    if not ticket:
-        raise HTTPException(status_code=404, detail="找不到該發票")
+def audit_ticket_bulk_logic(payload: TicketAuditBulkRequest, user) -> Tuple[str, Dict[str, Any]]:
+    try:
+        result = bulk_update_ticket_status(payload, checker_user_id=user.user_id)
+        return "批次審核完成", result
+    except Exception as e:
+        print(f"[ERROR] audit_ticket_bulk_logic: {e}")
+        raise HTTPException(status_code=500, detail="批次審核時發生錯誤")
 
-    if ticket.status == 2:
-        raise HTTPException(status_code=400, detail="該發票已完成，無法重新審核")
 
-    if update_ticket_status(ticket_id, status):
-        return "審核成功"
+def list_latest_approved_logic(limit: int = 4):
+    rows = get_latest_approved(limit=limit)
+    if rows is None:
+        raise HTTPException(status_code=500, detail="查詢失敗")
+    return "最新過審資料查詢成功", rows
 
-    raise HTTPException(status_code=500, detail="更新資料失敗")
+
+def list_pending_reimbursements_logic(limit: int = 20):
+    rows = get_pending_reimbursements(limit=limit)
+    if rows is None:
+        raise HTTPException(status_code=500, detail="查詢失敗")
+    return "待核銷申請查詢成功", rows
+
+def list_approved_records_logic(limit: int = 20):
+    rows = get_approved_records(limit=limit)
+    if rows is None:
+        raise HTTPException(status_code=500, detail="查詢失敗")
+    return "已核銷資料查詢成功", rows
