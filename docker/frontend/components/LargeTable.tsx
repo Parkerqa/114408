@@ -110,6 +110,7 @@ export default function LargeTable() {
   return (
     <div style={{ width: "100%" }}>
       <DataGrid
+        className={styles.grid}
         rows={rows}
         columns={columns}
         pageSizeOptions={[8]}
@@ -117,6 +118,17 @@ export default function LargeTable() {
         initialState={{
           pagination: {
             paginationModel: { pageSize: 8, page: 0 },
+          },
+        }}
+        sx={{
+          backgroundColor: "var(--list-bg)",
+          color: "var(--text-color)",
+          "& .MuiDataGrid-columnHeader": {
+            backgroundColor: "var(--list-bg)",
+            color: "var(--text-color)",
+          },
+          "& .MuiSvgIcon-root": {
+            color: "var(--text-color)",
           },
         }}
       />
