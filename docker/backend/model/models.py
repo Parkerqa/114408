@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, List
 import datetime
 import decimal
 
-from sqlalchemy import BigInteger, CHAR, Column, DECIMAL, DateTime, Enum, ForeignKeyConstraint, Index, Integer, String, Table, Text, text
+from sqlalchemy import BigInteger, CHAR, Column, DECIMAL, DateTime, Enum, ForeignKeyConstraint, Index, Integer, String, Table, Text, text, ForeignKey, ForeignKeyConstraint
 from sqlalchemy.dialects.mysql import DATETIME, TINYINT
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -94,7 +94,13 @@ class Ticket(Base):
     type: Mapped[Optional[int]] = mapped_column(Integer)
     invoice_number: Mapped[Optional[str]] = mapped_column(String(10))
     class_info_id: Mapped[Optional[str]] = mapped_column(Enum('a'))
-    user_id: Mapped[Optional[int]] = mapped_column(Integer)
+
+    user_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("user.user_id", ondelete="SET NULL"),
+        index=True,
+        nullable=True
+    )
+
     check_man: Mapped[Optional[str]] = mapped_column(String(150))
     check_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
     img: Mapped[Optional[str]] = mapped_column(String(255))
@@ -105,7 +111,19 @@ class Ticket(Base):
     updated_by: Mapped[Optional[str]] = mapped_column(String(150))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
 
-    ticket_detail: Mapped[list['TicketDetail']] = relationship('TicketDetail', back_populates='ticket')
+    creator: Mapped["User"] = relationship(
+        "User",
+        back_populates="tickets",
+        foreign_keys=[user_id],
+        lazy="joined",
+    )
+
+    ticket_detail: Mapped[List["TicketDetail"]] = relationship(
+        'TicketDetail',
+        back_populates='ticket',
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
 
 class User(Base):
@@ -122,6 +140,14 @@ class User(Base):
     img: Mapped[Optional[str]] = mapped_column(String(255))
     updated_by: Mapped[Optional[str]] = mapped_column(String(150))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
+
+    tickets: Mapped[list["Ticket"]] = relationship(
+        "Ticket",
+        back_populates="creator",
+        foreign_keys="Ticket.user_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
 
 class DepartmentAccounting(Base):
@@ -150,13 +176,17 @@ class DepartmentAccounting(Base):
 class TicketDetail(Base):
     __tablename__ = 'ticket_detail'
     __table_args__ = (
-        ForeignKeyConstraint(['ticket_id'], ['ticket.ticket_id'], ondelete='CASCADE', name='fk_ticket_detail_ticket'),
-        Index('fk_ticket_detail_ticket', 'ticket_id')
+        ForeignKeyConstraint(
+            ['ticket_id'], ['ticket.ticket_id'],
+            ondelete='CASCADE',
+            name='fk_ticket_detail_ticket'
+        ),
+        Index('ix_ticket_detail_ticket_id', 'ticket_id'),
     )
 
-    td_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    td_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     ticket_id: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[Optional[str]] = mapped_column(String(128))
     money: Mapped[Optional[decimal.Decimal]] = mapped_column(DECIMAL(10, 2))
 
-    ticket: Mapped['Ticket'] = relationship('Ticket', back_populates='ticket_detail')
+    ticket: Mapped["Ticket"] = relationship('Ticket', back_populates='ticket_detail')

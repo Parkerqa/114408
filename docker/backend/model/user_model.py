@@ -30,7 +30,7 @@ def get_user_by_email(email: str) -> Optional[User]:
 def create_user(username: str, email: str, password: str) -> bool:
     db: Session = SessionLocal()
     try:
-        user = User(username=username, email=email, password=password, priority=0, img="user.png", available=True)
+        user = User(username=username, email=email, password=password, priority=0, img="user.png")
         db.add(user)
         db.commit()
 

@@ -1,15 +1,15 @@
-from sqlalchemy import func, literal, cast
+from sqlalchemy import func, cast, Numeric, literal, case, and_
 from sqlalchemy.types import Numeric
 from sqlalchemy.orm import Session
 
 from .db_utils import SessionLocal
-from .models import Accounting, Department
+from .models import AccountingItems, Departments, DepartmentAccounting
 
 
 def get_account_classes_by_class(class_: str) -> list[str] or None:
     db: Session = SessionLocal()
     try:
-        results = db.query(Accounting.account_class).filter(Accounting.class_ == class_).all()
+        results = db.query(AccountingItems.account_class).filter(AccountingItems.class_ == class_).all()
         return [r[0] for r in results if r[0] is not None]
     except Exception as e:
         print(e)
@@ -19,28 +19,42 @@ def get_account_classes_by_class(class_: str) -> list[str] or None:
 
 
 def get_all_classes_info() -> list[dict] | None:
-    """
-    回傳每個會計科目的：account_class、total_budget、total_amount(暫為 0)
-    total_budget: sum(class_info.money_limit)
-    total_amount: 先以 0 回傳（尚無支出明細）
-    """
     db: Session = SessionLocal()
     try:
         query = (
             db.query(
-                Accounting.account_class.label("account_class"),
-                func.coalesce(func.sum(Department.money_limit), 0).label("total_budget"),
-                cast(literal(0), Numeric(10, 2)).label("total_amount"),  # <<< 這行修正重點
+                AccountingItems.account_class.label("account_class"),
+                # 只把「啟用中的關聯 + 啟用中的部門」的預算納入合計
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (
+                                and_(
+                                    Departments.is_active == 1,
+                                    DepartmentAccounting.is_active == 1
+                                ),
+                                DepartmentAccounting.budget_limit
+                            ),
+                            else_=0
+                        )
+                    ),
+                    0
+                ).label("total_budget"),
+                cast(literal(0), Numeric(12, 2)).label("total_amount"),
             )
-            .join(
-                Department,
-                Accounting.class_info_id == Department.class_info_id,
-                isouter=True
+            # 多對多關聯：會計項目 ←(外連結)→ 部門×科目 ←(外連結)→ 部門
+            .outerjoin(
+                DepartmentAccounting,
+                DepartmentAccounting.accounting_id == AccountingItems.accounting_id
             )
-            # 若 avaible 可能為 NULL，建議改成 func.coalesce(Accounting.avaible, 1) == 1
-            .filter(Accounting.avaible == 1)
-            .group_by(Accounting.account_class)
-            .order_by(Accounting.account_class.asc())
+            .outerjoin(
+                Departments,
+                Departments.department_id == DepartmentAccounting.department_id
+            )
+            # 只取啟用中的會計項目
+            .filter(AccountingItems.is_active == 1)
+            .group_by(AccountingItems.account_class)
+            .order_by(AccountingItems.account_class.asc())
         )
 
         rows = query.all()
