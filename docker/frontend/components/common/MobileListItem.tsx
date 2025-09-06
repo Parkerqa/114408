@@ -41,9 +41,9 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
     data.state,
   ];
 
-  const getBilling = async (id: number) => {
+  const getTicket = async (id: number) => {
     try {
-      const res = await ticketAPI.getBilling(id);
+      const res = await ticketAPI.getTicket(id);
       if (res.data) {
         setDetail(res.data);
       }
@@ -51,9 +51,9 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
     } catch {}
   };
 
-  const deleteBilling = async (id: number) => {
+  const deleteTicket = async (id: number) => {
     try {
-      await ticketAPI.deleteBilling(id);
+      await ticketAPI.deleteTicket(id);
     } catch {
     } finally {
       window.location.reload();
@@ -93,14 +93,14 @@ export default function MobileListItem({ data }: { data: ticketListType }) {
                       size={18}
                       className={styles.edit}
                       onClick={() => {
-                        getBilling(data.id);
+                        getTicket(data.id);
                       }}
                     />
                     <Trash2
                       size={18}
                       className={styles.delete}
                       onClick={() => {
-                        deleteBilling(data.id);
+                        deleteTicket(data.id);
                       }}
                     />
                   </div>
