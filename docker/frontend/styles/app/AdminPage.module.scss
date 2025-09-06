@@ -145,9 +145,10 @@
   }
 
   .pending {
+    width: 410px;
     background-color: var(--background-light-color);
     border-radius: 20px;
-    padding: 50px 20px 0px;
+    padding: 30px 20px 0px;
     box-shadow: var(--second-color) 0px 3px 3px;
 
     .guide {

@@ -18,11 +18,6 @@ export default function LoginLayout({
         priority
       />
       {children}
-      <div className={styles.circles}>
-        <div className={styles.bigCircle}></div>
-        <div className={styles.meduimCircle}></div>
-        <div className={styles.smallCircle}></div>
-      </div>
     </section>
   );
 }
