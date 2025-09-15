@@ -105,7 +105,7 @@ def write_off(current_user=Depends(get_current_user)):
 @ticket_router.patch("/audit", summary="批次審核發票（每筆可不同狀態）")
 def audit_ticket_bulk(
     payload: TicketAuditBulkRequest,
-    current_user=Depends(require_role(1)),  # 僅限管理員
+    current_user=Depends(require_role(0)),  # 僅限管理員
 ):
     message, data = audit_ticket_bulk_logic(payload, current_user)
     return make_response(message, data=data)
@@ -120,7 +120,7 @@ def latest_approved(limit: int = Query(4, ge=1, le=50), current_user=Depends(req
 @ticket_router.get("/pending_reimbursements", summary="代核銷的申請（待審中）")
 def list_pending_reimbursements(
     limit: int = Query(20, ge=1, le=100),
-    current_user=Depends(require_role(1)),
+    current_user=Depends(require_role(0)),
 ):
     message, data = list_pending_reimbursements_logic(limit=limit)
     return make_response(message, data=data)
@@ -129,7 +129,7 @@ def list_pending_reimbursements(
 @ticket_router.get("/approved_records", summary="已核銷的資料紀錄")
 def list_approved_records(
     limit: int = Query(20, ge=1, le=100),
-    current_user=Depends(require_role(1)),
+    current_user=Depends(require_role(0)),
 ):
     message, data = list_approved_records_logic(limit=limit)
     return make_response(message, data=data)

@@ -1,3 +1,4 @@
+from typing import Dict, Optional
 from sqlalchemy.orm import Session
 
 from .db_utils import SessionLocal
@@ -51,5 +52,37 @@ def update_or_insert_color_setting(user_id: int, payload) -> bool:
     except Exception:
         db.rollback()
         return False
+    finally:
+        db.close()
+
+
+def get_user_color_setting(user_id: int) -> Optional[Dict]:
+    db: Session = SessionLocal()
+    try:
+        row = (
+            db.query(
+                OtherSetting.red_bot,
+                OtherSetting.red_top,
+                OtherSetting.yellow_bot,
+                OtherSetting.yellow_top,
+                OtherSetting.green_bot,
+                OtherSetting.green_top,
+            )
+            .filter(OtherSetting.user_id == user_id)
+            .first()
+        )
+        if not row:
+            return {}
+        return {
+            "red_bot": int(row.red_bot) if row.red_bot is not None else None,
+            "red_top": int(row.red_top) if row.red_top is not None else None,
+            "yellow_bot": int(row.yellow_bot) if row.yellow_bot is not None else None,
+            "yellow_top": int(row.yellow_top) if row.yellow_top is not None else None,
+            "green_bot": int(row.green_bot) if row.green_bot is not None else None,
+            "green_top": int(row.green_top) if row.green_top is not None else None,
+        }
+    except Exception as e:
+        print(f"[ERROR] get_user_color_setting failed: {e}")
+        return None
     finally:
         db.close()
