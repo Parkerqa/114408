@@ -7,7 +7,8 @@ from datetime import datetime, timedelta, date as date_cls
 
 from .db_utils import SessionLocal
 from .models import User, Ticket, TicketDetail
-from views.checker import check_type
+from views.checker import check_type, check_status
+from constants.ticket_status import TicketStatus, FINAL_STATES
 
 
 def get_all_tickets(status: Optional[List[int]]):
@@ -50,6 +51,15 @@ def get_ticket_by_id(ticket_id: int):
         return None
     finally:
         db.close()
+
+
+def get_tickets_by_ids(ticket_ids: List[int]) -> Optional[List[Ticket]]:
+    db: Session = SessionLocal()
+    try:
+        return db.query(Ticket).filter(Ticket.ticket_id.in_(ticket_ids)).all()
+    except Exception as e:
+        print(e)
+        return None
 
 
 def delete_ticket_by_id(ticket_id: int) -> bool:
@@ -276,7 +286,7 @@ def bulk_update_ticket_status(payload, checker_user_id: int) -> Dict[str, Any]:
     try:
         id_set: Set[int] = {int(item.ticket_id) for item in payload.items}
         if not id_set:
-            return {"updated_count": 0, "updated_ids": [], "skipped": [], "not_found": []}
+            return {"updated_count": 0, "updated_ids": [], "skipped": [], "not_found": [], "invalid_status": []}
 
         tickets: List[Ticket] = db.query(Ticket).filter(Ticket.ticket_id.in_(id_set)).all()
         exists_map = {t.ticket_id: t for t in tickets}
@@ -284,6 +294,7 @@ def bulk_update_ticket_status(payload, checker_user_id: int) -> Dict[str, Any]:
         not_found: List[int] = [tid for tid in id_set if tid not in exists_map]
         skipped: List[Dict[str, Any]] = []
         updated_ids: List[int] = []
+        invalid_status: List[Dict[str, Any]] = []
 
         now = datetime.utcnow()
 
@@ -291,17 +302,25 @@ def bulk_update_ticket_status(payload, checker_user_id: int) -> Dict[str, Any]:
             tid = int(item.ticket_id)
             new_status = int(item.status)
 
+            # 狀態檢查（避免寫入不合法值）
+            if new_status not in [s.value for s in TicketStatus]:
+                invalid_status.append({"ticket_id": tid, "reason": f"不合法狀態: {new_status}"})
+                continue
+
             t = exists_map.get(tid)
             if t is None:
                 continue
 
-            if t.status == 3 or t.status == 4:
-                skipped.append({"ticket_id": tid, "reason": "該發票已完成，無法重新審核"})
+            # 已完成的票不可再審
+            if t.status in [s.value for s in FINAL_STATES]:
+                skipped.append({"ticket_id": tid, "reason": "該發票已完成審核，無法重新修改"})
                 continue
 
+            # 更新狀態
             t.status = new_status
 
-            if new_status == STATUS_COMPLETED:
+            # 如果狀態更新為「審核通過」→ 記錄審核人與時間
+            if new_status == TicketStatus.APPROVED:
                 if hasattr(t, "check_man"):
                     t.check_man = checker_user_id
                 if hasattr(t, "check_date"):
@@ -316,6 +335,7 @@ def bulk_update_ticket_status(payload, checker_user_id: int) -> Dict[str, Any]:
             "updated_ids": updated_ids,
             "skipped": skipped,
             "not_found": not_found,
+            "invalid_status": invalid_status,
         }
 
     except Exception as e:
@@ -421,6 +441,8 @@ def get_approved_records(limit: int = 20):
                 Ticket.total_money,
                 User.username.label("creator_name"),
                 Ticket.check_man,
+                Ticket.status,
+                Ticket.img,
             )
             .join(TicketDetail, TicketDetail.ticket_id == Ticket.ticket_id, isouter=True)
             .join(User, User.user_id == Ticket.created_by, isouter=True)
@@ -438,6 +460,8 @@ def get_approved_records(limit: int = 20):
                 "total_money": float(r.total_money) if r.total_money is not None else None,
                 "creator_name": r.creator_name,
                 "check_man": r.check_man,
+                "status": check_status(r.status),
+                "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}',
             }
             for r in rows
         ]
