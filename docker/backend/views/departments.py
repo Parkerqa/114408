@@ -1,7 +1,10 @@
+from typing import Tuple, List, Dict
+
 from model.departments_model import (
     department_exists, create_department,
     delete_department_by_id, get_department_by_id,
-    update_department_by_id
+    update_department_by_id, get_departments_budget_summary,
+    get_department_accounts
 )
 from schemas.departments import DepartmentCreate
 from starlette.exceptions import HTTPException
@@ -50,3 +53,21 @@ def delete_department_logic(dept_id: int) -> str:
     except Exception as e:
         print(f"[ERROR] 刪除 department 發生錯誤：{e}")
         raise HTTPException(status_code=500, detail="刪除 department 發生錯誤")
+
+
+def budget_summary_logic() -> Tuple[str, List[Dict]]:
+    results = get_departments_budget_summary()
+    if results is None:
+        raise HTTPException(status_code=500, detail="查詢失敗")
+    if not results:
+        raise HTTPException(status_code=404, detail="查無資料")
+    return "查詢成功", results
+
+
+def department_accounts_logic(department_id: int) -> Tuple[str, List[Dict]]:
+    results = get_department_accounts(department_id)
+    if results is None:
+        raise HTTPException(status_code=500, detail="查詢失敗")
+    if not results:
+        raise HTTPException(status_code=404, detail="查無資料")
+    return "查詢成功", results
