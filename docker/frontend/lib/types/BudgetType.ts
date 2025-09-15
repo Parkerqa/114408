@@ -1,12 +1,11 @@
 export type SummaryRow = {
-  department: string;
-  limit: number;
+  department_id: number;
+  dept_name: string;
+  total_budget: number;
 };
 
 export type BudgetRow = {
-  department: string;
-  account: string;
-  limit: number;
+  accounting_id: number;
+  account_name: string;
+  budget_limit: number;
 };
-
-export type FormValues = { budgets: BudgetRow[] };
