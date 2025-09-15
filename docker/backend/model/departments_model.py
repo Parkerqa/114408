@@ -1,13 +1,12 @@
 from sqlalchemy.orm import Session
-
 from .db_utils import SessionLocal
 from .models import Departments
 
 
-def class_exists(class_name: str) -> bool:
+def department_exists(name: str) -> bool:
     db: Session = SessionLocal()
     try:
-        return db.query(Departments).filter(Departments.class_ == class_name).first() is not None
+        return db.query(Departments).filter(Departments.name == name).first() is not None
     except Exception as e:
         print(e)
         return False
@@ -15,10 +14,10 @@ def class_exists(class_name: str) -> bool:
         db.close()
 
 
-def create_class(class_: str, money_limit: str) -> bool:
+def create_department(name: str, money_limit: str) -> bool:
     db: Session = SessionLocal()
     try:
-        new_item = Departments(class_=class_, money_limit=money_limit)
+        new_item = Departments(name=name, money_limit=money_limit)
         db.add(new_item)
         db.commit()
         return True
@@ -30,10 +29,10 @@ def create_class(class_: str, money_limit: str) -> bool:
         db.close()
 
 
-def get_class_by_id(cid: int):
+def get_department_by_id(dept_id: int):
     db: Session = SessionLocal()
     try:
-        return db.query(Departments).filter(Departments.cid == cid).first()
+        return db.query(Departments).filter(Departments.dept_id == dept_id).first()
     except Exception as e:
         print(e)
         return None
@@ -41,11 +40,11 @@ def get_class_by_id(cid: int):
         db.close()
 
 
-def update_class_by_id(cid: int, new_class: str, new_money_limit: str) -> bool:
+def update_department_by_id(dept_id: int, new_name: str, new_money_limit: str) -> bool:
     db: Session = SessionLocal()
     try:
-        result = db.query(Departments).filter(Departments.cid == cid).update({
-            Departments.class_: new_class,
+        result = db.query(Departments).filter(Departments.dept_id == dept_id).update({
+            Departments.name: new_name,
             Departments.money_limit: new_money_limit
         })
         db.commit()
@@ -58,10 +57,10 @@ def update_class_by_id(cid: int, new_class: str, new_money_limit: str) -> bool:
         db.close()
 
 
-def delete_class_by_id(cid: int) -> bool:
+def delete_department_by_id(dept_id: int) -> bool:
     db: Session = SessionLocal()
     try:
-        obj = db.query(Departments).filter(Departments.cid == cid).first()
+        obj = db.query(Departments).filter(Departments.dept_id == dept_id).first()
         if not obj:
             return False
         db.delete(obj)
