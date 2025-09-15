@@ -6,10 +6,10 @@ from fastapi import (APIRouter, BackgroundTasks, Depends, File, Path, Query,
                      UploadFile)
 from datetime import date
 
-from schemas.ticket import TicketAuditBulkRequest, TicketUpdate
+from schemas.ticket import TicketAuditBulkRequest, TicketUpdate, TicketList
 from views.parser import invoice_parser
 from views.ticket import (audit_ticket_bulk_logic, change_ticket_logic,
-                          delete_ticket_logic, list_specify_ticket_logic,
+                          delete_ticket_logic, list_specify_ticket_logic, list_multi_tickets_logic,
                           list_ticket_logic, not_write_off_logic,
                           search_ticket_logic, total_money_logic,
                           unaudited_invoices_logic, upload_ticket_logic,
@@ -28,6 +28,12 @@ def list_ticket(mode: Optional[int] = Query(None, ge=0, le=1), current_user=Depe
 @ticket_router.get("/list/{ticket_id}", summary="查詢單筆發票")
 def list_specify_ticket(ticket_id: int, current_user=Depends(get_current_user)):
     message, data = list_specify_ticket_logic(ticket_id, current_user)
+    return make_response(message, data=data)
+
+
+@ticket_router.get("/multi_list", summary="查詢多筆發票")
+def list_specify_ticket(payload: TicketList, current_user=require_role(0)):
+    message, data = list_multi_tickets_logic(payload)
     return make_response(message, data=data)
 
 

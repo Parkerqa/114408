@@ -36,7 +36,7 @@ CREATE TABLE `accounting_items` (
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`accounting_id`),
   UNIQUE KEY `uk_accounting_code` (`account_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -45,6 +45,7 @@ CREATE TABLE `accounting_items` (
 
 LOCK TABLES `accounting_items` WRITE;
 /*!40000 ALTER TABLE `accounting_items` DISABLE KEYS */;
+INSERT INTO `accounting_items` VALUES (1,'A100','Salary Expense','HR Cost',1,'system','2025-09-02 10:07:39',NULL,NULL),(2,'A200','Stationery','Admin Expense',1,'system','2025-09-02 10:07:39',NULL,NULL),(3,'A300','Advertising','Marketing Expense',1,'system','2025-09-02 10:07:39',NULL,NULL),(4,'A400','Server Hosting','IT Expense',1,'system','2025-09-02 10:07:39',NULL,NULL),(5,'A500','Other Expense','Other',0,'system','2025-09-02 10:07:39',NULL,NULL);
 /*!40000 ALTER TABLE `accounting_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -96,7 +97,7 @@ CREATE TABLE `department_accounting` (
   KEY `fk_da_accounting` (`accounting_id`),
   CONSTRAINT `fk_da_accounting` FOREIGN KEY (`accounting_id`) REFERENCES `accounting_items` (`accounting_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_da_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`department_id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -105,6 +106,7 @@ CREATE TABLE `department_accounting` (
 
 LOCK TABLES `department_accounting` WRITE;
 /*!40000 ALTER TABLE `department_accounting` DISABLE KEYS */;
+INSERT INTO `department_accounting` VALUES (7,5,1,500000.00,1,'system','2025-09-02 10:08:56',NULL,NULL),(8,5,2,20000.00,1,'system','2025-09-02 10:08:56',NULL,NULL),(9,6,2,15000.00,1,'system','2025-09-02 10:08:59',NULL,NULL),(10,6,4,80000.00,1,'system','2025-09-02 10:08:59',NULL,NULL),(11,7,3,120000.00,1,'system','2025-09-02 10:09:06',NULL,NULL),(12,8,4,200000.00,1,'system','2025-09-02 10:09:10',NULL,NULL);
 /*!40000 ALTER TABLE `department_accounting` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -119,7 +121,6 @@ CREATE TABLE `departments` (
   `department_id` bigint NOT NULL AUTO_INCREMENT,
   `dept_code` varchar(50) NOT NULL,
   `dept_name` varchar(150) NOT NULL,
-  `description` varchar(500) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `created_by` varchar(150) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -127,7 +128,7 @@ CREATE TABLE `departments` (
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`department_id`),
   UNIQUE KEY `uk_departments_code` (`dept_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -136,6 +137,7 @@ CREATE TABLE `departments` (
 
 LOCK TABLES `departments` WRITE;
 /*!40000 ALTER TABLE `departments` DISABLE KEYS */;
+INSERT INTO `departments` VALUES (5,'HR001','HR Department',1,'system','2025-09-02 10:07:10',NULL,NULL),(6,'FIN001','Finance Department',1,'system','2025-09-02 10:07:10',NULL,NULL),(7,'MKT001','Marketing Department',1,'system','2025-09-02 10:07:10',NULL,NULL),(8,'IT001','IT Department',0,'system','2025-09-02 10:07:10',NULL,NULL);
 /*!40000 ALTER TABLE `departments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -223,7 +225,7 @@ CREATE TABLE `ticket` (
   `updated_by` varchar(150) DEFAULT NULL,
   `updated_at` datetime(6) DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`ticket_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -232,6 +234,7 @@ CREATE TABLE `ticket` (
 
 LOCK TABLES `ticket` WRITE;
 /*!40000 ALTER TABLE `ticket` DISABLE KEYS */;
+INSERT INTO `ticket` VALUES (1,0,NULL,NULL,1,'1','2025-09-15 11:22:47','84d27744aafb4e648b1db693dfef3426.jpeg',NULL,NULL,3,NULL,1,'1','2025-09-02 15:13:50.749353','1','2025-09-15 11:22:47.415641'),(2,0,NULL,NULL,1,NULL,NULL,'f896d0cb992b42f4aa82d87eda7541ac.jpeg',NULL,NULL,3,NULL,1,'1','2025-09-02 15:13:51.654389','1','2025-09-02 15:14:11.723464'),(3,0,NULL,NULL,1,NULL,NULL,'568f6b3cb5f34fd68d3babd97654bb28.jpeg',NULL,NULL,3,NULL,1,'1','2025-09-02 15:13:52.365753','1','2025-09-02 15:14:13.304073'),(4,0,NULL,NULL,1,NULL,NULL,'a56c3f2b232f4643832da165147a31ba.jpeg',NULL,NULL,4,NULL,1,'1','2025-09-02 15:13:53.100976','1','2025-09-02 18:35:05.637635');
 /*!40000 ALTER TABLE `ticket` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -377,4 +380,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-02 17:29:29
+-- Dump completed on 2025-09-15 20:02:28

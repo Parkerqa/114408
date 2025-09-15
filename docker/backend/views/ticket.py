@@ -5,14 +5,14 @@ from fastapi import UploadFile
 from model.ticket_model import (count_by_status, count_status_1, create_ticket,
                                 create_ticket_detail, delete_ticket_by_id,
                                 delete_ticket_details_by_ids, get_all_tickets,
-                                get_detail_ids_by_tid, get_specify_ticket,
+                                get_detail_ids_by_tid, get_specify_ticket, get_tickets_by_ids,
                                 get_ticket_by_id, get_tickets_by_user,
                                 get_total_money, search_tickets_combined,
                                 sum_money_by_status, update_ticket_class,
                                 update_ticket_detail, bulk_update_ticket_status,
                                 get_latest_approved, get_pending_reimbursements,
                                 get_approved_records)
-from schemas.ticket import TicketAuditBulkRequest
+from schemas.ticket import TicketAuditBulkRequest, TicketList
 from starlette.exceptions import HTTPException
 from datetime import date
 
@@ -73,7 +73,7 @@ def list_specify_ticket_logic(ticket_id: int, user) -> Tuple[str, List[Dict] or 
 
     result = {
         "id": ticket.ticket_id,
-        "time": ticket.create_date.strftime("%Y-%m-%d"),
+        "time": ticket.created_at.strftime("%Y-%m-%d"),
         "type": check_type(ticket.type) if not is_processing else "等待系統辨識",
         "title": title_text if not is_processing else "等待系統辨識",
         "invoice_number": ticket.invoice_number if not is_processing and ticket.invoice_number is not None else (
@@ -85,6 +85,57 @@ def list_specify_ticket_logic(ticket_id: int, user) -> Tuple[str, List[Dict] or 
     }
 
     return "查詢成功", result
+
+
+def list_multi_tickets_logic(payload: TicketList) -> Tuple[str, List[Dict]]:
+    try:
+        ticket_ids = payload.ticket_id
+        if not ticket_ids:
+            raise HTTPException(status_code=400, detail="ticket_id 不可為空")
+
+        tickets = get_tickets_by_ids(ticket_ids)
+        if tickets is None:
+            raise HTTPException(status_code=500, detail="查詢失敗")
+        if not tickets:
+            return "查詢成功", None
+
+        results = []
+        for ticket in tickets:
+            is_processing = ticket.status == 1
+
+            if not is_processing:
+                titles = [detail.title for detail in ticket.ticket_detail if detail.title]
+                title_text = ", ".join(titles) if titles else (
+                    check_status(ticket.status) if ticket.status == 0 else "無品項"
+                )
+
+            result = {
+                "id": ticket.ticket_id,
+                "time": ticket.created_at.strftime("%Y-%m-%d") if ticket.created_at else None,
+                "type": check_type(ticket.type) if not is_processing else "等待系統辨識",
+                "title": title_text if not is_processing else "等待系統辨識",
+                "invoice_number": (
+                    ticket.invoice_number if not is_processing and ticket.invoice_number
+                    else (check_status(ticket.status) if ticket.status == 0 else "等待系統辨識")
+                ),
+                "money": (
+                    str(int(ticket.total_money)) if not is_processing and ticket.total_money is not None
+                    else (check_status(ticket.status) if ticket.status == 0 else "等待系統辨識")
+                ),
+                "state": check_status(ticket.status)
+            }
+            results.append(result)
+
+        return "查詢成功", results
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] list_multi_tickets_logic failed: {e}")
+        raise HTTPException(status_code=500, detail="伺服器錯誤")
+
+
+
 
 
 def delete_ticket_logic(ticket_id: int, user) -> str:
