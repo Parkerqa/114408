@@ -147,54 +147,53 @@ def change_ticket_logic(ticket_id: int, payload, user) -> str:
 
 
 def search_ticket_logic(
+    status: int,
     keyword: Optional[str],
     class_info_id: Optional[str],
     date: Optional[date],
     limit: int,
     user,
-) -> Tuple[str, List[Dict] or None]:
-
-    rows = search_tickets_combined(
+):
+    tickets = search_tickets_combined(
+        status=status,
         keyword=keyword,
         class_info_id=class_info_id,
         date=date,
         limit=limit,
     )
 
-    if rows is None:
-        raise HTTPException(status_code=500, detail="查詢時發生錯誤")
+    if tickets is None:
+        raise HTTPException(status_code=500, detail="查詢發生錯誤")
 
-    if not rows:
+    if not tickets:
         raise HTTPException(status_code=404, detail="查無資料")
 
     filtered = []
-    for row in rows:
+    for row in tickets:
         if user.priority == 0:
-            # 一般使用者：只能看到自己的票
             if row.user_id != user.user_id:
                 continue
             filtered.append({
-                "class": row.class_info_id,
-                "ticket_create": row.created_at.strftime("%Y-%m-%d %H:%M:%S") if row.created_at else None,
+                "class_info_id": row.class_info_id,
+                "ticket_create": row.created_at,
                 "invoice_number": row.invoice_number,
                 "title": row.title,
                 "money": row.money,
             })
         else:
-            # 管理員：可看所有欄位
             filtered.append({
                 "ticket_id": row.ticket_id,
-                "class": row.class_info_id,
+                "class_info_id": row.class_info_id,
                 "user_id": row.user_id,
                 "status": row.status,
                 "invoice_number": row.invoice_number,
-                "createdate": row.created_at.strftime("%Y-%m-%d %H:%M:%S") if row.created_at else None,
+                "created_at": row.created_at,
                 "title": row.title,
                 "money": row.money,
             })
 
     if not filtered:
-        raise HTTPException(status_code=403, detail="沒有權限查看資料")
+        raise HTTPException(status_code=403, detail="沒有權限查看這些資料")
 
     return "查詢成功", filtered
 

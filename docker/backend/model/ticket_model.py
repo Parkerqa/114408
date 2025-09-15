@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, date as date_cls
 
 from .db_utils import SessionLocal
 from .models import User, Ticket, TicketDetail
+from views.checker import check_type
 
 
 def get_all_tickets(status: Optional[List[int]]):
@@ -143,6 +144,7 @@ def delete_ticket_details_by_ids(td_ids: set) -> bool:
 
 
 def search_tickets_combined(
+    status: int,
     keyword: Optional[str] = None,
     class_info_id: Optional[str] = None,
     date: Optional[date_cls] = None,
@@ -167,7 +169,7 @@ def search_tickets_combined(
             .outerjoin(td, t.ticket_id == td.ticket_id)
         )
 
-        filters = []
+        filters = [t.status == status]
 
         if keyword:
             like = f"%{keyword}%"
@@ -187,10 +189,9 @@ def search_tickets_combined(
         if date:
             filters.append(cast(t.created_at, Date) == date)
 
-        if filters:
-            q = q.filter(and_(*filters))
-
+        q = q.filter(and_(*filters))
         q = q.order_by(desc(t.created_at)).limit(limit)
+
         return q.all()
 
     except Exception as e:
@@ -353,8 +354,8 @@ def get_latest_approved(limit: int = 4) -> Optional[List[Dict]]:
         results = []
         for r in rows:
             results.append({
-                "upload_date": r.created_at.isoformat() if r.created_at else None,
-                "type": r.type,
+                "upload_date": r.created_at.strftime("%Y-%m-%d") if r.created_at else None,
+                "type": check_type(r.type),
                 "title": r.title,
                 "total_money": float(r.total_money) if r.total_money is not None else None,
             })
@@ -372,11 +373,13 @@ def get_pending_reimbursements(limit: int = 20):
     try:
         q = (
             db.query(
+                Ticket.ticket_id,
                 Ticket.created_at.label("upload_date"),
                 Ticket.type,
                 TicketDetail.title.label("title"),
                 Ticket.total_money,
                 User.username.label("creator_name"),
+                Ticket.check_man,
                 Ticket.img,
             )
             .join(TicketDetail, TicketDetail.ticket_id == Ticket.ticket_id, isouter=True)
@@ -388,11 +391,13 @@ def get_pending_reimbursements(limit: int = 20):
         rows = q.all()
         return [
             {
-                "upload_date": r.upload_date.isoformat() if r.upload_date else None,
-                "type": r.type,
+                "ticket_id": r.ticket_id,
+                "upload_date": r.upload_date.strftime("%Y-%m-%d") if r.upload_date else None,
+                "type": check_type(r.type),
                 "title": r.title,
                 "total_money": float(r.total_money) if r.total_money is not None else None,
                 "creator_name": r.creator_name,
+                "check_man": r.check_man,
                 "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}' if r.img else None,
             }
             for r in rows
@@ -409,11 +414,13 @@ def get_approved_records(limit: int = 20):
     try:
         q = (
             db.query(
+                Ticket.ticket_id,
                 Ticket.created_at.label("upload_date"),
                 Ticket.type,
                 TicketDetail.title.label("title"),
                 Ticket.total_money,
                 User.username.label("creator_name"),
+                Ticket.check_man,
             )
             .join(TicketDetail, TicketDetail.ticket_id == Ticket.ticket_id, isouter=True)
             .join(User, User.user_id == Ticket.created_by, isouter=True)
@@ -424,11 +431,13 @@ def get_approved_records(limit: int = 20):
         rows = q.all()
         return [
             {
-                "upload_date": r.upload_date.isoformat() if r.upload_date else None,
-                "type": r.type,
+                "ticket_id": r.ticket_id,
+                "upload_date": r.upload_date.strftime("%Y-%m-%d") if r.upload_date else None,
+                "type": check_type(r.type),
                 "title": r.title,
                 "total_money": float(r.total_money) if r.total_money is not None else None,
                 "creator_name": r.creator_name,
+                "check_man": r.check_man,
             }
             for r in rows
         ]

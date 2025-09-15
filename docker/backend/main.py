@@ -109,9 +109,9 @@ from urls.accounting_router import accounting_router
 app.include_router(accounting_router, tags=["會計科目管理"], prefix="/accounting")
 
 # === class management ===
-from urls.classinfo_router import classinfo_router
+from urls.departments_router import departments_router
 
-app.include_router(classinfo_router, tags=["類別管理"], prefix="/class")
+app.include_router(departments_router, tags=["部門管理"], prefix="/departments")
 
 # === settings ===
 from urls.setting_router import setting_router

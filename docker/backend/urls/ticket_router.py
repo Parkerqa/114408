@@ -47,15 +47,17 @@ def change_ticket(
     return make_response(message)
 
 
-@ticket_router.get("/search", summary="核銷報帳合併查詢（關鍵字 / 類別 / 日期，皆為非必填）")
+@ticket_router.get("/search", summary="核銷報帳合併查詢（status 必填，關鍵字 / 類別 / 日期為選填）")
 def search_ticket(
-    q: Optional[str] = Query(None, min_length=1, description="關鍵字（title / invoice_number）"),
+    status: int = Query(..., description="發票狀態（必填）"),
+    q: Optional[str] = Query(None, min_length=1, description="關鍵字（title / invoice_number / created_at / 金額）"),
     class_info_id: Optional[str] = Query(None, description="會計類別代碼/ID"),
     date: Optional[date] = Query(None, description="日期"),
     limit: int = Query(50, ge=1, le=200, description="最多回傳筆數"),
     current_user=Depends(get_current_user),
 ):
     message, data = search_ticket_logic(
+        status=status,
         keyword=q.strip() if q else None,
         class_info_id=class_info_id,
         date=date,
@@ -103,14 +105,14 @@ def write_off(current_user=Depends(get_current_user)):
 @ticket_router.patch("/audit", summary="批次審核發票（每筆可不同狀態）")
 def audit_ticket_bulk(
     payload: TicketAuditBulkRequest,
-    current_user=Depends(require_role(1)),  # 僅限管理員
+    current_user=Depends(require_role(0)),  # 僅限管理員
 ):
     message, data = audit_ticket_bulk_logic(payload, current_user)
     return make_response(message, data=data)
 
 
 @ticket_router.get("/latest_approved", summary="最新過審的4筆資料")
-def latest_approved(limit: int = Query(4, ge=1, le=50), current_user=Depends(get_current_user)):
+def latest_approved(limit: int = Query(4, ge=1, le=50), current_user=Depends(require_role(1))):
     message, data = list_latest_approved_logic(limit=limit)
     return make_response(message, data=data)
 
@@ -118,7 +120,7 @@ def latest_approved(limit: int = Query(4, ge=1, le=50), current_user=Depends(get
 @ticket_router.get("/pending_reimbursements", summary="代核銷的申請（待審中）")
 def list_pending_reimbursements(
     limit: int = Query(20, ge=1, le=100),
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_role(0)),
 ):
     message, data = list_pending_reimbursements_logic(limit=limit)
     return make_response(message, data=data)
@@ -127,7 +129,7 @@ def list_pending_reimbursements(
 @ticket_router.get("/approved_records", summary="已核銷的資料紀錄")
 def list_approved_records(
     limit: int = Query(20, ge=1, le=100),
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_role(0)),
 ):
     message, data = list_approved_records_logic(limit=limit)
     return make_response(message, data=data)
