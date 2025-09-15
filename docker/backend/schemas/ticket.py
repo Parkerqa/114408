@@ -9,13 +9,18 @@ class TicketDetailUpdate(BaseModel):
     money: str
 
 
+class TicketList(BaseModel):
+    ticket_id: List[int]
+
+
 class TicketUpdate(BaseModel):
     detail: List[TicketDetailUpdate]
 
 
 class TicketAuditItem(BaseModel):
     ticket_id: int = Field(..., description="發票ID")
-    status: int = Field(..., description="欲更新的狀態（例：0=待審、1=退回、2=通過）")
+    status: int = Field(..., description="欲更新的狀態")
+
 
 class TicketAuditBulkRequest(BaseModel):
     items: List[TicketAuditItem] = Field(..., min_items=1, description="多筆審核項目")

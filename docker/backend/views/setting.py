@@ -1,5 +1,7 @@
+from typing import Tuple, Dict
 from model.setting_model import (update_or_insert_color_setting,
-                                 update_or_insert_theme)
+                                 update_or_insert_theme, get_user_color_setting)
+from schemas.setting import ColorSetting
 from starlette.exceptions import HTTPException
 
 
@@ -17,7 +19,7 @@ def change_theme_logic(user_id: int, theme: int):
         raise HTTPException(status_code=500, detail="修改主題模式失敗")
 
 
-def change_color_logic(user_id: int, payload) -> str:
+def change_color_logic(user_id: int, payload: ColorSetting) -> str:
     try:
         # 驗證邏輯條件
         if not (payload.red_bot <= payload.red_top and
@@ -38,3 +40,11 @@ def change_color_logic(user_id: int, payload) -> str:
     except Exception as e:
         print(f"[ERROR] 更新 other_setting 閾值失敗：{e}")
         raise HTTPException(status_code=500, detail="閾值更新閾值失敗")
+
+
+def get_color_logic(user_id: int) -> Tuple[str, Dict]:
+    result = get_user_color_setting(user_id)
+    if result is None:
+        raise HTTPException(status_code=500, detail="讀取顏色設定失敗")
+
+    return "取得顏色設定成功", result
