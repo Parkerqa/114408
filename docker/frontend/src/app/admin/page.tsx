@@ -44,7 +44,7 @@ export default function Admin() {
       try {
         const res = await ticketAPI.getUnVerifyCount();
         if (res.data) {
-          setCount(res.data.status_1_count);
+          setCount(res.data.total);
         }
       } catch {}
     };

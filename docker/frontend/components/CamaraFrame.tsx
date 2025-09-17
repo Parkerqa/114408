@@ -41,7 +41,7 @@ export default function CameraFrame({
     formData.append("photo", file);
 
     try {
-      await ticketAPI.addBilling(formData);
+      await ticketAPI.addTicket(formData);
     } catch {
     } finally {
       setIsAdd(false);

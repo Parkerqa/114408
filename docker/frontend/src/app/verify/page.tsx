@@ -5,13 +5,15 @@ import { Search, ListChecks } from "lucide-react";
 
 import VerifyPopup from "@/components/VerifyPopup";
 import InputField from "@/components/common/InputField";
-import LargeTable from "@/components/LargeTable";
+import PendingTable from "@/components/PendingTable";
+import ApprovedTable from "@/components/ApprovedTable";
 import { ApplyType } from "@/lib/types/ApplyType";
 import styles from "@/styles/app/VerifyPage.module.scss";
 
 export default function Verify() {
   const [isPast, setIsPast] = useState<boolean>(false);
-  const [isVerify, setIsVerify] = useState<boolean>(true);
+  const [isVerify, setIsVerify] = useState<boolean>(false);
+  const [tableData, setTableData] = useState();
 
   const verifyData: ApplyType[] = [
     {
@@ -89,13 +91,15 @@ export default function Verify() {
                 <Search strokeWidth={3} />
               </button>
             </div>
-            <button className={styles.verifyBtn}>
-              <ListChecks />
-              <p>批量核銷</p>
-            </button>
+            {!isPast && (
+              <button className={styles.verifyBtn}>
+                <ListChecks />
+                <p>批量核銷</p>
+              </button>
+            )}
           </div>
         </div>
-        <LargeTable />
+        {isPast ? <ApprovedTable /> : <PendingTable />}
       </div>
       {isVerify && <VerifyPopup setIsPopup={setIsVerify} data={verifyData} />}
     </>

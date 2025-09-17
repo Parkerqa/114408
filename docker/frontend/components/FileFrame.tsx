@@ -32,7 +32,7 @@ export default function FileFrame({
     formdata.append("photo", file);
 
     try {
-      await ticketAPI.addBilling(formdata);
+      await ticketAPI.addTicket(formdata);
     } catch {
     } finally {
       setIsAdd(false);

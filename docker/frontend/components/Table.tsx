@@ -1,29 +1,25 @@
-type Record = {
-  date: string;
-  type: string;
-  title: string;
-  amount: number;
-};
+import { useEffect, useState } from "react";
 
-const records: Record[] = [
-  {
-    date: "2025/03/08",
-    type: "電子發票",
-    title: "PILOT百樂 超級果汁筆-10色*5",
-    amount: 2500,
-  },
-  { date: "2025/03/05", type: "收據", title: "55688 台灣大車隊", amount: 2700 },
-  {
-    date: "2025/03/05",
-    type: "二聯式發票",
-    title: "噴墨式印表機",
-    amount: 4000,
-  },
-];
-
+import { latestTicket } from "@/lib/types/TicketType";
+import ticketAPI from "@/services/ticketAPI";
 import styles from "@/styles/components/Table.module.scss";
 
 export default function Table() {
+  const [data, setData] = useState<latestTicket[]>();
+
+  useEffect(() => {
+    const getLatest = async () => {
+      try {
+        const res = await ticketAPI.getLatest();
+        if (res.data) {
+          setData(res.data);
+        }
+      } catch {}
+    };
+
+    getLatest();
+  }, []);
+
   return (
     <div>
       <table className={styles.table}>
@@ -36,18 +32,19 @@ export default function Table() {
           </tr>
         </thead>
         <tbody className={styles.tableBody}>
-          {records.map((r, i) => (
-            <tr
-              className={styles.line}
-              key={i}
-              onClick={() => alert(`查看：${r.title}`)}
-            >
-              <td className={styles.item}>{r.date}</td>
-              <td className={styles.item}>{r.type}</td>
-              <td className={styles.item}>{r.title}</td>
-              <td className={styles.item}>{r.amount}</td>
-            </tr>
-          ))}
+          {data &&
+            data.map((item, index) => (
+              <tr
+                className={styles.line}
+                key={index}
+                onClick={() => alert(`查看：${item.title}`)}
+              >
+                <td className={styles.item}>{item.upload_date}</td>
+                <td className={styles.item}>{item.type}</td>
+                <td className={styles.item}>{item.title}</td>
+                <td className={styles.item}>{item.total_money}</td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </div>
