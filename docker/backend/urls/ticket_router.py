@@ -31,8 +31,8 @@ def list_specify_ticket(ticket_id: int, current_user=Depends(get_current_user)):
     return make_response(message, data=data)
 
 
-@ticket_router.get("/multi_list", summary="查詢多筆發票")
-def list_specify_ticket(payload: TicketList, current_user=require_role(0)):
+@ticket_router.post("/multi_list", summary="查詢多筆發票")
+def list_specify_ticket(payload: TicketList, current_user=Depends(require_role(0))):
     message, data = list_multi_tickets_logic(payload)
     return make_response(message, data=data)
 
