@@ -9,6 +9,8 @@ import Chart from "@/components/chart/Chart";
 import AddBudgetPopup from "@/components/Budget/AddBudgetPopup";
 import EditBudgetPopup from "@/components/Budget/EditBudgetPopup";
 import { BudgetRow, SummaryRow } from "@/lib/types/BudgetType";
+import n8nAPI from "@/services/n8nAPI";
+import departmentAPI from "@/services/departmentAPI";
 import ticketAPI from "@/services/ticketAPI";
 import styles from "@/styles/app/AdminPage.module.scss";
 
@@ -23,21 +25,13 @@ const chartData = {
   ],
 };
 
-const budgetData: BudgetRow[] = [
-  { department: "人事部門", account: "廣告費", limit: 50000 },
-  { department: "人事部門", account: "文具用品", limit: 3000 },
-];
-
-const summaryData: SummaryRow[] = [
-  { department: "人事部門", limit: 53000 },
-  { department: "研發部門", limit: 43000 },
-];
-
 export default function Admin() {
   const [count, setCount] = useState();
-  const [editItem, setEditItem] = useState<string>();
+  const [editTitle, setEditTitle] = useState<string>();
+  const [editId, setEditId] = useState<number>();
   const [isAdd, setIsAdd] = useState<boolean>(false);
   const [isEdit, setIsEdit] = useState<boolean>(false);
+  const [summaryData, setSummaryData] = useState<SummaryRow[]>();
 
   useEffect(() => {
     const getCount = async () => {
@@ -49,7 +43,24 @@ export default function Admin() {
       } catch {}
     };
 
+    const getChart = async () => {
+      try {
+        const res = await n8nAPI.getHomeChart();
+      } catch {}
+    };
+
+    const getSummary = async () => {
+      try {
+        const res = await departmentAPI.getDeptSummary();
+        if (res.data) {
+          setSummaryData(res.data);
+        }
+      } catch {}
+    };
+
+    getChart();
     getCount();
+    getSummary();
   }, []);
 
   return (
@@ -115,23 +126,25 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody className={styles.tableTbody}>
-                {summaryData.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.department}</td>
-                    <td>{item.limit}</td>
-                    <td>
-                      <Settings
-                        className={styles.edit}
-                        size={20}
-                        onClick={() => {
-                          setIsEdit(true);
-                          setEditItem(item.department);
-                        }}
-                      />
-                      <Trash2 className={styles.delete} size={20} />
-                    </td>
-                  </tr>
-                ))}
+                {summaryData &&
+                  summaryData.map((item, index) => (
+                    <tr key={index}>
+                      <td>{item.dept_name}</td>
+                      <td>{item.total_budget}</td>
+                      <td>
+                        <Settings
+                          className={styles.edit}
+                          size={20}
+                          onClick={() => {
+                            setIsEdit(true);
+                            setEditTitle(item.dept_name);
+                            setEditId(item.department_id);
+                          }}
+                        />
+                        <Trash2 className={styles.delete} size={20} />
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
             <Plus
@@ -145,11 +158,11 @@ export default function Admin() {
         </div>
       </div>
       {isAdd && <AddBudgetPopup setIsPopup={setIsAdd} />}
-      {isEdit && editItem && (
+      {isEdit && editTitle && editId && (
         <EditBudgetPopup
           setIsPopup={setIsEdit}
-          budgetData={budgetData}
-          department={editItem}
+          deptTitle={editTitle}
+          deptId={editId}
         />
       )}
     </>
