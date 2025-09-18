@@ -111,7 +111,7 @@ class Ticket(Base):
     updated_by: Mapped[Optional[str]] = mapped_column(String(150))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
 
-    creator: Mapped["User"] = relationship(
+    user: Mapped["User"] = relationship(
         "User",
         back_populates="tickets",
         foreign_keys=[user_id],
@@ -143,7 +143,7 @@ class User(Base):
 
     tickets: Mapped[list["Ticket"]] = relationship(
         "Ticket",
-        back_populates="creator",
+        back_populates="user",
         foreign_keys="Ticket.user_id",
         cascade="all, delete-orphan",
         passive_deletes=True,

@@ -1,3 +1,4 @@
+import os
 from typing import Dict, List, Optional, Tuple, Any
 
 from core.upload_utils import upload_image
@@ -103,26 +104,25 @@ def list_multi_tickets_logic(payload: TicketList) -> Tuple[str, List[Dict]]:
         for ticket in tickets:
             is_processing = ticket.status == 1
 
-            if not is_processing:
-                titles = [detail.title for detail in ticket.ticket_detail if detail.title]
-                title_text = ", ".join(titles) if titles else (
-                    check_status(ticket.status) if ticket.status == 0 else "無品項"
-                )
+            # 處理明細 (ticket_detail)
+            details = []
+            if ticket.ticket_detail:
+                details = [
+                    {
+                        "title": d.title,
+                        "money": float(d.money) if d.money is not None else 0.0
+                    }
+                    for d in ticket.ticket_detail if d.title
+                ]
+
+            applicant = ticket.user.username if ticket.user else ticket.created_by
 
             result = {
-                "id": ticket.ticket_id,
-                "time": ticket.created_at.strftime("%Y-%m-%d") if ticket.created_at else None,
+                "Details": details if not is_processing else [],
+                "time": ticket.created_at.strftime("%Y/%m/%d") if ticket.created_at else None,
                 "type": check_type(ticket.type) if not is_processing else "等待系統辨識",
-                "title": title_text if not is_processing else "等待系統辨識",
-                "invoice_number": (
-                    ticket.invoice_number if not is_processing and ticket.invoice_number
-                    else (check_status(ticket.status) if ticket.status == 0 else "等待系統辨識")
-                ),
-                "money": (
-                    str(int(ticket.total_money)) if not is_processing and ticket.total_money is not None
-                    else (check_status(ticket.status) if ticket.status == 0 else "等待系統辨識")
-                ),
-                "state": check_status(ticket.status)
+                "applicant": applicant if not is_processing else "等待系統辨識",
+                "img_url": f'{os.getenv("BASE_INVOICE_IMAGE_URL")}{ticket.img}' if ticket.img else None,
             }
             results.append(result)
 
