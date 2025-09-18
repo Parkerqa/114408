@@ -1,3 +1,10 @@
+import ReportNav from "@/components/ReportNav";
+import styles from "@/styles/app/report/YearPage.module.scss";
+
 export default function Year() {
-  return <></>;
+  return (
+    <div className={styles.wrap}>
+      <ReportNav />
+    </div>
+  );
 }

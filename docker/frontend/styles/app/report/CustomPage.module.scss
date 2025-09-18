@@ -1,0 +1,9 @@
+@use "@/styles/base/variables" as *;
+
+.wrap {
+  display: flex;
+  margin: 14vh 2vw 0 25vw;
+  gap: 30px;
+  flex-direction: column;
+  overflow-x: hidden;
+}
