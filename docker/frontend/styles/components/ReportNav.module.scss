@@ -1,0 +1,24 @@
+@use "@/styles/base/variables" as *;
+
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  .back {
+    width: fit-content;
+    padding: 10px 12px;
+
+    p {
+      transition: ease-in 0.1s;
+      font-size: $large-size;
+      font-weight: bold;
+      width: fit-content;
+
+      &:hover {
+        cursor: pointer;
+        transform: scale(1.05);
+      }
+    }
+  }
+}

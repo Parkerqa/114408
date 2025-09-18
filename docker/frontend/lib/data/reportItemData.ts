@@ -7,21 +7,21 @@ export const reportItemData = [
   {
     icon: Clock,
     title: "近期核銷圖表",
-    link: "/recent",
+    link: "/report/recent",
   },
   {
     icon: CalendarDays,
     title: "年度核銷圖表",
-    link: "/year",
+    link: "/report/year",
   },
   {
     icon: ChartCandlestick,
     title: "自訂期間圖表",
-    link: "/custom",
+    link: "/report/custom",
   },
   {
     icon: BookOpenText,
     title: "事件簿",
-    link: "/event",
+    link: "/report/event",
   },
 ];

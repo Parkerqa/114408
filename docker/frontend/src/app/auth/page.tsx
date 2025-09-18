@@ -100,7 +100,7 @@ export default function Auth() {
           password: data.password,
         });
         if (res.state === "success") {
-          route.push("/user");
+          route.push("./");
         }
       } else if (data.username) {
         res = await userAPI.register({
