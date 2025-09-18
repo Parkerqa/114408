@@ -63,12 +63,12 @@ class OtherSetting(Base):
 
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     theme: Mapped[int] = mapped_column(Integer, nullable=False)
-    red_bot: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    red_top: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    green_bot: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    green_top: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    yellow_bot: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    yellow_top: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    red_usage_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    red_remaining_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    green_usage_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    green_remaining_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    yellow_usage_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    yellow_remaining_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
 
 
 t_request = Table(
@@ -111,7 +111,7 @@ class Ticket(Base):
     updated_by: Mapped[Optional[str]] = mapped_column(String(150))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
 
-    creator: Mapped["User"] = relationship(
+    user: Mapped["User"] = relationship(
         "User",
         back_populates="tickets",
         foreign_keys=[user_id],
@@ -143,7 +143,7 @@ class User(Base):
 
     tickets: Mapped[list["Ticket"]] = relationship(
         "Ticket",
-        back_populates="creator",
+        back_populates="user",
         foreign_keys="Ticket.user_id",
         cascade="all, delete-orphan",
         passive_deletes=True,
