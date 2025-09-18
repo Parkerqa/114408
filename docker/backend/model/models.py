@@ -63,12 +63,12 @@ class OtherSetting(Base):
 
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     theme: Mapped[int] = mapped_column(Integer, nullable=False)
-    red_bot: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    red_top: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    green_bot: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    green_top: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    yellow_bot: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    yellow_top: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    red_usage_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    red_remaining_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    green_usage_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    green_remaining_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    yellow_usage_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    yellow_remaining_rate: Mapped[decimal.Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
 
 
 t_request = Table(

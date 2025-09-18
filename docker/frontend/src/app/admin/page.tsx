@@ -43,11 +43,11 @@ export default function Admin() {
       } catch {}
     };
 
-    const getChart = async () => {
-      try {
-        const res = await n8nAPI.getHomeChart();
-      } catch {}
-    };
+    // const getChart = async () => {
+    //   try {
+    //     const res = await n8nAPI.getHomeChart();
+    //   } catch {}
+    // };
 
     const getSummary = async () => {
       try {
@@ -58,7 +58,7 @@ export default function Admin() {
       } catch {}
     };
 
-    getChart();
+    // getChart();
     getCount();
     getSummary();
   }, []);

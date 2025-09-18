@@ -22,13 +22,13 @@ def change_theme_logic(user_id: int, theme: int):
 def change_color_logic(user_id: int, payload: ColorSetting) -> str:
     try:
         # 驗證邏輯條件
-        if not (payload.red_bot <= payload.red_top and
-                payload.yellow_bot <= payload.yellow_top and
-                payload.green_bot <= payload.green_top):
+        if not (payload.red_usage_rate <= payload.red_remaining_rate and
+                payload.yellow_usage_rate <= payload.yellow_remaining_rate and
+                payload.green_usage_rate <= payload.green_remaining_rate):
             raise HTTPException(status_code=400, detail="bot 值不能大於 top")
 
-        if not (payload.red_top <= payload.yellow_bot and
-                payload.yellow_top <= payload.green_bot):
+        if not (payload.red_remaining_rate <= payload.yellow_usage_rate and
+                payload.yellow_remaining_rate <= payload.green_usage_rate):
             raise HTTPException(status_code=400, detail="red 不可超過 yellow，yellow 不可超過 green")
 
         success = update_or_insert_color_setting(user_id, payload)
