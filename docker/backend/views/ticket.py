@@ -118,6 +118,7 @@ def list_multi_tickets_logic(payload: TicketList) -> Tuple[str, List[Dict]]:
             applicant = ticket.user.username if ticket.user else ticket.created_by
 
             result = {
+                "ticket_id": ticket.ticket_id,
                 "Details": details if not is_processing else [],
                 "time": ticket.created_at.strftime("%Y/%m/%d") if ticket.created_at else None,
                 "type": check_type(ticket.type) if not is_processing else "等待系統辨識",
