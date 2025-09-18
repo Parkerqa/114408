@@ -14,16 +14,12 @@ export default function WarningLight() {
 
   const { register, handleSubmit } = useForm<FormValues>({
     defaultValues: {
-      excess_top: 100,
-      excess_bot: 81,
-      high_top: 80,
-      high_bot: 61,
-      good_top: 60,
-      good_bot: 41,
-      low_top: 40,
-      low_bot: 21,
-      insufficient_top: 20,
-      insufficient_bot: 0,
+      green_top: 80,
+      green_bot: 20,
+      yellow_top: 50,
+      yellow_bot: 50,
+      red_top: 20,
+      red_bot: 80,
     },
   });
 

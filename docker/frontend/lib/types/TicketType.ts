@@ -34,15 +34,30 @@ export type searchTicket = {
 export type latestTicket = {
   title: string;
   upload_date: string;
-  type: string | number;
+  type: string;
   total_money: number;
 };
 
 export type pendingTicket = {
+  ticket_id: number;
   upload_date: string;
-  type: string | number;
+  type: string;
   title: string;
   total_money: number;
   creator_name: string;
   img_url: string;
+};
+
+export type multiTicket = {
+  ticket_id: number[];
+};
+
+export type multiTicketDetail = {
+  id: number;
+  time: string;
+  type: string;
+  title: string;
+  invoice_number: string;
+  money: string | number;
+  state: string;
 };

@@ -1,22 +1,28 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { PencilLine, Plus, CircleMinus } from "lucide-react";
 
 import ShadowPopup from "@/components/common/ShadowPopup";
 import InputField from "@/components/common/InputField";
 import SelectField from "@/components/common/SelectField";
-import { FormValues, BudgetRow } from "@/lib/types/BudgetType";
+import { BudgetRow } from "@/lib/types/BudgetType";
 import styles from "@/styles/components/EditBudgetPopup.module.scss";
+import departmentAPI from "@/services/departmentAPI";
+
+type FormValues = {
+  budgets: BudgetRow[];
+};
 
 export default function EditBudgetPopup({
-  department,
+  deptTitle,
+  deptId,
   setIsPopup,
-  budgetData,
 }: {
-  department: string;
+  deptTitle: string;
+  deptId: number;
   setIsPopup: (boolean: boolean) => void;
-  budgetData: BudgetRow[];
 }) {
+  // const [budgetData, setBudgetData] = useState<BudgetRow[]>();
   const {
     control,
     register,
@@ -33,38 +39,33 @@ export default function EditBudgetPopup({
   });
 
   useEffect(() => {
-    reset({ budgets: budgetData });
-    replace(budgetData);
+    const getBudget = async () => {
+      try {
+        const res = await departmentAPI.getDeptAccount(deptId);
+        if (res.data) {
+          // setBudgetData(res.data);
+          reset({ budgets: res.data });
+        }
+      } catch {}
+    };
+
+    getBudget();
   }, []);
 
   const onSubmit = async (values: FormValues) => {
-    // const payload = values.budgets
-    //   .filter((b) => b.department && b.account && b.limit !== "")
-    //   .map((b) => ({ ...b, limit: Number(b.limit) }));
-
-    // const res = await fetch("/api/budgets", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ budgets: payload }),
-    // });
-
-    // if (!res.ok) {
-    //   // TODO: 錯誤提示
-    //   return;
-    // }
     setIsPopup(false);
     console.log(values);
   };
 
   return (
-    <ShadowPopup setIsPopup={setIsPopup} title={`編輯預算 一 ${department}`}>
+    <ShadowPopup setIsPopup={setIsPopup} title={`編輯預算 一 ${deptTitle}`}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className={styles.wrap}>
-          {fields.map((field, index) => (
-            <div className={styles.fieldWrap} key={field.id}>
+          {fields.map((item, index) => (
+            <div className={styles.fieldWrap} key={item.id}>
               <Controller
                 control={control}
-                name={`budgets.${index}.account`}
+                name={`budgets.${index}.account_name`}
                 rules={{ required: true }}
                 render={({ field }) => (
                   <SelectField
@@ -90,8 +91,10 @@ export default function EditBudgetPopup({
                 showIcon
                 icon={<PencilLine size={20} />}
                 iconRight
-                register={register(`budgets.${index}.limit`, {
+                register={register(`budgets.${index}.budget_limit`, {
                   valueAsNumber: true,
+                  required: true,
+                  min: 0,
                 })}
               />
               <CircleMinus
@@ -102,10 +105,7 @@ export default function EditBudgetPopup({
             </div>
           ))}
           <hr className={styles.hr} />
-          <Plus
-            className={styles.addBudget}
-            onClick={() => append({ department: "", account: "", limit: 0 })}
-          />
+          <Plus className={styles.addBudget} />
           <div className={styles.buttonWrap}>
             <button
               type="button"
