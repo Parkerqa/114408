@@ -22,6 +22,11 @@ const userAPI = {
       headers: { "Content-Type": "multipart/form-data" },
       toast: true,
     }),
+  forgetPassword: (data: { email: string }): Promise<Response<any>> =>
+    API.post(`${BASE_URL}/forget_password`, data, {
+      headers: { "Content-Type": "application/json" },
+      toast: true,
+    }),
 };
 
 export default userAPI;
