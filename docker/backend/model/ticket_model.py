@@ -408,20 +408,34 @@ def get_pending_reimbursements(limit: int = 20):
             .order_by(desc(Ticket.created_at))
             .limit(limit)
         )
+
         rows = q.all()
-        return [
-            {
-                "ticket_id": r.ticket_id,
-                "upload_date": r.upload_date.strftime("%Y-%m-%d") if r.upload_date else None,
-                "type": check_type(r.type),
-                "title": r.title,
-                "total_money": float(r.total_money) if r.total_money is not None else None,
-                "creator_name": r.creator_name,
-                "check_man": r.check_man,
-                "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}' if r.img else None,
-            }
-            for r in rows
-        ]
+
+        grouped = {}
+        for r in rows:
+            if r.ticket_id not in grouped:
+                grouped[r.ticket_id] = {
+                    "ticket_id": r.ticket_id,
+                    "upload_date": r.upload_date.strftime("%Y-%m-%d") if r.upload_date else None,
+                    "type": check_type(r.type),
+                    "total_money": float(r.total_money) if r.total_money is not None else None,
+                    "creator_name": r.creator_name,
+                    "check_man": r.check_man,
+                    "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}' if r.img else None,
+                    "titles": []
+                }
+            if r.title:  # 有 title 才加
+                grouped[r.ticket_id]["titles"].append(r.title)
+
+        # 最後把 titles list 轉成字串
+        results = []
+        for t in grouped.values():
+            t["title"] = ", ".join(t["titles"]) if t["titles"] else "無品項"
+            del t["titles"]
+            results.append(t)
+
+        return results
+
     except Exception as e:
         print(e)
         return None
