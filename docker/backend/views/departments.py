@@ -4,7 +4,7 @@ from model.departments_model import (
     department_exists, create_department,
     delete_department_by_id, get_department_by_id,
     update_department_by_id, get_departments_budget_summary,
-    get_department_accounts
+    get_department_accounts, get_departments_with_accounts
 )
 from schemas.departments import DepartmentCreate
 from starlette.exceptions import HTTPException
@@ -66,6 +66,15 @@ def budget_summary_logic() -> Tuple[str, List[Dict]]:
 
 def department_accounts_logic(department_id: int) -> Tuple[str, List[Dict]]:
     results = get_department_accounts(department_id)
+    if results is None:
+        raise HTTPException(status_code=500, detail="查詢失敗")
+    if not results:
+        raise HTTPException(status_code=404, detail="查無資料")
+    return "查詢成功", results
+
+
+def get_departments_with_accounts_logic() -> Tuple[str, List[Dict]]:
+    results = get_departments_with_accounts()
     if results is None:
         raise HTTPException(status_code=500, detail="查詢失敗")
     if not results:
