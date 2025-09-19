@@ -319,8 +319,7 @@ def bulk_update_ticket_status(payload, checker_user_id: int) -> Dict[str, Any]:
             # 更新狀態
             t.status = new_status
 
-            # 如果狀態更新為「審核通過」→ 記錄審核人與時間
-            if new_status == TicketStatus.APPROVED:
+            if new_status in (TicketStatus.APPROVED, TicketStatus.REJECTED):
                 if hasattr(t, "check_man"):
                     t.check_man = checker_user_id
                 if hasattr(t, "check_date"):
