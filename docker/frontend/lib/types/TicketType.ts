@@ -53,11 +53,14 @@ export type multiTicket = {
 };
 
 export type multiTicketDetail = {
-  id: number;
+  ticket_id: number;
+  Details: {
+    title: string;
+    money: number;
+  }[];
   time: string;
   type: string;
-  title: string;
-  invoice_number: string;
-  money: string | number;
-  state: string;
+  applicant: string;
+  img_url: string;
+  state?: number;
 };

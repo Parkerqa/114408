@@ -1,62 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, ListChecks } from "lucide-react";
+import { useForm, Controller } from "react-hook-form";
 
 import VerifyPopup from "@/components/VerifyPopup";
 import InputField from "@/components/common/InputField";
+import SelectField from "@/components/common/SelectField";
 import PendingTable from "@/components/PendingTable";
 import ApprovedTable from "@/components/ApprovedTable";
-import { ApplyType } from "@/lib/types/ApplyType";
+import { pendingTicket } from "@/lib/types/TicketType";
+import ticketAPI from "@/services/ticketAPI";
 import styles from "@/styles/app/VerifyPage.module.scss";
+
+const optionData = [
+  { value: "無" },
+  { value: "傳統發票" },
+  { value: "電子發票" },
+  { value: "二聯發票" },
+  { value: "三聯發票" },
+  { value: "收據" },
+];
+
+type FormValues = {
+  date: string;
+  type: string;
+  keywords: string;
+};
 
 export default function Verify() {
   const [isPast, setIsPast] = useState<boolean>(false);
   const [isVerify, setIsVerify] = useState<boolean>(false);
-  const [tableData, setTableData] = useState();
+  const [pendingTable, setPendingTable] = useState<pendingTicket[]>([]);
+  const [verifyData, setVerifyData] = useState();
 
-  const verifyData: ApplyType[] = [
-    {
-      Details: [
-        { title: "測資1標題1", money: 150 },
-        { title: "測資1標題2", money: 300 },
-      ],
-      time: "2025/8/20",
-      type: "電子發票",
-      applicant: "員工A",
-      status: 0,
+  const { register, control, handleSubmit } = useForm<FormValues>({
+    defaultValues: {
+      date: "",
+      type: "",
+      keywords: "",
     },
-    {
-      Details: [
-        { title: "測資2標題1", money: 150 },
-        { title: "測資2標題2", money: 300 },
-      ],
-      time: "2025/8/20",
-      type: "電子發票",
-      applicant: "員工B",
-      status: 0,
-    },
-    {
-      Details: [
-        { title: "測資3標題1", money: 150 },
-        { title: "測資3標題2", money: 300 },
-      ],
-      time: "2025/8/20",
-      type: "電子發票",
-      applicant: "員工C",
-      status: 0,
-    },
-    {
-      Details: [
-        { title: "測資4標題1", money: 150 },
-        { title: "測資4標題2", money: 300 },
-      ],
-      time: "2025/8/20",
-      type: "電子發票",
-      applicant: "員工D",
-      status: 0,
-    },
-  ];
+  });
+
+  const search = async (value: FormValues) => {
+    const q = value.keywords || undefined;
+    const class_info_id = value.type || undefined;
+    const date = value.date || undefined;
+
+    try {
+      const res = await ticketAPI.searchTicket({ q, class_info_id, date });
+      if (res.data) {
+        setPendingTable(res.data);
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const res = await ticketAPI.getPending();
+        if (res.data) {
+          setPendingTable(res.data);
+        }
+      } catch {}
+    };
+
+    getData();
+  }, []);
 
   return (
     <>
@@ -83,25 +93,61 @@ export default function Verify() {
         <div className={styles.searchBar}>
           <p>報帳申請查詢</p>
           <div className={styles.operateBar}>
-            <div className={styles.searchItem}>
-              <InputField type="date" />
-              <InputField type="text" />
-              <InputField type="text" />
-              <button className={styles.searchBtn}>
-                <Search strokeWidth={3} />
-              </button>
-            </div>
+            <form onSubmit={handleSubmit(search)}>
+              <div className={styles.searchItem}>
+                <InputField register={register("date")} type="date" />
+                <Controller
+                  control={control}
+                  name={"type"}
+                  render={({ field }) => (
+                    <SelectField
+                      style={{ width: "200px" }}
+                      title="報帳種類"
+                      value={field.value}
+                      onChange={field.onChange}
+                      optionData={optionData}
+                    />
+                  )}
+                />
+                <InputField
+                  register={register("keywords")}
+                  type="text"
+                  hint="關鍵字查詢"
+                />
+                <button type="submit" className={styles.searchBtn}>
+                  <Search strokeWidth={3} />
+                </button>
+              </div>
+            </form>
             {!isPast && (
-              <button className={styles.verifyBtn}>
+              <button
+                className={styles.verifyBtn}
+                onClick={() => {
+                  setIsVerify(true);
+                }}
+              >
                 <ListChecks />
                 <p>批量核銷</p>
               </button>
             )}
           </div>
         </div>
-        {isPast ? <ApprovedTable /> : <PendingTable />}
+        {isPast ? (
+          <ApprovedTable />
+        ) : (
+          <PendingTable
+            setVerifyData={setVerifyData}
+            pendingData={pendingTable}
+          />
+        )}
       </div>
-      {isVerify && <VerifyPopup setIsPopup={setIsVerify} data={verifyData} />}
+      {isVerify && verifyData && (
+        <VerifyPopup
+          setIsPopup={setIsVerify}
+          data={verifyData}
+          setPendingTable={setPendingTable}
+        />
+      )}
     </>
   );
 }
