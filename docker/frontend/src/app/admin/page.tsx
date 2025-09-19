@@ -8,7 +8,7 @@ import Table from "@/components/Table";
 import Chart from "@/components/chart/Chart";
 import AddBudgetPopup from "@/components/Budget/AddBudgetPopup";
 import EditBudgetPopup from "@/components/Budget/EditBudgetPopup";
-import { BudgetRow, SummaryRow } from "@/lib/types/BudgetType";
+import { SummaryRow } from "@/lib/types/BudgetType";
 import n8nAPI from "@/services/n8nAPI";
 import departmentAPI from "@/services/departmentAPI";
 import ticketAPI from "@/services/ticketAPI";

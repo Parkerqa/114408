@@ -10,12 +10,19 @@ import { LockKeyhole } from "lucide-react";
 
 import { useLoading } from "@/lib/context/LoadingContext";
 import { useConfig } from "@/lib/context/ConfigContext";
+import { AuthFormData } from "@/lib/types/UserAPIType";
 import InputField from "@/components/common/InputField";
+import ForgetPassword from "@/components/ForgetPassword";
 import userAPI from "@/services/userAPI";
 import styles from "@/styles/app/auth/AuthPage.module.scss";
-import { AuthFormData } from "@/lib/types/UserAPIType";
 
-const Login = ({ register }: { register: any }) => {
+const Login = ({
+  register,
+  setIsPopup,
+}: {
+  register: any;
+  setIsPopup: (boolean: boolean) => void;
+}) => {
   const { theme } = useConfig();
   const iconColor = theme === 0 ? "#3f4360" : "#f0f0f5";
 
@@ -39,7 +46,14 @@ const Login = ({ register }: { register: any }) => {
         register={register("password", { required: true })}
         showIcon={true}
       />
-      <span className={styles.forget}>忘記密碼？</span>
+      <span
+        className={styles.forget}
+        onClick={() => {
+          setIsPopup(true);
+        }}
+      >
+        忘記密碼？
+      </span>
     </div>
   );
 };
@@ -84,6 +98,7 @@ const SignUp = ({ register }: { register: any }) => {
 export default function Auth() {
   const route = useRouter();
   const [isLogin, setIsLogin] = useState<boolean>(true);
+  const [isForget, setIsForget] = useState<boolean>();
   const { register, handleSubmit } = useForm<AuthFormData>();
   const { setLoading } = useLoading();
 
@@ -123,23 +138,26 @@ export default function Auth() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)}>
-      <div className={styles.authWrap}>
-        <div className={styles.option}>
-          <p className={loginClass} onClick={() => setIsLogin(true)}>
-            登入
-          </p>
-          <p className={signupClass} onClick={() => setIsLogin(false)}>
-            註冊
-          </p>
+    <>
+      <form onSubmit={handleSubmit(onSubmit, onError)}>
+        <div className={styles.authWrap}>
+          <div className={styles.option}>
+            <p className={loginClass} onClick={() => setIsLogin(true)}>
+              登入
+            </p>
+            <p className={signupClass} onClick={() => setIsLogin(false)}>
+              註冊
+            </p>
+          </div>
+          {isLogin ? (
+            <Login register={register} setIsPopup={setIsForget} />
+          ) : (
+            <SignUp register={register} />
+          )}
+          <button className={styles.click}>{isLogin ? "登入" : "註冊"}</button>
         </div>
-        {isLogin ? (
-          <Login register={register} />
-        ) : (
-          <SignUp register={register} />
-        )}
-        <button className={styles.click}>{isLogin ? "登入" : "註冊"}</button>
-      </div>
-    </form>
+      </form>
+      {isForget && <ForgetPassword setIsPopup={setIsForget} />}
+    </>
   );
 }
