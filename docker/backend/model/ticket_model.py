@@ -179,8 +179,18 @@ def search_tickets_combined(
             .outerjoin(td, t.ticket_id == td.ticket_id)
         )
 
-        filters = [t.status == status]
+        filters = []
 
+        # ✅ 已核銷 vs 未核銷
+        if status == 1:  # 已核銷
+            filters.append(t.status == 3)  # 只抓審核通過
+        elif status == 0:  # 未核銷
+            filters.append(t.status.in_([0, 1, 2, 4]))
+        else:
+            # 若傳入其他值，回傳空
+            return []
+
+        # 關鍵字模糊搜尋
         if keyword:
             like = f"%{keyword}%"
             filters.append(
