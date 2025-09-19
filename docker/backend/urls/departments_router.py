@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Path
 from schemas.departments import DepartmentCreate, DepartmentUpdate
 from views.departments import (add_department_logic, delete_department_logic,
                                update_department_logic, budget_summary_logic,
-                               department_accounts_logic)
+                               department_accounts_logic, get_departments_with_accounts_logic)
 
 departments_router = APIRouter()
 
@@ -39,4 +39,10 @@ def department_accounts(
     current_user=Depends(get_current_user)
 ):
     message, data = department_accounts_logic(department_id)
+    return make_response(message, data=data)
+
+
+@departments_router.get("/with_accounts", summary="取得部門與對應會計科目")
+def departments_with_accounts(current_user=Depends(get_current_user)):
+    message, data = get_departments_with_accounts_logic()
     return make_response(message, data=data)

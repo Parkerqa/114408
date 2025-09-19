@@ -137,3 +137,47 @@ def get_department_accounts(department_id: int) -> Optional[List[Dict]]:
         return None
     finally:
         db.close()
+
+
+def get_departments_with_accounts() -> Optional[List[Dict]]:
+    db: Session = SessionLocal()
+    try:
+        rows = (
+            db.query(
+                Departments.department_id,
+                Departments.dept_name,
+                AccountingItems.accounting_id,
+                AccountingItems.account_name,
+                DepartmentAccounting.budget_limit
+            )
+            .join(DepartmentAccounting, Departments.department_id == DepartmentAccounting.department_id)
+            .join(AccountingItems, AccountingItems.accounting_id == DepartmentAccounting.accounting_id)
+            .filter(
+                Departments.is_active == 1,
+                AccountingItems.is_active == 1,
+                DepartmentAccounting.is_active == 1
+            )
+            .all()
+        )
+
+        # 整理成 {部門: [科目清單]}
+        dept_map: Dict[int, Dict] = {}
+        for r in rows:
+            if r.department_id not in dept_map:
+                dept_map[r.department_id] = {
+                    "department_id": r.department_id,
+                    "dept_name": r.dept_name,
+                    "accounts": []
+                }
+            dept_map[r.department_id]["accounts"].append({
+                "accounting_id": r.accounting_id,
+                "account_name": r.account_name,
+                "budget_limit": float(r.budget_limit) if r.budget_limit else 0.0
+            })
+
+        return list(dept_map.values())
+    except Exception as e:
+        print(f"[ERROR] get_departments_with_accounts failed: {e}")
+        return None
+    finally:
+        db.close()
