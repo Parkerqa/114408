@@ -1,10 +1,10 @@
-import { DataGrid, GridRowsProp, GridColDef } from "@mui/x-data-grid";
+import { useEffect, useState } from "react";
+import { DataGrid, GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { Eye } from "lucide-react";
 
-import styles from "@/styles/components/LargeTable.module.scss";
-import { useEffect, useState } from "react";
-import ticketAPI from "@/services/ticketAPI";
 import { pendingTicket } from "@/lib/types/TicketType";
+import ticketAPI from "@/services/ticketAPI";
+import styles from "@/styles/components/LargeTable.module.scss";
 
 const columns: GridColDef[] = [
   { field: "upload_date", headerName: "報帳時間", width: 100 },
@@ -31,31 +31,34 @@ const columns: GridColDef[] = [
   },
 ];
 
-export default function PendingTable() {
-  const [data, setData] = useState<pendingTicket[]>();
-
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const res = await ticketAPI.getPending();
-        if (res.data) {
-          setData(res.data);
-        }
-      } catch {}
+export default function PendingTable({
+  pendingData,
+  setVerifyData,
+}: {
+  pendingData: pendingTicket[];
+  setVerifyData: (any: any) => void;
+}) {
+  const handleSelectionChange = async (selection: GridRowSelectionModel) => {
+    const ids = {
+      ticket_id: Array.from(selection.ids).map((id) => Number(id)),
     };
 
-    getData();
-  }, []);
+    try {
+      const res = await ticketAPI.getMultiList(ids);
+      setVerifyData(res.data);
+    } catch {}
+  };
 
   return (
     <div style={{ width: "100%", height: "100%  " }}>
       <DataGrid
         className={styles.grid}
-        rows={data}
+        rows={pendingData}
         columns={columns}
+        getRowId={(row) => `${row.ticket_id}`}
         pageSizeOptions={[8]}
+        onRowSelectionModelChange={handleSelectionChange}
         checkboxSelection
-        getRowId={(row) => `${row.upload_date}-${row.img_url}`}
         disableRowSelectionOnClick
         initialState={{
           pagination: {

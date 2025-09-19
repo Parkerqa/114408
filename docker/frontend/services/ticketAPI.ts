@@ -7,6 +7,8 @@ import {
   searchTicket,
   latestTicket,
   pendingTicket,
+  multiTicket,
+  multiTicketDetail,
 } from "@/lib/types/TicketType";
 
 const BASE_URL = "/ticket";
@@ -14,6 +16,10 @@ const BASE_URL = "/ticket";
 const ticketAPI = {
   getList: (mode?: number): Promise<Response<ticketListType[]>> =>
     API.get(`${BASE_URL}/list`, { params: { mode: mode } }),
+  getMultiList: (data: multiTicket): Promise<Response<multiTicketDetail[]>> =>
+    API.post(`${BASE_URL}/multi_list`, data, {
+      headers: { "Content-Type": "application/json" },
+    }),
   getTicket: (id: number): Promise<Response<ticketListType>> =>
     API.get(`${BASE_URL}/list/${id}`),
   addTicket: (data: FormData): Promise<Response<any>> =>

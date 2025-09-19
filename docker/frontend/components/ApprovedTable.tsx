@@ -8,12 +8,19 @@ import { pendingTicket } from "@/lib/types/TicketType";
 const columns: GridColDef[] = [
   { field: "upload_date", headerName: "報帳時間", width: 100 },
   { field: "type", headerName: "報帳種類", width: 100 },
-  { field: "title", headerName: "標題", width: 580 },
+  { field: "title", headerName: "標題", width: 550 },
   { field: "total_money", headerName: "金額", width: 50 },
   {
     field: "creator_name",
     headerName: "申請人",
-    width: 70,
+    width: 100,
+    headerAlign: "center",
+    align: "center",
+  },
+  {
+    field: "check_man",
+    headerName: "核銷人",
+    width: 100,
     headerAlign: "center",
     align: "center",
   },
@@ -42,7 +49,7 @@ export default function ApprovedTable() {
         rows={data}
         columns={columns}
         pageSizeOptions={[8]}
-        getRowId={(row) => `${row.upload_date}-${row.img_url}`}
+        getRowId={(row) => `${row.ticket_id}`}
         disableRowSelectionOnClick
         initialState={{
           pagination: {
