@@ -14,10 +14,9 @@ export default function NavSelector() {
   }
 
   switch (role) {
-    case 0:
-      return <BottomNav />;
     case 1:
-      return <Sidebar />;
+      return <BottomNav />;
+    case 0:
     case 2:
     case 3:
       return <Sidebar />;
