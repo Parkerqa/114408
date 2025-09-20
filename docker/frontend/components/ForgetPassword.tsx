@@ -35,10 +35,10 @@ export default function ForgetPassword({
           讓我們協助您重設密碼
         </p>
         <InputField
+          style={{ width: "100%" }}
           type="text"
           register={register("email")}
           isCornerRadius={true}
-          style={{ width: "20vw" }}
           icon={<Mail size={24} color={iconColor} />}
           showIcon={true}
         />
