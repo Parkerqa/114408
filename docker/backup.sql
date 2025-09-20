@@ -151,12 +151,12 @@ DROP TABLE IF EXISTS `other_setting`;
 CREATE TABLE `other_setting` (
   `user_id` int NOT NULL,
   `theme` int NOT NULL,
-  `red_bot` decimal(10,2) NOT NULL,
-  `red_top` decimal(10,2) NOT NULL,
-  `green_bot` decimal(10,2) NOT NULL,
-  `green_top` decimal(10,2) NOT NULL,
-  `yellow_bot` decimal(10,2) NOT NULL,
-  `yellow_top` decimal(10,2) NOT NULL,
+  `red_usage_rate` decimal(10,2) NOT NULL,
+  `red_remaining_rate` decimal(10,2) NOT NULL,
+  `green_usage_rate` decimal(10,2) NOT NULL,
+  `green_remaining_rate` decimal(10,2) NOT NULL,
+  `yellow_usage_rate` decimal(10,2) NOT NULL,
+  `yellow_remaining_rate` decimal(10,2) NOT NULL,
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -380,4 +380,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-15 20:02:28
+-- Dump completed on 2025-09-18 23:23:40
