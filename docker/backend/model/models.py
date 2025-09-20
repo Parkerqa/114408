@@ -139,7 +139,12 @@ class User(Base):
     priority: Mapped[Optional[int]] = mapped_column(Integer)
     img: Mapped[Optional[str]] = mapped_column(String(255))
     updated_by: Mapped[Optional[str]] = mapped_column(String(150))
-    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DATETIME(fsp=6),
+        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP(6)"),
+        server_onupdate=text("CURRENT_TIMESTAMP(6)")
+    )
 
     tickets: Mapped[list["Ticket"]] = relationship(
         "Ticket",

@@ -37,9 +37,9 @@ def create_user(username: str, email: str, password: str) -> bool:
         user.created_by = user.user_id
         user.updated_by = user.user_id
         other_setting = OtherSetting(user_id=user.user_id, theme=0,
-                                     red_bot=0, red_top=50,
-                                     green_bot=51, green_top=70,
-                                     yellow_bot=71, yellow_top=100)
+                                     red_usage_rate=0, red_remaining_rate=50,
+                                     green_usage_rate=51, green_remaining_rate=70,
+                                     yellow_usage_rate=71, yellow_remaining_rate=100)
         db.add(other_setting)
         db.commit()
         return True
