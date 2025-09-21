@@ -35,7 +35,7 @@ def get_awaiting_ticket_info_by_uid(user_id: int, ticket_id: int):
 
         header = (
             f"發票編號：{ticket.invoice_number}\n"
-            f"申請日期：{ticket.create_date.strftime('%Y-%m-%d')}\n"
+            f"申請日期：{ticket.created_at.strftime('%Y-%m-%d')}\n"
             f"狀態：{check_status(ticket.status)}\n"
         )
 
@@ -68,7 +68,7 @@ def get_awaiting_list_by_uid(user_id: int):
         if results:
             header = f"您有 {len(results)} 筆待處理發票：\n\n"
             messages = [
-                f"{idx + 1}. 申請日期：{t.create_date.strftime('%Y-%m-%d')}\n    發票號碼：{t.invoice_number}\n    狀態：{check_status(t.status)}"
+                f"{idx + 1}. 申請日期：{t.created_at.strftime('%Y-%m-%d')}\n    發票號碼：{t.invoice_number}\n    狀態：{check_status(t.status)}"
                 for idx, t in enumerate(results)
             ]
             return header + "\n\n".join(messages)
