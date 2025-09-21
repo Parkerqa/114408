@@ -8,8 +8,8 @@ export default function Setting() {
   const { role } = useConfig();
   return (
     <>
-      {role === 0 && <MobileSetting />}
-      {role === 1 && <AdminSetting />}
+      {role === 1 && <MobileSetting />}
+      {[0, 2, 3].includes(role) && <AdminSetting />}
     </>
   );
 }
