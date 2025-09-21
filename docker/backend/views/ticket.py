@@ -37,9 +37,8 @@ def list_ticket_logic(mode, user) -> Tuple[str, List[Dict] or None]:
         is_processing = t.status == 1
 
         if not is_processing:
-            # 把每筆 TicketDetail 都轉換成 {title, money}
             details = [
-                {"title": detail.title, "money": str(detail.money)}
+                {"title": detail.title, "money": str(int(detail.money)) if detail.money is not None else "0"}
                 for detail in t.ticket_detail if detail.title
             ]
             if not details:
@@ -51,7 +50,7 @@ def list_ticket_logic(mode, user) -> Tuple[str, List[Dict] or None]:
             "id": t.ticket_id,
             "time": t.created_at.strftime("%Y-%m-%d"),
             "type": check_type(t.type) if not is_processing else "等待系統辨識",
-            "Details": details if not is_processing else [],  # ✅ 改成 Details 陣列
+            "Details": details if not is_processing else [],
             "invoice_number": t.invoice_number if not is_processing and t.invoice_number is not None else (
                 check_status(t.status) if t.status == 0 else "等待系統辨識"),
             "money": str(int(t.total_money)) if not is_processing and t.total_money is not None else (
