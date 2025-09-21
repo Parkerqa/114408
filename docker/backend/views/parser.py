@@ -2,6 +2,8 @@ import io
 import json
 import re
 
+import base64
+import cv2
 import numpy as np
 import opencc
 from core.upload_utils import BASE_DIR, INVOICE_UPLOAD_FOLDER
@@ -11,6 +13,7 @@ from paddleocr import PaddleOCR
 from PIL import Image
 from pyzbar.pyzbar import decode
 from views.openai import ocr_correction_logic
+from qreader import QReader
 
 
 # 初始化模型
@@ -55,118 +58,221 @@ def snn_logic(image_path) -> int:
         return 0
 
 
-def extract_qrcodes(image_path):
-    with open(image_path, "rb") as f:
-        image_bytes = f.read()
+HEX_CHARS = set("0123456789abcdefABCDEF")
 
-    img = Image.open(io.BytesIO(image_bytes))
-    qrcodes = decode(img)
-    if len(qrcodes) != 2:
-        raise ValueError("QRCode 數量錯誤")
-    sorted_qrcodes = sorted(qrcodes, key=lambda q: q.rect.left)
-    return [qr.data.decode("utf-8") for qr in sorted_qrcodes]
-
-
-def convert_date(tw_date: str) -> str:
-    year = int(tw_date[:3]) + 1911
-    month = tw_date[3:5]
-    day = tw_date[5:7]
-    return f"{year}/{month}/{day}"
-
-
-def decode_item_name(name, encoding):
+# ---------------- 工具函式 ---------------- #
+def decode_item_name(name: str, encoding_flag: str) -> str:
+    """中文編碼參數：0=Big5, 1=UTF-8, 2=Base64(UTF-8), 3=UTF-8(境外電商)"""
     try:
-        if encoding == "0":
-            return name.encode("latin1").decode("big5")
-        elif encoding == "2":
-            return base64.b64decode(name).decode("utf-8")
+        if encoding_flag == "0":
+            return name.encode("latin1").decode("big5", errors="ignore")
+        elif encoding_flag in ("1", "3"):
+            return name
+        elif encoding_flag == "2":
+            return base64.b64decode(name).decode("utf-8", errors="ignore")
         return name
-    except Exception as e:
-        print(e)
-        raise ValueError(f"錯誤的編碼設定:{name}")
+    except Exception:
+        return name
 
 
-def parse_invoice_qrcodes(left_data, right_data):
-    result = {
+def parse_overseas_amount(val: str) -> float:
+    """境外金額(10)：前8碼整數(16進位)+後2碼小數(16進位)"""
+    if len(val) != 10 or any(c not in HEX_CHARS for c in val):
+        raise ValueError(f"境外金額格式錯誤: {val}")
+    integer = int(val[:8], 16)
+    decimal = int(val[8:], 16)
+    return float(f"{integer}.{decimal:02d}")
+
+
+def split_ext_fields(left_data: str, right_data: str):
+    """切割 77 碼後延伸欄位，以冒號分隔"""
+    tail_left = left_data[77:] if len(left_data) > 77 else ""
+    tail_right = right_data[2:] if right_data.startswith("**") else right_data
+    merged = (tail_left or "") + (tail_right or "")
+    fields = merged.split(":") if merged else []
+    if fields and fields[0] == "":
+        fields = fields[1:]
+    return fields
+
+
+def parse_decimal(s: str):
+    """品項數量/單價 → 十進制整數或小數"""
+    s = s.strip()
+    if not s:
+        return 0
+    return float(s) if "." in s else int(s)
+
+
+# ---------------- QRCode 擷取 ---------------- #
+def extract_qrcodes(image_path: str, debug: bool = False):
+    qreader = QReader()
+    img_cv = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
+    decoded_texts = qreader.detect_and_decode(image=img_cv)
+
+    results = [t for t in decoded_texts if t]
+
+    # fallback: pyzbar
+    if len(results) < 2:
+        pil_img = Image.open(image_path)
+        qrs = decode(pil_img)
+        results += [qr.data.decode("utf-8") for qr in qrs]
+
+    # fallback: 左右裁切再用 QReader
+    if len(results) < 2:
+        h, w = img_cv.shape[:2]
+        left_img = img_cv[:, :w // 2]
+        right_img = img_cv[:, w // 2:]
+        left_data = qreader.detect_and_decode(image=left_img)
+        right_data = qreader.detect_and_decode(image=right_img)
+        if left_data and isinstance(left_data, list) and left_data[0]:
+            results.append(left_data[0])
+        if right_data and isinstance(right_data, list) and right_data[0]:
+            results.append(right_data[0])
+
+    # 過濾掉太短的雜訊（小於 20 碼）
+    results = [r for r in results if len(r) >= 20]
+
+    if debug:
+        print("偵測到的 QRCode：")
+        for i, qr in enumerate(results):
+            print(f"  QR[{i}] 長度={len(qr)}, 開頭={qr[:12]}...")
+
+    if not results:
+        raise ValueError("沒有偵測到 QRCode")
+
+    # 確認左右碼角色：左碼必須 >= 77 碼
+    if len(results) == 2:
+        if len(results[0]) >= 77:
+            left_data, right_data = results[0], results[1]
+        else:
+            left_data, right_data = results[1], results[0]
+        return [left_data, right_data]
+
+    return results
+
+
+# ---------------- 左碼解析 ---------------- #
+def parse_amount_8(val: str) -> int | None:
+    if val.isdigit():
+        return int(val)
+    try:
+        return int(val, 16)  # fallback：十六進位
+    except ValueError:
+        print(f"[警告] 左碼金額格式無法解析: {val}")
+        return None
+
+def parse_left_qrcode(left_data: str) -> dict:
+    if len(left_data) < 77:
+        raise ValueError(f"左碼長度不足 77 碼: {left_data}")
+    return {
         "invoice_number": left_data[0:10],
         "date": left_data[10:17],
-        # '隨機碼': left_data[17:21],
-        # '銷售額': left_data[21:29],
-        # '總計額': left_data[29:37],
-        # '買方統一編號': left_data[37:45],
-        # '賣方統一編號': left_data[45:53],
+        "random_code": left_data[17:21],
+        "sales_amount_8": parse_amount_8(left_data[21:29]),
+        "total_amount_8": parse_amount_8(left_data[29:37]),
+        "buyer_id": left_data[37:45],
+        "seller_id": left_data[45:53],
+        "encrypt": left_data[53:77],
     }
 
-    remaining = left_data[77:] + right_data[2:]
-    fields = remaining.split(":")
-    del fields[0]
 
-    try:
-        # result.update({
-        #     '營業人自行使用區': fields[0],
-        #     '二維條碼記載完整品目筆數': int(fields[1]),
-        #     '該張發票交易品目總筆數': int(fields[2]),
-        #     'encoding': fields[3],
-        # })
-        encoding = fields[3]
-        items_raw = fields[4:]
-        items = []
-        for i in range(0, len(items_raw), 3):
-            if i + 2 >= len(items_raw):
-                break
-            name = decode_item_name(items_raw[i], encoding)
-            quantity = int(items_raw[i + 1])
-            price = int(items_raw[i + 2])
-            items.append(
-                {
-                    "title": name,
-                    # '數量': quantity,
-                    "money": price,
-                }
-            )
-        result["items"] = items
-    except Exception as e:
-        result["items"] = []
-        raise Exception("明細解析錯誤")
+# ---------------- 延伸區/右碼解析 ---------------- #
+def parse_invoice_ext(left_data: str, right_data: str):
+    fields = split_ext_fields(left_data, right_data)
+    result = {
+        "Details": [],   # 只保留 title 和 money
+        "overseas_sales": None,
+        "overseas_total": None,
+        "encoding": None
+    }
+
+    if not fields or len(fields) < 4:
+        return result
+
+    overseas = (fields[3] == "3")
+    if overseas:
+        result["encoding"] = "3"
+        if len(fields) > 5:
+            try:
+                result["overseas_sales"] = parse_overseas_amount(fields[4])
+            except Exception as e:
+                print("境外銷售額解析錯誤:", e)
+            try:
+                result["overseas_total"] = parse_overseas_amount(fields[5])
+            except Exception as e:
+                print("境外總計額解析錯誤:", e)
+        start_idx = 6
+    else:
+        result["encoding"] = fields[3]
+        start_idx = 4
+
+    # 品項解析，只保留 title 和 money
+    items_raw = fields[start_idx:]
+    for i in range(0, len(items_raw), 3):
+        if i + 2 >= len(items_raw):
+            break
+        try:
+            title = decode_item_name(items_raw[i], result["encoding"] or "1")
+            money = parse_decimal(items_raw[i + 2])
+            result["Details"].append({"title": title, "money": money})
+        except Exception:
+            continue
+
     return result
 
 
-def qrcode_decoder_logic(image_path, ticket_id, invoice_type):
+# ---------------- 主流程 ---------------- #
+def qrcode_decoder_logic(image_path, ticket_id, invoice_type, debug=False):
     try:
-        # 解析 QRCode
-        left_data, right_data = extract_qrcodes(image_path)
-        result = parse_invoice_qrcodes(left_data, right_data)
+        qrcodes = extract_qrcodes(image_path, debug=debug)
+        if len(qrcodes) == 2:
+            left_data, right_data = qrcodes
+        elif len(qrcodes) == 1:
+            left_data, right_data = qrcodes[0], ""
+        else:
+            raise ValueError("無效的 QRCode 數量")
 
-        invoice_number = result.get("invoice_number")
+        result = parse_left_qrcode(left_data)
+        ext_result = parse_invoice_ext(left_data, right_data)
+        result.update(ext_result)
+
+        # 日期轉換 (民國 → 西元)
         raw_date = result.get("date")
-        items = result.get("items", [])
-
-        # 轉換民國 → 西元
-        if re.match(r"\d{7}", raw_date):
+        formatted_date = None
+        if raw_date and re.match(r"\d{7}", raw_date):
             year = int(raw_date[:3]) + 1911
             month = raw_date[3:5]
-            day = raw_date[5:]
+            day = raw_date[5:7]
             formatted_date = f"{year}-{month}-{day}"
-        else:
-            formatted_date = None
+        result["date"] = formatted_date
 
+        # 總金額決策
+        if result.get("overseas_total") is not None:
+            total_money = result["overseas_total"]
+        elif result.get("items"):
+            total_money = sum(item["money"] for item in result["items"])
+        elif result.get("total_amount_8") is not None:
+            total_money = result["total_amount_8"]
+        else:
+            total_money = 0
+
+        # 儲存
         if save_qrcode_result(
-            ticket_id,
-            invoice_type,
-            {
-                "invoice_number": invoice_number,
-                "date": formatted_date,
-                "total_money": sum(item["money"] for item in items),
-            },
-            items,
+                ticket_id,
+                invoice_type,
+                {
+                    "invoice_number": result.get("invoice_number"),
+                    "date": result.get("date"),
+                    "total_money": total_money,
+                },
+                result.get("Details", []),
         ):
             return
+        save_error(ticket_id)
 
-        save_error(ticket_id)
     except Exception as e:
-        print(e)
+        print("解析錯誤:", e)
         save_error(ticket_id)
-        return
 
 
 def extract_clean_json(content: str) -> str:

@@ -1,6 +1,6 @@
 CREATE DATABASE  IF NOT EXISTS `114408` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `114408`;
--- MySQL dump 10.13  Distrib 8.0.42, for macos15 (arm64)
+-- MySQL dump 10.13  Distrib 8.0.42, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: 114408
 -- ------------------------------------------------------
@@ -16,6 +16,36 @@ USE `114408`;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `accounting`
+--
+
+DROP TABLE IF EXISTS `accounting`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `accounting` (
+  `accounting_id` int NOT NULL AUTO_INCREMENT,
+  `class_info_id` varchar(50) NOT NULL,
+  `account_class` varchar(150) DEFAULT NULL,
+  `create_id` varchar(150) NOT NULL,
+  `create_date` datetime NOT NULL,
+  `modify_id` varchar(150) DEFAULT NULL,
+  `modify_date` datetime DEFAULT NULL,
+  `avaible` tinyint NOT NULL,
+  PRIMARY KEY (`accounting_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `accounting`
+--
+
+LOCK TABLES `accounting` WRITE;
+/*!40000 ALTER TABLE `accounting` DISABLE KEYS */;
+INSERT INTO `accounting` VALUES (3,'A001','','admin','2025-08-22 03:15:09',NULL,NULL,1),(4,'A001','','admin','2025-08-22 03:15:09',NULL,NULL,1),(5,'A002','','admin','2025-08-22 03:15:09',NULL,NULL,1),(6,'A003','','admin','2025-08-22 03:15:09',NULL,NULL,1),(7,'A003','','admin','2025-08-22 03:15:09',NULL,NULL,0);
+/*!40000 ALTER TABLE `accounting` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `accounting_items`
@@ -73,6 +103,36 @@ CREATE TABLE `ai_log` (
 LOCK TABLES `ai_log` WRITE;
 /*!40000 ALTER TABLE `ai_log` DISABLE KEYS */;
 /*!40000 ALTER TABLE `ai_log` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `class_info`
+--
+
+DROP TABLE IF EXISTS `class_info`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `class_info` (
+  `class_id` int NOT NULL AUTO_INCREMENT,
+  `money_limit` decimal(10,2) NOT NULL,
+  `class_info_id` varchar(50) NOT NULL,
+  `create_id` varchar(150) NOT NULL,
+  `create_date` datetime NOT NULL,
+  `modify_id` varchar(150) DEFAULT NULL,
+  `modify_date` datetime DEFAULT NULL,
+  `available` tinyint NOT NULL,
+  PRIMARY KEY (`class_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `class_info`
+--
+
+LOCK TABLES `class_info` WRITE;
+/*!40000 ALTER TABLE `class_info` DISABLE KEYS */;
+INSERT INTO `class_info` VALUES (5,10000.00,'A001','admin','2025-08-22 03:14:44',NULL,NULL,1),(6,5000.00,'A002','admin','2025-08-22 03:14:44',NULL,NULL,1),(7,2000.00,'A003','admin','2025-08-22 03:14:44',NULL,NULL,1);
+/*!40000 ALTER TABLE `class_info` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -151,12 +211,12 @@ DROP TABLE IF EXISTS `other_setting`;
 CREATE TABLE `other_setting` (
   `user_id` int NOT NULL,
   `theme` int NOT NULL,
-  `red_bot` decimal(10,2) NOT NULL,
-  `red_top` decimal(10,2) NOT NULL,
-  `green_bot` decimal(10,2) NOT NULL,
-  `green_top` decimal(10,2) NOT NULL,
-  `yellow_bot` decimal(10,2) NOT NULL,
-  `yellow_top` decimal(10,2) NOT NULL,
+  `red_usage_rate` decimal(10,2) NOT NULL,
+  `red_remaining_rate` decimal(10,2) NOT NULL,
+  `green_usage_rate` decimal(10,2) NOT NULL,
+  `green_remaining_rate` decimal(10,2) NOT NULL,
+  `yellow_usage_rate` decimal(10,2) NOT NULL,
+  `yellow_remaining_rate` decimal(10,2) NOT NULL,
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -282,8 +342,8 @@ CREATE TABLE `user` (
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `created_by` varchar(150) NOT NULL,
   `created_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  `updated_by` varchar(150) DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
+  `updated_by` varchar(150) NOT NULL,
+  `updated_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -294,7 +354,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'user','user@example.com','$2b$12$l3bU0Xt8hwIQ6j8IszI.9OvqewE0znCsbSn.zB6QLDKJXjLPvx.rC',0,'user.png',1,'','2025-09-02 09:17:49.025654',NULL,NULL);
+INSERT INTO `user` VALUES (1,'user','user@example.com','$2b$12$l3bU0Xt8hwIQ6j8IszI.9OvqewE0znCsbSn.zB6QLDKJXjLPvx.rC',0,'user.png',1,'system','2025-09-02 09:17:49.025654','system','2025-09-20 08:05:06.122160');
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -380,4 +440,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-15 20:02:28
+-- Dump completed on 2025-09-20 16:07:57

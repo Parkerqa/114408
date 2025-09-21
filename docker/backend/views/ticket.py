@@ -24,7 +24,7 @@ def list_ticket_logic(mode, user) -> Tuple[str, List[Dict] or None]:
     user_id = user.user_id
     priority = user.priority
 
-    if priority == 1:
+    if priority in (0, 3):
         tickets = get_all_tickets(check_mode(mode))
     else:
         tickets = get_tickets_by_user(user_id, check_mode(mode))
@@ -33,21 +33,25 @@ def list_ticket_logic(mode, user) -> Tuple[str, List[Dict] or None]:
         return "目前沒有發票資料", None
 
     results = []
-    # 處理結果格式
     for t in tickets:
         is_processing = t.status == 1
 
         if not is_processing:
-            # 串接所有對應的 TicketDetail.title
-            titles = [detail.title for detail in t.ticket_details if detail.title]
-            title_text = ", ".join(titles) if titles else (
-                check_status(t.status) if t.status == 0 else "無品項")
+            # 把每筆 TicketDetail 都轉換成 {title, money}
+            details = [
+                {"title": detail.title, "money": str(detail.money)}
+                for detail in t.ticket_detail if detail.title
+            ]
+            if not details:
+                details = [] if t.status != 0 else [{"title": check_status(t.status), "money": "0"}]
+        else:
+            details = []
 
         result = {
             "id": t.ticket_id,
-            "time": t.create_date.strftime("%Y-%m-%d"),
+            "time": t.created_at.strftime("%Y-%m-%d"),
             "type": check_type(t.type) if not is_processing else "等待系統辨識",
-            "title": title_text if not is_processing else "等待系統辨識",
+            "Details": details if not is_processing else [],  # ✅ 改成 Details 陣列
             "invoice_number": t.invoice_number if not is_processing and t.invoice_number is not None else (
                 check_status(t.status) if t.status == 0 else "等待系統辨識"),
             "money": str(int(t.total_money)) if not is_processing and t.total_money is not None else (
@@ -68,7 +72,7 @@ def list_specify_ticket_logic(ticket_id: int, user) -> Tuple[str, List[Dict] or 
 
     is_processing = ticket.status == 1
     if not is_processing:
-        titles = [detail.title for detail in ticket.ticket_details if detail.title]
+        titles = [detail.title for detail in ticket.ticket_detail if detail.title]
         title_text = ", ".join(titles) if titles else (
             check_status(ticket.status) if ticket.status == 0 else "無品項")
 

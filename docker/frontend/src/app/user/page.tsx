@@ -27,9 +27,7 @@ export default function User() {
       if (res.data) {
         setData(res.data);
       }
-    } catch {
-      route.push("/auth");
-    }
+    } catch {}
   };
 
   useEffect(() => {
