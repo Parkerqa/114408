@@ -1,9 +1,31 @@
 @use "@/styles/base/variables" as *;
 
-.inputWrap{
+.inputWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .state {
+    display: flex;
+    gap: 10px;
+
+    p {
+      font-size: $regular-size;
+    }
+  }
+
+  .detailList {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+  }
+
+  .detailRow {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 20px;
+  }
 }
 
 .operateBtn {

@@ -21,7 +21,14 @@ export const LoadingProvider = ({
 
   return (
     <LoadingContext.Provider value={{ isLoading, setLoading: setIsLoading }}>
-      {isLoading ? <Loading /> : children}
+      {isLoading ? (
+        <>
+          <Loading />
+          {children}
+        </>
+      ) : (
+        children
+      )}
     </LoadingContext.Provider>
   );
 };

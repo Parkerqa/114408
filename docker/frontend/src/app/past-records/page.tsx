@@ -46,7 +46,7 @@ export default function PastRecords() {
       </div>
       <div className={styles.list}>
         {data?.map((item, index) => (
-          <MobileListItem data={item} key={index} />
+          <MobileListItem data={item} key={index} getList={getList} />
         ))}
       </div>
     </div>

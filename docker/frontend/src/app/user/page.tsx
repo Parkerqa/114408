@@ -13,7 +13,6 @@ import ticketAPI from "@/services/ticketAPI";
 import styles from "@/styles/app/UserPage.module.scss";
 
 export default function User() {
-  const route = useRouter();
   const [isAdd, setIsAdd] = useState<boolean>(false);
   const [data, setData] = useState<ticketListType[]>([]);
   const { register, watch } = useForm();
@@ -50,7 +49,7 @@ export default function User() {
         </div>
         <div className={styles.list}>
           {data?.map((item, index) => (
-            <MobileListItem data={item} key={index} />
+            <MobileListItem data={item} key={index} getList={getList} />
           ))}
         </div>
       </div>
@@ -61,7 +60,7 @@ export default function User() {
         className={styles.addBtn}
         strokeWidth={4}
       />
-      {isAdd && <MobileAddPopup setIsAdd={setIsAdd} />}
+      {isAdd && <MobileAddPopup setIsAdd={setIsAdd} getList={getList} />}
     </>
   );
 }

@@ -1,8 +1,11 @@
 export type ticketListType = {
   id: number;
+  Details: {
+    title: string;
+    money: number;
+  }[];
   time: string;
   type: string;
-  title: string;
   invoice_number: string;
   money: number;
   state: string;

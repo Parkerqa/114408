@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Bot, Settings, Trash2, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
+import { useConfig } from "@/lib/context/ConfigContext";
 import Table from "@/components/Table";
 import Chart from "@/components/chart/Chart";
 import AddBudgetPopup from "@/components/Budget/AddBudgetPopup";
@@ -26,12 +28,20 @@ const chartData = {
 };
 
 export default function Admin() {
+  const route = useRouter();
+  const { role } = useConfig();
   const [count, setCount] = useState();
   const [editTitle, setEditTitle] = useState<string>();
   const [editId, setEditId] = useState<number>();
   const [isAdd, setIsAdd] = useState<boolean>(false);
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [summaryData, setSummaryData] = useState<SummaryRow[]>();
+
+  if (role) {
+    if ([0, 2, 3].includes(role)) {
+      route.push("/user");
+    }
+  }
 
   useEffect(() => {
     const getCount = async () => {

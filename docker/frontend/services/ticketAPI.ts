@@ -22,6 +22,8 @@ const ticketAPI = {
     }),
   getTicket: (id: number): Promise<Response<ticketListType>> =>
     API.get(`${BASE_URL}/list/${id}`),
+  userSearch:():Promise<Response<any>>=>
+    API.post(``),
   addTicket: (data: FormData): Promise<Response<any>> =>
     API.post(`${BASE_URL}/upload`, data, {
       headers: { "Content-Type": "multipart/form-data" },
