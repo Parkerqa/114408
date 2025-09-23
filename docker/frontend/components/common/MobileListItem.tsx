@@ -26,23 +26,26 @@ export default function MobileListItem({
   const dataArray = [data];
 
   const getTicket = async (id: number) => {
+    setLoading(true);
+
     try {
       const res = await ticketAPI.getTicket(id);
       if (res.data) {
         setDetail(res.data);
       }
       setIsDetail(true);
-    } catch {}
+    } catch {
+    } finally {
+      setLoading(false);
+    }
   };
 
   const deleteTicket = async (id: number) => {
-    setLoading(true);
     try {
       await ticketAPI.deleteTicket(id);
     } catch {
     } finally {
       getList();
-      setLoading(false);
     }
   };
 

@@ -22,12 +22,17 @@ export default function User() {
   const onSearch = !!keyword;
 
   const getList = async () => {
+    setLoading(true);
+
     try {
       const res = await ticketAPI.getList(0);
       if (res.data) {
         setData(res.data);
       }
-    } catch {}
+    } catch {
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

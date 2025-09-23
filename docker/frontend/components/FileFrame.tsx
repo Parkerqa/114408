@@ -31,7 +31,6 @@ export default function FileFrame({
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
     const file = acceptedFiles[0];
     const formdata = new FormData();
     formdata.append("photo", file);
@@ -42,7 +41,6 @@ export default function FileFrame({
     } finally {
       setIsAdd(false);
       getList();
-      setLoading(false);
     }
   };
 

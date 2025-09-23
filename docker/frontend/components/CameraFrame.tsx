@@ -38,7 +38,6 @@ export default function CameraFrame({
   }, []);
 
   const handleSubmit = async () => {
-    setLoading(true);
     const base64 = capturedImage;
     const file = base64ToFile(base64!);
     if (!file) return;
@@ -52,7 +51,6 @@ export default function CameraFrame({
     } finally {
       setIsAdd(false);
       getList();
-      setLoading(false);
     }
   };
 
