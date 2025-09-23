@@ -84,11 +84,11 @@ export default function MobileListItem({
                   {item.Details.map((item, index) => (
                     <div key={index}>
                       <div className={styles.info}>
-                        <span>細項#{index + 1}</span>
+                        <span>細項 {index + 1}</span>
                         <p>{item.title}</p>
                       </div>
                       <div className={styles.info}>
-                        <span>金額#{index + 1}</span>
+                        <span>金額 {index + 1}</span>
                         <p>{item.money}</p>
                       </div>
                     </div>

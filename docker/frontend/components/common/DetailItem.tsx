@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm, Controller, useWatch } from "react-hook-form";
 
 import BasePopup from "@/components/common/BasePopup";
@@ -6,11 +6,24 @@ import InputField from "@/components/common/InputField";
 import SelectField from "@/components/common/SelectField";
 import { useLoading } from "@/lib/context/LoadingContext";
 import { ticketListType } from "@/lib/types/TicketType";
+import { editTicket } from "@/lib/types/TicketType";
+import ticketAPI from "@/services/ticketAPI";
 import styles from "@/styles/components/common/DetailItem.module.scss";
+
+const typeMap: Record<string, number> = {
+  系統辨識失敗: 0,
+  等待系統辨識: 1,
+  傳統發票: 2,
+  電子發票: 3,
+  二聯發票: 4,
+  三聯發票: 5,
+  收據: 6,
+};
 
 type editType = {
   id: number;
   Details: {
+    td_id: number;
     title: string;
     money: number;
   }[];
@@ -28,15 +41,16 @@ export default function DetailItem({
   setIsDetail: (state: boolean) => void;
 }) {
   const { setLoading } = useLoading();
-  const { register, handleSubmit, reset, control } = useForm<editType>({
-    defaultValues: {
-      id: 0,
-      Details: [{ title: "", money: 0 }],
-      type: "",
-      invoice_number: "",
-      money: 0,
-    },
-  });
+  const { register, handleSubmit, reset, control, setValue } =
+    useForm<editType>({
+      defaultValues: {
+        id: 0,
+        Details: [{ td_id: 1, title: "", money: 0 }],
+        type: "",
+        invoice_number: "",
+        money: 0,
+      },
+    });
   const { fields, append, remove } = useFieldArray({
     control,
     name: "Details",
@@ -49,10 +63,10 @@ export default function DetailItem({
         id: data.id,
         Details: data.Details?.length
           ? data.Details
-          : [{ title: "", money: 0 }],
-        type: data.type ?? "",
+          : [{ td_id: 1, title: "", money: 0 }],
+        type: data.type,
         invoice_number: data.invoice_number ?? "",
-        money: Number(data.money ?? 0),
+        money: data.money,
       });
     }
   }, [data]);
@@ -60,24 +74,24 @@ export default function DetailItem({
   useEffect(() => {
     const total =
       (details ?? []).reduce((sum, d) => sum + (Number(d?.money) || 0), 0) || 0;
-
     setValue("money", total, { shouldValidate: true, shouldDirty: true });
   }, [details, setValue]);
 
   const onSubmit = async (data: editType) => {
     setLoading(true);
-    const payload: editType = {
-      id: Number(data.id),
-      type: data.type,
+    const payload = {
+      type: typeMap[data.type],
       invoice_number: (data.invoice_number ?? "").trim(),
-      money: Number(data.money) || 0,
+      total_money: data.money || 0,
       Details: (data.Details ?? []).map((d) => ({
+        td_id: d.td_id || 0,
         title: (d.title ?? "").trim(),
         money: Number(d.money) || 0,
       })),
     };
 
     try {
+      await ticketAPI.editTicket(data.id, payload);
     } catch {
     } finally {
       setIsDetail(false);
@@ -132,6 +146,12 @@ export default function DetailItem({
             <div className={styles.detailList}>
               {fields.map((field, index) => (
                 <div key={field.id} className={styles.detailRow}>
+                  <input
+                    type="hidden"
+                    {...register(`Details.${index}.td_id` as const, {
+                      valueAsNumber: true,
+                    })}
+                  />
                   <InputField
                     style={{ width: 130 }}
                     label={`細項#${index + 1}`}
@@ -160,7 +180,7 @@ export default function DetailItem({
           </div>
           <div className={styles.operateBtn}>
             <button
-              type="submit"
+              type="button"
               className={styles.close}
               onClick={() => {
                 setIsDetail(false);
@@ -176,11 +196,4 @@ export default function DetailItem({
       </div>
     </BasePopup>
   );
-}
-function setValue(
-  arg0: string,
-  total: number,
-  arg2: { shouldValidate: boolean; shouldDirty: boolean }
-) {
-  throw new Error("Function not implemented.");
 }

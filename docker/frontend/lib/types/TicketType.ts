@@ -12,12 +12,14 @@ export type ticketListType = {
 };
 
 export type editTicket = {
-  time: string;
-  type: string;
-  title: string;
-  number: string;
-  money: number;
-  state: string;
+  Details: {
+    td_id: number;
+    title: string;
+    money: number;
+  }[];
+  type: number;
+  invoice_number: string;
+  total_money: number;
 };
 
 export type auditTicket = {

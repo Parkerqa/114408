@@ -34,16 +34,10 @@
       }
 
       .details {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .details {
         max-width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 10px;
       }
 
       .info,
@@ -54,7 +48,7 @@
         align-items: center;
 
         p {
-          font-size: $regular-size;
+          font-size: $medium-size;
         }
 
         .edit,
@@ -84,7 +78,7 @@
   }
 
   .item {
-    gap: 20px;
+    gap: 15px;
   }
 }
 

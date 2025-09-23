@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 
+import { useLoading } from "@/lib/context/LoadingContext";
 import MobileAddPopup from "@/components/MobileAddPopup";
 import MobileListItem from "@/components/common/MobileListItem";
 import InputField from "@/components/common/InputField";
@@ -13,6 +13,7 @@ import ticketAPI from "@/services/ticketAPI";
 import styles from "@/styles/app/UserPage.module.scss";
 
 export default function User() {
+  const { setLoading } = useLoading();
   const [isAdd, setIsAdd] = useState<boolean>(false);
   const [data, setData] = useState<ticketListType[]>([]);
   const { register, watch } = useForm();
