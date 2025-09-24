@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Bot, Settings, Trash2, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { useConfig } from "@/lib/context/ConfigContext";
 import Table from "@/components/Table";
@@ -28,7 +28,6 @@ const chartData = {
 };
 
 export default function Admin() {
-  const route = useRouter();
   const { role } = useConfig();
   const [count, setCount] = useState();
   const [editTitle, setEditTitle] = useState<string>();
@@ -38,8 +37,8 @@ export default function Admin() {
   const [summaryData, setSummaryData] = useState<SummaryRow[]>();
 
   if (role) {
-    if ([0, 2, 3].includes(role)) {
-      route.push("/user");
+    if (![0, 2, 3].includes(role)) {
+      notFound();
     }
   }
 
