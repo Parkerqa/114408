@@ -43,12 +43,13 @@ export default function Verify() {
   });
 
   const search = async (value: FormValues) => {
+    const status = isPast ? 2 : [3, 4];
     const q = value.keywords || undefined;
-    const class_info_id = value.type || undefined;
+    // const class_info_id = value.type || undefined;
     const date = value.date || undefined;
 
     try {
-      const res = await ticketAPI.searchTicket({ q, class_info_id, date });
+      const res = await ticketAPI.searchTicket({ status, q, date });
       if (res.data) {
         setPendingTable(res.data);
       }

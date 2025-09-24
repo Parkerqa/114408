@@ -29,10 +29,17 @@ export default function User() {
       if (res.data) {
         setData(res.data);
       }
-    } catch {
-    } finally {
-      setLoading(false);
-    }
+    } catch {}
+    setLoading(false);
+  };
+
+  const search = async () => {
+    try {
+      const res = await ticketAPI.searchTicket({ status: 2, q: keyword });
+      if (res.data) {
+        setData(res.data);
+      }
+    } catch {}
   };
 
   useEffect(() => {
@@ -51,6 +58,7 @@ export default function User() {
           />
           <Search
             className={`${styles.searchBtn} ${onSearch ? styles.onSearch : ""}`}
+            onClick={search}
           />
         </div>
         <div className={styles.list}>

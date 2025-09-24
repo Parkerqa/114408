@@ -6,7 +6,6 @@ import InputField from "@/components/common/InputField";
 import SelectField from "@/components/common/SelectField";
 import { useLoading } from "@/lib/context/LoadingContext";
 import { ticketListType } from "@/lib/types/TicketType";
-import { editTicket } from "@/lib/types/TicketType";
 import ticketAPI from "@/services/ticketAPI";
 import styles from "@/styles/components/common/DetailItem.module.scss";
 
@@ -29,7 +28,7 @@ type editType = {
   }[];
   type: string;
   invoice_number: string;
-  money: number;
+  total_money: number;
 };
 
 export default function DetailItem({
@@ -48,7 +47,7 @@ export default function DetailItem({
         Details: [{ td_id: 1, title: "", money: 0 }],
         type: "",
         invoice_number: "",
-        money: 0,
+        total_money: 0,
       },
     });
   const { fields, append, remove } = useFieldArray({
@@ -66,7 +65,7 @@ export default function DetailItem({
           : [{ td_id: 1, title: "", money: 0 }],
         type: data.type,
         invoice_number: data.invoice_number ?? "",
-        money: data.money,
+        total_money: data.total_money,
       });
     }
   }, [data]);
@@ -74,7 +73,7 @@ export default function DetailItem({
   useEffect(() => {
     const total =
       (details ?? []).reduce((sum, d) => sum + (Number(d?.money) || 0), 0) || 0;
-    setValue("money", total, { shouldValidate: true, shouldDirty: true });
+    setValue("total_money", total, { shouldValidate: true, shouldDirty: true });
   }, [details, setValue]);
 
   const onSubmit = async (data: editType) => {
@@ -82,7 +81,7 @@ export default function DetailItem({
     const payload = {
       type: typeMap[data.type],
       invoice_number: (data.invoice_number ?? "").trim(),
-      total_money: data.money || 0,
+      total_money: data.total_money || 0,
       Details: (data.Details ?? []).map((d) => ({
         td_id: d.td_id || 0,
         title: (d.title ?? "").trim(),
@@ -112,7 +111,7 @@ export default function DetailItem({
               <p>|</p>
               <p>
                 <span>狀態：</span>
-                {data.state}
+                {data.status}
               </p>
             </div>
             <Controller
@@ -174,7 +173,7 @@ export default function DetailItem({
               style={{ width: 250 }}
               label="總金額"
               type="number"
-              register={register("money")}
+              register={register("total_money")}
               readonly={true}
             />
           </div>

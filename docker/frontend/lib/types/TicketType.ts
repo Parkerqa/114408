@@ -7,8 +7,8 @@ export type ticketListType = {
   time: string;
   type: string;
   invoice_number: string;
-  money: number;
-  state: string;
+  total_money: number;
+  status: string;
 };
 
 export type editTicket = {
@@ -30,8 +30,8 @@ export type auditTicket = {
 };
 
 export type searchTicket = {
+  status: number | number[];
   q?: string;
-  class_info_id?: string;
   date?: string;
   limit?: number;
 };

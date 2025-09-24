@@ -84,18 +84,19 @@ export default function MobileListItem({
                   <p>{item.type}</p>
                 </div>
                 <div className={styles.details}>
-                  {item.Details.map((item, index) => (
-                    <div key={index}>
-                      <div className={styles.info}>
-                        <span>細項 {index + 1}</span>
-                        <p>{item.title}</p>
+                  {item.Details &&
+                    item.Details.map((item, index) => (
+                      <div key={index}>
+                        <div className={styles.info}>
+                          <span>細項 {index + 1}</span>
+                          <p>{item.title}</p>
+                        </div>
+                        <div className={styles.info}>
+                          <span>金額 {index + 1}</span>
+                          <p>{item.money}</p>
+                        </div>
                       </div>
-                      <div className={styles.info}>
-                        <span>金額 {index + 1}</span>
-                        <p>{item.money}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
                 <div className={styles.info}>
                   <span>編號</span>
@@ -103,11 +104,11 @@ export default function MobileListItem({
                 </div>
                 <div className={styles.info}>
                   <span>總額</span>
-                  <p>{item.money}</p>
+                  <p>{item.total_money}</p>
                 </div>
                 <div className={styles.info}>
                   <span>狀態</span>
-                  <p>{item.state}</p>
+                  <p>{item.status}</p>
                 </div>
                 {!isPastRecord && (
                   <div className={styles.info}>
