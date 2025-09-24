@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { PencilLine, Plus, CircleMinus } from "lucide-react";
 
+import { useLoading } from "@/lib/context/LoadingContext";
 import ShadowPopup from "@/components/common/ShadowPopup";
 import InputField from "@/components/common/InputField";
 import SelectField from "@/components/common/SelectField";
-import { BudgetRow } from "@/lib/types/BudgetType";
-import styles from "@/styles/components/EditBudgetPopup.module.scss";
+import { BudgetRow, EditBudget } from "@/lib/types/BudgetType";
 import departmentAPI from "@/services/departmentAPI";
+import styles from "@/styles/components/EditBudgetPopup.module.scss";
 
 type FormValues = {
   budgets: BudgetRow[];
@@ -17,12 +18,13 @@ export default function EditBudgetPopup({
   deptTitle,
   deptId,
   setIsPopup,
+  getSummary,
 }: {
   deptTitle: string;
   deptId: number;
   setIsPopup: (boolean: boolean) => void;
+  getSummary: () => void;
 }) {
-  // const [budgetData, setBudgetData] = useState<BudgetRow[]>();
   const {
     control,
     register,
@@ -32,8 +34,8 @@ export default function EditBudgetPopup({
   } = useForm<FormValues>({
     defaultValues: { budgets: [] },
   });
-
-  const { fields, append, remove, replace } = useFieldArray({
+  const { setLoading } = useLoading();
+  const { fields, append, remove } = useFieldArray({
     control,
     name: "budgets",
   });
@@ -43,7 +45,6 @@ export default function EditBudgetPopup({
       try {
         const res = await departmentAPI.getDeptAccount(deptId);
         if (res.data) {
-          // setBudgetData(res.data);
           reset({ budgets: res.data });
         }
       } catch {}
@@ -53,7 +54,24 @@ export default function EditBudgetPopup({
   }, []);
 
   const onSubmit = async (values: FormValues) => {
-    setIsPopup(false);
+    setLoading(true);
+
+    const data: EditBudget = {
+      accounting_items: values.budgets.map(
+        ({ accounting_id, budget_limit }) => ({
+          accounting_id: Number(accounting_id),
+          budget_limit: budget_limit,
+        })
+      ),
+    };
+
+    try {
+      const res = await departmentAPI.editBudget(deptId, data);
+    } finally {
+      setIsPopup(false);
+      getSummary();
+      setLoading(false);
+    }
   };
 
   return (
@@ -104,7 +122,12 @@ export default function EditBudgetPopup({
             </div>
           ))}
           <hr className={styles.hr} />
-          <Plus className={styles.addBudget} />
+          <Plus
+            className={styles.addBudget}
+            onClick={() =>
+              append({ accounting_id: 1, account_name: "", budget_limit: 0 })
+            }
+          />
           <div className={styles.buttonWrap}>
             <button
               type="button"

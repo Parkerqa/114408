@@ -10,7 +10,7 @@ import Table from "@/components/Table";
 import Chart from "@/components/chart/Chart";
 import AddBudgetPopup from "@/components/Budget/AddBudgetPopup";
 import EditBudgetPopup from "@/components/Budget/EditBudgetPopup";
-import { SummaryRow } from "@/lib/types/BudgetType";
+import { SummaryRow, EditBudget } from "@/lib/types/BudgetType";
 import n8nAPI from "@/services/n8nAPI";
 import departmentAPI from "@/services/departmentAPI";
 import ticketAPI from "@/services/ticketAPI";
@@ -42,34 +42,42 @@ export default function Admin() {
     }
   }
 
-  useEffect(() => {
-    const getCount = async () => {
-      try {
-        const res = await ticketAPI.getUnVerifyCount();
-        if (res.data) {
-          setCount(res.data.total);
-        }
-      } catch {}
-    };
+  const getSummary = async () => {
+    try {
+      const res = await departmentAPI.getDeptSummary();
+      if (res.data) {
+        setSummaryData(res.data);
+      }
+    } catch {}
+  };
 
+  const getCount = async () => {
+    try {
+      const res = await ticketAPI.getUnVerifyCount();
+      if (res.data) {
+        setCount(res.data.total);
+      }
+    } catch {}
+  };
+
+  const getDropdown = async () => {
+    try {
+      const res = await departmentAPI.getDropdown();
+      console.log(res.data);
+    } catch {}
+  };
+
+  useEffect(() => {
     // const getChart = async () => {
     //   try {
     //     const res = await n8nAPI.getHomeChart();
     //   } catch {}
     // };
 
-    const getSummary = async () => {
-      try {
-        const res = await departmentAPI.getDeptSummary();
-        if (res.data) {
-          setSummaryData(res.data);
-        }
-      } catch {}
-    };
-
     // getChart();
     getCount();
     getSummary();
+    getDropdown();
   }, []);
 
   return (
@@ -150,7 +158,19 @@ export default function Admin() {
                             setEditId(item.department_id);
                           }}
                         />
-                        <Trash2 className={styles.delete} size={20} />
+                        <Trash2
+                          className={styles.delete}
+                          size={20}
+                          onClick={async () => {
+                            const id = item.department_id;
+                            const data: EditBudget = {
+                              accounting_items: [],
+                            };
+                            try {
+                              await departmentAPI.editBudget(id, data);
+                            } catch {}
+                          }}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -172,6 +192,7 @@ export default function Admin() {
           setIsPopup={setIsEdit}
           deptTitle={editTitle}
           deptId={editId}
+          getSummary={getSummary}
         />
       )}
     </>
