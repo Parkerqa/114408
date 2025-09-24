@@ -685,3 +685,70 @@ Traceback (most recent call last):
     version = _bcrypt.__about__.__version__
 AttributeError: module 'bcrypt' has no attribute '__about__'
 WARNING:tensorflow:5 out of the last 5 calls to <function TensorFlowTrainer.make_predict_function.<locals>.one_step_on_data_distributed at 0x7f21f0487640> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:passlib.handlers.bcrypt:(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+AttributeError: module 'bcrypt' has no attribute '__about__'
+INFO:matplotlib.font_manager:generated new fontManager
+WARNING:passlib.handlers.bcrypt:(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+AttributeError: module 'bcrypt' has no attribute '__about__'
+WARNING:passlib.handlers.bcrypt:(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+AttributeError: module 'bcrypt' has no attribute '__about__'
+INFO:matplotlib.font_manager:generated new fontManager
+ERROR:sqlalchemy.pool.impl.QueuePool:Exception during reset or similar
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 985, in _finalize_fairy
+    fairy._reset(
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1433, in _reset
+    pool._dialect.do_rollback(self)
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 711, in do_rollback
+    dbapi_connection.rollback()
+  File "/usr/local/lib/python3.10/site-packages/pymysql/connections.py", line 505, in rollback
+    self._read_ok_packet()
+  File "/usr/local/lib/python3.10/site-packages/pymysql/connections.py", line 465, in _read_ok_packet
+    pkt = self._read_packet()
+  File "/usr/local/lib/python3.10/site-packages/pymysql/connections.py", line 760, in _read_packet
+    raise err.OperationalError(
+pymysql.err.OperationalError: (2013, 'Lost connection to MySQL server during query')
+WARNING:passlib.handlers.bcrypt:(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+AttributeError: module 'bcrypt' has no attribute '__about__'
+ERROR:sqlalchemy.pool.impl.QueuePool:Exception during reset or similar
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 985, in _finalize_fairy
+    fairy._reset(
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1433, in _reset
+    pool._dialect.do_rollback(self)
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 711, in do_rollback
+    dbapi_connection.rollback()
+  File "/usr/local/lib/python3.10/site-packages/pymysql/connections.py", line 505, in rollback
+    self._read_ok_packet()
+  File "/usr/local/lib/python3.10/site-packages/pymysql/connections.py", line 465, in _read_ok_packet
+    pkt = self._read_packet()
+  File "/usr/local/lib/python3.10/site-packages/pymysql/connections.py", line 760, in _read_packet
+    raise err.OperationalError(
+pymysql.err.OperationalError: (2013, 'Lost connection to MySQL server during query')
+ERROR:sqlalchemy.pool.impl.QueuePool:Exception during reset or similar
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 985, in _finalize_fairy
+    fairy._reset(
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1433, in _reset
+    pool._dialect.do_rollback(self)
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 711, in do_rollback
+    dbapi_connection.rollback()
+  File "/usr/local/lib/python3.10/site-packages/pymysql/connections.py", line 505, in rollback
+    self._read_ok_packet()
+  File "/usr/local/lib/python3.10/site-packages/pymysql/connections.py", line 465, in _read_ok_packet
+    pkt = self._read_packet()
+  File "/usr/local/lib/python3.10/site-packages/pymysql/connections.py", line 760, in _read_packet
+    raise err.OperationalError(
+pymysql.err.OperationalError: (2013, 'Lost connection to MySQL server during query')
