@@ -12,8 +12,8 @@ from model.ticket_model import (count_by_status, count_status_1, create_ticket,
                                 sum_money_by_status, update_ticket_class,
                                 update_ticket_detail, bulk_update_ticket_status,
                                 get_latest_approved, get_pending_reimbursements,
-                                get_approved_records)
-from schemas.ticket import TicketAuditBulkRequest, TicketList
+                                get_approved_records, update_ticket_info)
+from schemas.ticket import TicketAuditBulkRequest, TicketList, TicketOut
 from starlette.exceptions import HTTPException
 from datetime import date
 
@@ -53,39 +53,51 @@ def list_ticket_logic(mode, user) -> Tuple[str, List[Dict] or None]:
             "Details": details if not is_processing else [],
             "invoice_number": t.invoice_number if not is_processing and t.invoice_number is not None else (
                 check_status(t.status) if t.status == 0 else "等待系統辨識"),
-            "money": str(int(t.total_money)) if not is_processing and t.total_money is not None else (
+            "total_money": str(int(t.total_money)) if not is_processing and t.total_money is not None else (
                 check_status(t.status) if t.status == 0 else "等待系統辨識"
             ),
-            "state": check_status(t.status)
+            "status": check_status(t.status)
         }
         results.append(result)
 
     return "成功", results
 
 
-def list_specify_ticket_logic(ticket_id: int, user) -> Tuple[str, List[Dict] or None]:
+def list_specify_ticket_logic(ticket_id: int, user) -> Tuple[str, Dict or None]:
     ticket = get_specify_ticket(user.user_id, ticket_id)
 
     if not ticket:
         raise HTTPException(status_code=403, detail="你無權查詢此發票")
 
     is_processing = ticket.status == 1
+
     if not is_processing:
-        titles = [detail.title for detail in ticket.ticket_detail if detail.title]
-        title_text = ", ".join(titles) if titles else (
-            check_status(ticket.status) if ticket.status == 0 else "無品項")
+        details = [
+            {
+                "td_id": detail.td_id,
+                "title": detail.title,
+                "money": str(int(detail.money)) if detail.money is not None else "0"
+            }
+            for detail in ticket.ticket_detail if detail.title
+        ]
+        if not details:
+            details = [] if ticket.status != 0 else [
+                {"td_id": None, "title": check_status(ticket.status), "money": "0"}
+            ]
+    else:
+        details = []
 
     result = {
         "id": ticket.ticket_id,
         "time": ticket.created_at.strftime("%Y-%m-%d"),
         "type": check_type(ticket.type) if not is_processing else "等待系統辨識",
-        "title": title_text if not is_processing else "等待系統辨識",
+        "Details": details if not is_processing else [],
         "invoice_number": ticket.invoice_number if not is_processing and ticket.invoice_number is not None else (
             check_status(ticket.status) if ticket.status == 0 else "等待系統辨識"),
-        "money": str(int(ticket.total_money)) if not is_processing and ticket.total_money is not None else (
+        "total_money": str(int(ticket.total_money)) if not is_processing and ticket.total_money is not None else (
             check_status(ticket.status) if ticket.status == 0 else "等待系統辨識"
         ),
-        "state": check_status(ticket.status)
+        "status": check_status(ticket.status)
     }
 
     return "查詢成功", result
@@ -139,9 +151,6 @@ def list_multi_tickets_logic(payload: TicketList) -> Tuple[str, List[Dict]]:
         raise HTTPException(status_code=500, detail="伺服器錯誤")
 
 
-
-
-
 def delete_ticket_logic(ticket_id: int, user) -> str:
     ticket = get_ticket_by_id(ticket_id)
     if not ticket:
@@ -152,7 +161,7 @@ def delete_ticket_logic(ticket_id: int, user) -> str:
         raise HTTPException(status_code=403, detail="無法刪除已完成的發票")
 
     # 一般使用者只能刪除自己的發票
-    if user.priority == 0 and ticket.user_id != user.user_id:
+    if user.priority == 1 and ticket.user_id != user.user_id:
         raise HTTPException(status_code=403, detail="你無權刪除此發票")
 
     success = delete_ticket_by_id(ticket_id)
@@ -166,27 +175,33 @@ def change_ticket_logic(ticket_id: int, payload, user) -> str:
     if not ticket:
         raise HTTPException(status_code=404, detail="找不到發票")
 
-    if ticket.status == 2:
+    if ticket.status == 3:
         raise HTTPException(status_code=403, detail="無法修改已完成的發票")
 
     if user.priority == 0 and ticket.user_id != user.user_id:
         raise HTTPException(status_code=403, detail="你無權修改這張發票")
 
+    # 更新基本資訊 + total_money
+    success = update_ticket_info(ticket_id, payload.type, payload.invoice_number, payload.total_money)
+    if not success:
+        raise HTTPException(status_code=500, detail="更新發票資訊失敗")
+
+    # 明細處理（跟原本一樣）
     existing_ids = set(get_detail_ids_by_tid(ticket_id))
     new_ids = set()
 
-    for item in payload.detail:
+    for item in payload.Details:
         if item.title is None or item.money is None:
             continue
 
-        if item.id:
-            if item.id in existing_ids:
-                success = update_ticket_detail(item.id, ticket_id, item.title, item.money)
+        if item.td_id:
+            if item.td_id in existing_ids:
+                success = update_ticket_detail(item.td_id, ticket_id, item.title, item.money)
                 if not success:
-                    raise HTTPException(status_code=500, detail=f"更新明細 ID {item.id} 失敗")
-                new_ids.add(item.id)
+                    raise HTTPException(status_code=500, detail=f"更新明細 ID {item.td_id} 失敗")
+                new_ids.add(item.td_id)
             else:
-                raise HTTPException(status_code=404, detail=f"找不到明細 id {item.id}")
+                raise HTTPException(status_code=404, detail=f"找不到明細 id {item.td_id}")
         else:
             success = create_ticket_detail(ticket_id, item.title, item.money)
             if not success:
@@ -202,9 +217,8 @@ def change_ticket_logic(ticket_id: int, payload, user) -> str:
 
 
 def search_ticket_logic(
-    status: int,
+    status: List[int],
     keyword: Optional[str],
-    class_info_id: Optional[str],
     date: Optional[date],
     limit: int,
     user,
@@ -212,7 +226,6 @@ def search_ticket_logic(
     tickets = search_tickets_combined(
         status=status,
         keyword=keyword,
-        class_info_id=class_info_id,
         date=date,
         limit=limit,
     )
@@ -223,34 +236,33 @@ def search_ticket_logic(
     if not tickets:
         raise HTTPException(status_code=404, detail="查無資料")
 
-    filtered = []
-    for row in tickets:
-        if user.priority == 0:
-            if row.user_id != user.user_id:
-                continue
-            filtered.append({
-                "class_info_id": row.class_info_id,
-                "ticket_create": row.created_at,
-                "invoice_number": row.invoice_number,
-                "title": row.title,
-                "money": row.money,
-            })
-        else:
-            filtered.append({
-                "ticket_id": row.ticket_id,
-                "class_info_id": row.class_info_id,
-                "user_id": row.user_id,
-                "status": row.status,
-                "invoice_number": row.invoice_number,
-                "created_at": row.created_at,
-                "title": row.title,
-                "money": row.money,
-            })
+    # 如果 user.priority == 0 → 過濾自己的
+    if user.priority == 0:
+        tickets = [t for t in tickets if t.user_id == user.user_id]
 
-    if not filtered:
+    if not tickets:
         raise HTTPException(status_code=403, detail="沒有權限查看這些資料")
 
-    return "查詢成功", filtered
+    results = []
+    for t in tickets:
+        results.append({
+            "id": t.ticket_id,
+            "time": t.created_at.strftime("%Y-%m-%d") if t.created_at else None,
+            "type": check_type(t.type),
+            "invoice_number": t.invoice_number,
+            "total_money": int(t.total_money),
+            "status": check_status(t.status),
+            "Details": [
+                {
+                    "id": d.td_id,
+                    "title": d.title,
+                    "money": int(d.money) if d.money is not None else 0
+                }
+                for d in t.ticket_detail
+            ]
+        })
+
+    return "查詢成功", results
 
 
 async def upload_ticket_logic(image: UploadFile, user) -> Tuple[str, List[Dict] or None]:
@@ -334,6 +346,7 @@ def list_pending_reimbursements_logic(limit: int = 20):
     if rows is None:
         raise HTTPException(status_code=500, detail="查詢失敗")
     return "待核銷申請查詢成功", rows
+
 
 def list_approved_records_logic(limit: int = 20):
     rows = get_approved_records(limit=limit)
