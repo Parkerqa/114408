@@ -54,7 +54,6 @@ export default function EditBudgetPopup({
 
   const onSubmit = async (values: FormValues) => {
     setIsPopup(false);
-    console.log(values);
   };
 
   return (
