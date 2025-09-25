@@ -1,8 +1,8 @@
 export type FormValues = {
-  green_top: number;
-  green_bot: number;
-  yellow_top: number;
-  yellow_bot: number;
-  red_top: number;
-  red_bot: number;
+  green_usage_rate: number;
+  green_remaining_rate: number;
+  yellow_usage_rate: number;
+  yellow_remaining_rate: number;
+  red_usage_rate: number;
+  red_remaining_rate: number;
 };
