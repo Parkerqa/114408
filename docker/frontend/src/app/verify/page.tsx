@@ -1,9 +1,11 @@
 "use client";
 
+import { notFound } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Search, ListChecks } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 
+import { useConfig } from "@/lib/context/ConfigContext";
 import VerifyPopup from "@/components/VerifyPopup";
 import InputField from "@/components/common/InputField";
 import SelectField from "@/components/common/SelectField";
@@ -29,6 +31,14 @@ type FormValues = {
 };
 
 export default function Verify() {
+  const { role } = useConfig();
+
+  if (role) {
+    if (![0, 2, 3].includes(role)) {
+      notFound();
+    }
+  }
+
   const [isPast, setIsPast] = useState<boolean>(false);
   const [isVerify, setIsVerify] = useState<boolean>(false);
   const [pendingTable, setPendingTable] = useState<pendingTicket[]>([]);
@@ -56,16 +66,16 @@ export default function Verify() {
     } catch {}
   };
 
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const res = await ticketAPI.getPending();
-        if (res.data) {
-          setPendingTable(res.data);
-        }
-      } catch {}
-    };
+  const getData = async () => {
+    try {
+      const res = await ticketAPI.getPending();
+      if (res.data) {
+        setPendingTable(res.data);
+      }
+    } catch {}
+  };
 
+  useEffect(() => {
     getData();
   }, []);
 

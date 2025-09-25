@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ChartLine } from "lucide-react";
 
+import { useConfig } from "@/lib/context/ConfigContext";
 import { reportItemData } from "@/lib/data/reportItemData";
 import styles from "@/styles/app/report/ReportPage.module.scss";
 
@@ -24,6 +26,14 @@ const Item = ({
 };
 
 export default function Report() {
+  const { role } = useConfig();
+
+  if (role) {
+    if (![0, 2, 3].includes(role)) {
+      notFound();
+    }
+  }
+
   return (
     <div className={styles.wrap}>
       <p className={styles.title}>

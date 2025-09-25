@@ -9,7 +9,7 @@ export default function Setting() {
   return (
     <>
       {role === 1 && <MobileSetting />}
-      {role && [0, 2, 3].includes(role) && <AdminSetting />}
+      {(role === 0 || role === 2 || role === 3) && <AdminSetting />}
     </>
   );
 }
