@@ -55,7 +55,7 @@ export default function CameraFrame({
   };
 
   return (
-    <BasePopup {...props} title="相機掃描">
+    <BasePopup {...props} title="相機拍攝">
       <div className={styles.wrap}>
         {capturedImage ? (
           <>
