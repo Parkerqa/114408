@@ -1,0 +1,17 @@
+@use "@/styles/base/variables" as *;
+
+.dayWrap {
+  width: fit-content;
+  height: fit-content;
+  border-radius: 10px;
+  padding: 10px 20px;
+  background-color: var(--list-bg);
+  box-shadow: var(--second-color) 0px 3px 5px;
+}
+
+.isFocus {
+  background-color: var(--primary-color);
+  border-radius: 30px;
+  padding: 5px 10px;
+  color: #fff;
+}
