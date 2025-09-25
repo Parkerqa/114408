@@ -17,6 +17,9 @@ export default function DateSelector({
   initRange,
   onChange,
 }: props) {
+  const toNoonLocal = (d?: Date) =>
+    d ? new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12) : undefined;
+
   const today = new Date();
 
   const getRange = (number: number): DateRange => {
@@ -31,8 +34,15 @@ export default function DateSelector({
   );
 
   const handleSelect = (newRange: DateRange | undefined) => {
-    setRange(newRange);
-    if (onChange) onChange(newRange);
+    const fixed: DateRange | undefined = newRange
+      ? {
+          from: toNoonLocal(newRange.from),
+          to: toNoonLocal(newRange.to),
+        }
+      : undefined;
+
+    setRange(fixed);
+    if (onChange) onChange(fixed);
   };
 
   useEffect(() => {
