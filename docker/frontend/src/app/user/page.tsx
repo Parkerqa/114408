@@ -55,6 +55,7 @@ export default function User() {
             type="text"
             icon={<Pencil size={20} />}
             register={register("keyword")}
+            hint="關鍵字查詢"
           />
           <Search
             className={`${styles.searchBtn} ${onSearch ? styles.onSearch : ""}`}
