@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { DataGrid, GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { Eye } from "lucide-react";
 
@@ -50,7 +49,7 @@ export default function PendingTable({
   };
 
   return (
-    <div style={{ width: "100%", height: "100%  " }}>
+    <div style={{ width: "100%", height: "100%" }}>
       <DataGrid
         className={styles.grid}
         rows={pendingData}

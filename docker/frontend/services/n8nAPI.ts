@@ -1,7 +1,7 @@
 import API from "@/lib/api/api";
 import { Response } from "@/lib/types/ResponseType";
 
-const BASE_URL = "https://senichini.app.n8n.cloud/webhook-test";
+const BASE_URL = "http://localhost:5678/webhook-test";
 
 type n8nType = {
   reminder: string;
@@ -10,7 +10,7 @@ type n8nType = {
 };
 
 const n8nAPI = {
-  getHome: (): Promise<Response<n8nType>> => API.get(`${BASE_URL}/admin-home`),
+  getHomeChart: (): Promise<Response<n8nType>> => API.get(`${BASE_URL}/home-chart`),
 };
 
 export default n8nAPI;

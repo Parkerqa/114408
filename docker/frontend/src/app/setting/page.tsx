@@ -6,10 +6,11 @@ import { useConfig } from "@/lib/context/ConfigContext";
 
 export default function Setting() {
   const { role } = useConfig();
+  
   return (
     <>
       {role === 1 && <MobileSetting />}
-      {[0, 2, 3].includes(role) && <AdminSetting />}
+      {(role === 0 || role === 2 || role === 3) && <AdminSetting />}
     </>
   );
 }

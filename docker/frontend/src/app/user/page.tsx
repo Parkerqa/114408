@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 
+import { useLoading } from "@/lib/context/LoadingContext";
 import MobileAddPopup from "@/components/MobileAddPopup";
 import MobileListItem from "@/components/common/MobileListItem";
 import InputField from "@/components/common/InputField";
@@ -13,7 +13,7 @@ import ticketAPI from "@/services/ticketAPI";
 import styles from "@/styles/app/UserPage.module.scss";
 
 export default function User() {
-  const route = useRouter();
+  const { setLoading } = useLoading();
   const [isAdd, setIsAdd] = useState<boolean>(false);
   const [data, setData] = useState<ticketListType[]>([]);
   const { register, watch } = useForm();
@@ -22,8 +22,20 @@ export default function User() {
   const onSearch = !!keyword;
 
   const getList = async () => {
+    setLoading(true);
+
     try {
       const res = await ticketAPI.getList(0);
+      if (res.data) {
+        setData(res.data);
+      }
+    } catch {}
+    setLoading(false);
+  };
+
+  const search = async () => {
+    try {
+      const res = await ticketAPI.searchTicket({ status: 2, q: keyword });
       if (res.data) {
         setData(res.data);
       }
@@ -43,14 +55,16 @@ export default function User() {
             type="text"
             icon={<Pencil size={20} />}
             register={register("keyword")}
+            hint="關鍵字查詢"
           />
           <Search
             className={`${styles.searchBtn} ${onSearch ? styles.onSearch : ""}`}
+            onClick={search}
           />
         </div>
         <div className={styles.list}>
           {data?.map((item, index) => (
-            <MobileListItem data={item} key={index} />
+            <MobileListItem data={item} key={index} getList={getList} />
           ))}
         </div>
       </div>
@@ -61,7 +75,7 @@ export default function User() {
         className={styles.addBtn}
         strokeWidth={4}
       />
-      {isAdd && <MobileAddPopup setIsAdd={setIsAdd} />}
+      {isAdd && <MobileAddPopup setIsAdd={setIsAdd} getList={getList} />}
     </>
   );
 }

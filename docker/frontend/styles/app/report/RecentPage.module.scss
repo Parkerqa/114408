@@ -2,8 +2,26 @@
 
 .wrap {
   display: flex;
-  margin: 14vh 2vw 0 25vw;
-  gap: 30px;
+  margin: 8.5vh 2vw 0 23vw;
+  gap: 10px;
   flex-direction: column;
-  overflow-x: hidden;
+
+  .infoArea {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .infoItem {
+      width: fit-content;
+      height: fit-content;
+      position: relative;
+      padding-top: 40px;
+    }
+
+    .title {
+      font-weight: bold;
+      position: absolute;
+      top: 0;
+    }
+  }
 }

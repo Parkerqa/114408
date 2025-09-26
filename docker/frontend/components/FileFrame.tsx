@@ -1,20 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import { FileText, Image, Eye, SquareX } from "lucide-react";
 
 import BasePopup from "@/components/common/BasePopup";
+import { useLoading } from "@/lib/context/LoadingContext";
 import { HtmlDivPropsType } from "@/lib/types/HtmlDivType";
 import styles from "@/styles/components/FileFrame.module.scss";
 import ticketAPI from "@/services/ticketAPI";
 
 export default function FileFrame({
   setIsAdd,
+  getList,
   ...props
-}: HtmlDivPropsType & { setIsAdd: (state: boolean) => void }) {
-  const route = useRouter();
+}: HtmlDivPropsType & {
+  setIsAdd: (state: boolean) => void;
+  getList: () => void;
+}) {
+  const { setLoading } = useLoading();
   const [preview, setPreview] = useState<string | null>(null);
   const { getRootProps, getInputProps, acceptedFiles } = useDropzone({
     accept: { "image/*": [] },
@@ -36,7 +40,7 @@ export default function FileFrame({
     } catch {
     } finally {
       setIsAdd(false);
-      window.location.reload();
+      getList();
     }
   };
 

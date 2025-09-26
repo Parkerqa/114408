@@ -5,13 +5,15 @@ import { ImageUp } from "lucide-react";
 import { Camera } from "lucide-react";
 
 import FileFrame from "@/components/FileFrame";
-import CameraFrame from "@/components/CamaraFrame";
+import CameraFrame from "@/components/CameraFrame";
 import styles from "@/styles/components/MobileAddPopup.module.scss";
 
 export default function MobileAddPopup({
   setIsAdd,
+  getList,
 }: {
   setIsAdd: (state: boolean) => void;
+  getList: () => void;
 }) {
   const [isFileUpload, setIsFileUpload] = useState<boolean>(false);
   const [isCameraScan, setIsCameraScan] = useState<boolean>(false);
@@ -42,10 +44,10 @@ export default function MobileAddPopup({
           }}
         >
           <Camera size={55} strokeWidth={1.5} className={styles.icon} />
-          <p>相機掃描</p>
+          <p>相機拍攝</p>
         </div>
-        {isCameraScan && <CameraFrame setIsAdd={setIsAdd} />}
-        {isFileUpload && <FileFrame setIsAdd={setIsAdd} />}
+        {isCameraScan && <CameraFrame setIsAdd={setIsAdd} getList={getList} />}
+        {isFileUpload && <FileFrame setIsAdd={setIsAdd} getList={getList}/>}
       </div>
     </>
   );

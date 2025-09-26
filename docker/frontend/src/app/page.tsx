@@ -16,10 +16,10 @@ export default function Home() {
     }
 
     switch (role) {
-      case 0:
       case 1:
         route.replace("/user");
         break;
+      case 0:
       case 2:
       case 3:
         route.replace("/admin");

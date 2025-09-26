@@ -1,20 +1,25 @@
 export type ticketListType = {
   id: number;
+  Details: {
+    title: string;
+    money: number;
+  }[];
   time: string;
   type: string;
-  title: string;
   invoice_number: string;
-  money: number;
-  state: string;
+  total_money: number;
+  status: string;
 };
 
 export type editTicket = {
-  time: string;
-  type: string;
-  title: string;
-  number: string;
-  money: number;
-  state: string;
+  Details: {
+    td_id: number;
+    title: string;
+    money: number;
+  }[];
+  type: number;
+  invoice_number: string;
+  total_money: number;
 };
 
 export type auditTicket = {
@@ -25,8 +30,8 @@ export type auditTicket = {
 };
 
 export type searchTicket = {
+  status: number | number[];
   q?: string;
-  class_info_id?: string;
   date?: string;
   limit?: number;
 };
@@ -63,4 +68,33 @@ export type multiTicketDetail = {
   applicant: string;
   img_url: string;
   state?: number;
+};
+
+export type daily_amounts = {
+  id: number;
+  money: number;
+};
+
+export type bar_chart = {
+  account_class: string;
+  total_budget: number;
+  total_amount: number;
+};
+
+export type report_ticket = {
+  ticket_id: number;
+  upload_date: string;
+  type: string;
+  title: string;
+  total_money: number;
+  creator_name: string;
+  check_date: string;
+  check_man: string;
+  img_url: string;
+};
+
+export type report = {
+  tickets: report_ticket[];
+  top_accounts: bar_chart[];
+  daily_amounts: daily_amounts[];
 };

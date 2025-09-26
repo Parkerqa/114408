@@ -39,6 +39,16 @@
   --input-box-shadow: rgba(163, 192, 254, 0.08);
 }
 
+.rdp-root {
+  --rdp-accent-color: var(--primary-color) !important;
+  --rdp-accent-background-color: var(--second-light-color) !important;
+}
+
+[data-theme="dark"] .rdp-root {
+  --rdp-accent-color: var(--primary-color) !important;
+  --rdp-accent-background-color: var(--second-light-color) !important;
+}
+
 // 全局基礎樣式
 body {
   background-color: var(--background-color);
