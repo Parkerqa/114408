@@ -147,7 +147,7 @@ function LineMoneyChart({
   return (
     <div
       style={{
-        width: "320px",
+        width: "340px",
         height: fixedHeightPx ?? "230px",
       }}
     >

@@ -59,7 +59,7 @@ export default function BarChart({ data }: { data: BudgetData[] }) {
   return (
     <div
       style={{
-        width: "320px",
+        width: "340px",
         height: "230px",
         borderRadius: 10,
       }}
