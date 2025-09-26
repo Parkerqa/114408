@@ -54,7 +54,13 @@ export default function DateSelector({
   return (
     <div className={styles.dayWrap}>
       {recentBtn && (
-        <div style={{ marginTop: "10px", display: "flex", gap: "10px" }}>
+        <div
+          style={{
+            marginTop: "10px",
+            display: "flex",
+            gap: "10px",
+          }}
+        >
           <button
             className={`${rangeNum === 7 && styles.isFocus} `}
             onClick={() => {
