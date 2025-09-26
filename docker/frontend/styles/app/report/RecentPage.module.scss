@@ -2,16 +2,26 @@
 
 .wrap {
   display: flex;
-  margin: 14vh 2vw 0 25vw;
-  gap: 30px;
+  margin: 8.5vh 2vw 0 23vw;
+  gap: 10px;
   flex-direction: column;
 
-  .dayWrap {
-    width: fit-content;
-    height: fit-content;
-    border-radius: 10px;
-    padding: 10px 20px;
-    background-color: var(--list-bg);
-    box-shadow: var(--second-color) 0px 3px 5px;
+  .infoArea {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .infoItem {
+      width: fit-content;
+      height: fit-content;
+      position: relative;
+      padding-top: 40px;
+    }
+
+    .title {
+      font-weight: bold;
+      position: absolute;
+      top: 0;
+    }
   }
 }

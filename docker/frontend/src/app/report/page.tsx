@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChartLine } from "lucide-react";
