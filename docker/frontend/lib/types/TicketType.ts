@@ -69,3 +69,32 @@ export type multiTicketDetail = {
   img_url: string;
   state?: number;
 };
+
+export type daily_amounts = {
+  id: number;
+  money: number;
+};
+
+export type bar_chart = {
+  account_class: string;
+  total_budget: number;
+  total_amount: number;
+};
+
+export type report_ticket = {
+  ticket_id: number;
+  upload_date: string;
+  type: string;
+  title: string;
+  total_money: number;
+  creator_name: string;
+  check_date: string;
+  check_man: string;
+  img_url: string;
+};
+
+export type report = {
+  tickets: report_ticket[];
+  top_accounts: bar_chart[];
+  daily_amounts: daily_amounts[];
+};

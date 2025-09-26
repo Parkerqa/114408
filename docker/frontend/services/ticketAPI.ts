@@ -9,6 +9,7 @@ import {
   pendingTicket,
   multiTicket,
   multiTicketDetail,
+  report,
 } from "@/lib/types/TicketType";
 
 const BASE_URL = "/ticket";
@@ -60,6 +61,13 @@ const ticketAPI = {
         q: q,
         date: date,
         limit: limit,
+      },
+    }),
+  report: (start: string, end: string): Promise<Response<report>> =>
+    API.get(`${BASE_URL}/report`, {
+      params: {
+        start_date: start,
+        end_date: end,
       },
     }),
 };
