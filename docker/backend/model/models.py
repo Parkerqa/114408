@@ -56,6 +56,7 @@ class Departments(Base):
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
 
     department_accounting: Mapped[list['DepartmentAccounting']] = relationship('DepartmentAccounting', back_populates='department')
+    users: Mapped[list["User"]] = relationship("User", back_populates="department")
 
 
 class OtherSetting(Base):
@@ -93,7 +94,10 @@ class Ticket(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DATETIME(fsp=6), nullable=False, server_default=text('CURRENT_TIMESTAMP(6)'))
     type: Mapped[Optional[int]] = mapped_column(Integer)
     invoice_number: Mapped[Optional[str]] = mapped_column(String(10))
-    class_info_id: Mapped[Optional[str]] = mapped_column(Enum('a'))
+    accounting_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("accounting_items.accounting_id", ondelete="SET NULL"),
+        nullable=True
+    )
 
     user_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("user.user_id", ondelete="SET NULL"),
@@ -123,6 +127,7 @@ class Ticket(Base):
         back_populates='ticket',
         cascade="all, delete-orphan",
         passive_deletes=True,
+        order_by="TicketDetail.td_id",
     )
 
 
@@ -145,6 +150,14 @@ class User(Base):
         server_default=text("CURRENT_TIMESTAMP(6)"),
         server_onupdate=text("CURRENT_TIMESTAMP(6)")
     )
+
+    department_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("departments.department_id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+
+    department: Mapped[Optional["Departments"]] = relationship("Departments", back_populates="users")
 
     tickets: Mapped[list["Ticket"]] = relationship(
         "Ticket",

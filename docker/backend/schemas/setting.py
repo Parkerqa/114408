@@ -6,9 +6,9 @@ class ThemeUpdate(BaseModel):
 
 
 class ColorSetting(BaseModel):
-    red_bot: int
-    red_top: int
-    yellow_bot: int
-    yellow_top: int
-    green_bot: int
-    green_top: int
+    red_usage_rate: int
+    red_remaining_rate: int
+    green_usage_rate: int
+    green_remaining_rate: int
+    yellow_usage_rate: int
+    yellow_remaining_rate: int

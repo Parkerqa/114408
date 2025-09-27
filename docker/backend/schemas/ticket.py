@@ -1,20 +1,35 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from datetime import datetime
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class TicketDetailUpdate(BaseModel):
-    id: Optional[int] = None
+    td_id: Optional[int] = None
     title: str
-    money: str
+    money: int
+
+
+class TicketUpdate(BaseModel):
+    type: int
+    invoice_number: Optional[str] = None
+    total_money: int
+    Details: List[TicketDetailUpdate]
 
 
 class TicketList(BaseModel):
     ticket_id: List[int]
 
 
-class TicketUpdate(BaseModel):
-    detail: List[TicketDetailUpdate]
+class TicketOut(BaseModel):
+    ticket_id: int
+    time: Optional[datetime]
+    type: int
+    Details: List[TicketDetailUpdate]
+    invoice_number: Optional[str]
+    status: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TicketAuditItem(BaseModel):

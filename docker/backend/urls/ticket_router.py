@@ -1,12 +1,13 @@
-from typing import Optional
+from typing import Optional, List
 
 from core.response import make_response
 from dependencies import get_current_user, require_role
 from fastapi import (APIRouter, BackgroundTasks, Depends, File, Path, Query,
                      UploadFile)
+from fastapi.encoders import jsonable_encoder
 from datetime import date
 
-from schemas.ticket import TicketAuditBulkRequest, TicketUpdate, TicketList
+from schemas.ticket import TicketAuditBulkRequest, TicketUpdate, TicketList, TicketOut
 from views.parser import invoice_parser
 from views.ticket import (audit_ticket_bulk_logic, change_ticket_logic,
                           delete_ticket_logic, list_specify_ticket_logic, list_multi_tickets_logic,
@@ -14,7 +15,8 @@ from views.ticket import (audit_ticket_bulk_logic, change_ticket_logic,
                           search_ticket_logic, total_money_logic,
                           unaudited_invoices_logic, upload_ticket_logic,
                           write_off_logic, list_latest_approved_logic,
-                          list_pending_reimbursements_logic, list_approved_records_logic)
+                          list_pending_reimbursements_logic, list_approved_records_logic,
+                          get_ticket_report_logic)
 
 ticket_router = APIRouter()
 
@@ -32,7 +34,7 @@ def list_specify_ticket(ticket_id: int, current_user=Depends(get_current_user)):
 
 
 @ticket_router.post("/multi_list", summary="查詢多筆發票")
-def list_specify_ticket(payload: TicketList, current_user=Depends(require_role(0))):
+def list_multi_ticket(payload: TicketList, current_user=Depends(require_role(0))):
     message, data = list_multi_tickets_logic(payload)
     return make_response(message, data=data)
 
@@ -53,23 +55,24 @@ def change_ticket(
     return make_response(message)
 
 
-@ticket_router.get("/search", summary="核銷報帳合併查詢（status 必填，關鍵字 / 類別 / 日期為選填）")
+@ticket_router.get("/search", summary="核銷報帳合併查詢（status 必填，關鍵字 / 類別 / 日期為選填）", response_model=List[TicketOut])
 def search_ticket(
-    status: int = Query(..., description="發票狀態（必填）"),
+    status: List[int] = Query(..., description="發票狀態（可傳多個）"),
     q: Optional[str] = Query(None, min_length=1, description="關鍵字（title / invoice_number / created_at / 金額）"),
-    class_info_id: Optional[str] = Query(None, description="會計類別代碼/ID"),
     date: Optional[date] = Query(None, description="日期"),
     limit: int = Query(50, ge=1, le=200, description="最多回傳筆數"),
     current_user=Depends(get_current_user),
 ):
-    message, data = search_ticket_logic(
+    message, tickets_out = search_ticket_logic(
         status=status,
         keyword=q.strip() if q else None,
-        class_info_id=class_info_id,
         date=date,
         limit=limit,
         user=current_user,
     )
+
+    data = jsonable_encoder(tickets_out)
+
     return make_response(message, data=data)
 
 
@@ -118,7 +121,7 @@ def audit_ticket_bulk(
 
 
 @ticket_router.get("/latest_approved", summary="最新過審的4筆資料")
-def latest_approved(limit: int = Query(4, ge=1, le=50), current_user=Depends(require_role(1))):
+def latest_approved(limit: int = Query(4, ge=1, le=50), current_user=Depends(require_role(0))):
     message, data = list_latest_approved_logic(limit=limit)
     return make_response(message, data=data)
 
@@ -138,4 +141,14 @@ def list_approved_records(
     current_user=Depends(require_role(0)),
 ):
     message, data = list_approved_records_logic(limit=limit)
+    return make_response(message, data=data)
+
+
+@ticket_router.get("/report", summary="依日期區間查詢核銷報帳資訊")
+def get_ticket_report(
+    start_date: date = Query(..., description="開始日期 yyyy-mm-dd"),
+    end_date: date = Query(..., description="結束日期 yyyy-mm-dd"),
+    current_user=Depends(get_current_user)
+):
+    message, data = get_ticket_report_logic(start_date, end_date, current_user)
     return make_response(message, data=data)

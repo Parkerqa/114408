@@ -4,9 +4,10 @@ from model.departments_model import (
     department_exists, create_department,
     delete_department_by_id, get_department_by_id,
     update_department_by_id, get_departments_budget_summary,
-    get_department_accounts, get_departments_with_accounts
+    get_department_accounts, get_departments_with_accounts,
+    sync_department_accountings
 )
-from schemas.departments import DepartmentCreate
+from schemas.departments import DepartmentCreate, DepartmentAccountingSync
 from starlette.exceptions import HTTPException
 
 
@@ -80,3 +81,14 @@ def get_departments_with_accounts_logic() -> Tuple[str, List[Dict]]:
     if not results:
         raise HTTPException(status_code=404, detail="查無資料")
     return "查詢成功", results
+
+
+def sync_department_accounting_logic(department_id: int, payload: DepartmentAccountingSync, user) -> str:
+    try:
+        success = sync_department_accountings(department_id, payload.accounting_items, user.user_id)
+        if not success:
+            raise HTTPException(status_code=500, detail="同步更新失敗")
+        return "同步更新成功"
+    except Exception as e:
+        print(f"[ERROR] 同步更新 department_accounting 發生錯誤：{e}")
+        raise HTTPException(status_code=500, detail="伺服器錯誤")
