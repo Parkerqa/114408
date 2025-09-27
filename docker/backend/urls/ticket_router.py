@@ -15,7 +15,8 @@ from views.ticket import (audit_ticket_bulk_logic, change_ticket_logic,
                           search_ticket_logic, total_money_logic,
                           unaudited_invoices_logic, upload_ticket_logic,
                           write_off_logic, list_latest_approved_logic,
-                          list_pending_reimbursements_logic, list_approved_records_logic)
+                          list_pending_reimbursements_logic, list_approved_records_logic,
+                          get_ticket_report_logic)
 
 ticket_router = APIRouter()
 
@@ -140,4 +141,14 @@ def list_approved_records(
     current_user=Depends(require_role(0)),
 ):
     message, data = list_approved_records_logic(limit=limit)
+    return make_response(message, data=data)
+
+
+@ticket_router.get("/report", summary="依日期區間查詢核銷報帳資訊")
+def get_ticket_report(
+    start_date: date = Query(..., description="開始日期 yyyy-mm-dd"),
+    end_date: date = Query(..., description="結束日期 yyyy-mm-dd"),
+    current_user=Depends(get_current_user)
+):
+    message, data = get_ticket_report_logic(start_date, end_date, current_user)
     return make_response(message, data=data)

@@ -1,13 +1,13 @@
 import os
 
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Set
 from sqlalchemy import String, desc, cast, func, or_, and_, Date
 from sqlalchemy.orm import Session, aliased, joinedload
 from datetime import datetime, timedelta, date as date_cls
 from decimal import Decimal
 
 from .db_utils import SessionLocal
-from .models import User, Ticket, TicketDetail
+from .models import User, Ticket, TicketDetail, AccountingItems, DepartmentAccounting
 from views.checker import check_type, check_status
 from constants.ticket_status import TicketStatus, FINAL_STATES
 
@@ -508,5 +508,72 @@ def get_approved_records(limit: int = 20):
     except Exception as e:
         print(f"[ERROR] get_approved_records failed: {e}")
         return None
+    finally:
+        db.close()
+
+
+def get_tickets_in_range(start_date: date_cls, end_date: date_cls):
+    db: Session = SessionLocal()
+    try:
+        return (
+            db.query(Ticket)
+            .filter(Ticket.created_at >= start_date, Ticket.created_at <= end_date)
+            .options(
+                joinedload(Ticket.ticket_detail),
+                joinedload(Ticket.user)
+            )
+            .all()
+        )
+    finally:
+        db.close()
+
+
+def get_top_accounting_in_range(start_date: date_cls, end_date: date_cls, limit: int = 3):
+    db: Session = SessionLocal()
+    try:
+        rows = (
+            db.query(
+                AccountingItems.account_class,
+                func.sum(Ticket.total_money).label("total_amount"),
+                func.sum(DepartmentAccounting.budget_limit).label("total_budget"),
+            )
+            .join(Ticket, Ticket.accounting_id == AccountingItems.accounting_id)
+            .join(DepartmentAccounting, DepartmentAccounting.accounting_id == AccountingItems.accounting_id)
+            .filter(Ticket.created_at >= start_date, Ticket.created_at <= end_date)
+            .group_by(AccountingItems.account_class)
+            .order_by(desc(func.sum(Ticket.total_money)))
+            .limit(limit)
+            .all()
+        )
+        return [
+            {
+                "account_class": r.account_class,
+                "total_budget": float(r.total_budget) if r.total_budget else 0.0,
+                "total_amount": float(r.total_amount) if r.total_amount else 0.0
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+def get_daily_amounts_in_range(start_date: date_cls, end_date: date_cls):
+    db: Session = SessionLocal()
+    try:
+        rows = (
+            db.query(
+                cast(Ticket.created_at, Date).label("day"),
+                func.sum(Ticket.total_money).label("money")
+            )
+            .filter(Ticket.created_at >= start_date, Ticket.created_at <= end_date)
+            .group_by(cast(Ticket.created_at, Date))
+            .order_by(cast(Ticket.created_at, Date))
+            .all()
+        )
+
+        return [
+            {"id": idx + 1, "money": float(r.money) if r.money else 0.0}
+            for idx, r in enumerate(rows)
+        ]
     finally:
         db.close()

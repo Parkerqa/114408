@@ -12,7 +12,9 @@ from model.ticket_model import (count_by_status, count_status_1, create_ticket,
                                 sum_money_by_status, update_ticket_class,
                                 update_ticket_detail, bulk_update_ticket_status,
                                 get_latest_approved, get_pending_reimbursements,
-                                get_approved_records, update_ticket_info)
+                                get_approved_records, update_ticket_info,
+                                get_tickets_in_range, get_top_accounting_in_range,
+                                get_daily_amounts_in_range)
 from schemas.ticket import TicketAuditBulkRequest, TicketList, TicketOut
 from starlette.exceptions import HTTPException
 from datetime import date
@@ -301,11 +303,7 @@ def unaudited_invoices_logic() -> Tuple[str, List[Dict] or None]:
 
 def not_write_off_logic() -> Tuple[str, List[Dict] or None]:
     try:
-        count_0 = count_by_status(0)
-        count_1 = count_by_status(1)
-        total = count_0 + count_1
-
-        return "統計成功", {"total": total}
+        return "統計成功", {"total": count_by_status(2)}
     except Exception as e:
         print(f"[ERROR] 統計 Ticket status 錯誤：{e}")
         raise HTTPException(status_code=500, detail="統計失敗")
@@ -313,15 +311,15 @@ def not_write_off_logic() -> Tuple[str, List[Dict] or None]:
 
 def write_off_logic() -> Tuple[str, List[Dict] or None]:
     try:
-        count = count_by_status(2)
-        total_money = sum_money_by_status(2)
+        count = count_by_status(3)
+        total_money = sum_money_by_status(3)
 
         return "統計成功", {
             "count": count,
             "total_money": total_money
         }
     except Exception as e:
-        print(f"[ERROR] 統計 status=2 與金額加總錯誤：{e}")
+        print(f"[ERROR] 統計 status=3 與金額加總錯誤：{e}")
         raise HTTPException(status_code=500, detail="統計失敗")
 
 
@@ -353,3 +351,40 @@ def list_approved_records_logic(limit: int = 20):
     if rows is None:
         raise HTTPException(status_code=500, detail="查詢失敗")
     return "已核銷資料查詢成功", rows
+
+
+def get_ticket_report_logic(start_date: date, end_date: date, user) -> Tuple[str, Dict]:
+    try:
+        # 1. 查詢所有核銷報帳
+        tickets = get_tickets_in_range(start_date, end_date)
+
+        ticket_list = [
+            {
+                "ticket_id": t.ticket_id,
+                "upload_date": t.created_at.strftime("%Y-%m-%d") if t.created_at else None,
+                "type": check_type(t.type),
+                "title": ", ".join([d.title for d in t.ticket_detail if d.title]) if t.ticket_detail else "",
+                "total_money": float(t.total_money) if t.total_money else 0.0,
+                "created_by": t.created_by if t.created_by else None,
+                "check_date": t.check_date.strftime("%Y-%m-%d") if t.check_date else None,
+                "check_man": t.check_man,
+                "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{t.img}' if t.img else None,
+            }
+            for t in tickets
+        ]
+
+        # 2. 前三支出的會計項目
+        top_accounts = get_top_accounting_in_range(start_date, end_date, limit=3)
+
+        # 3. 日期區間的每日金額
+        daily_amounts = get_daily_amounts_in_range(start_date, end_date)
+
+        return "查詢成功", {
+            "tickets": ticket_list,
+            "top_accounts": top_accounts,
+            "daily_amounts": daily_amounts
+        }
+
+    except Exception as e:
+        print(f"[ERROR] get_ticket_report_logic failed: {e}")
+        raise HTTPException(status_code=500, detail="產生報表失敗")
