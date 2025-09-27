@@ -52,7 +52,6 @@ export default function AddBudgetPopup({
     //   return;
     // }
     setIsPopup(false);
-    console.log(values);
   };
 
   return (

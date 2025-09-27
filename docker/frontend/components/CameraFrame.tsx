@@ -2,12 +2,12 @@
 
 import React, { useRef, useState, useCallback } from "react";
 import Webcam from "react-webcam";
-import { useRouter } from "next/navigation";
 
 import BasePopup from "@/components/common/BasePopup";
+import { useLoading } from "@/lib/context/LoadingContext";
 import { base64ToFile } from "@/lib/utils/img-format-convert";
 import { HtmlDivPropsType } from "@/lib/types/HtmlDivType";
-import styles from "@/styles/components/CamaraFrame.module.scss";
+import styles from "@/styles/components/CameraFrame.module.scss";
 import ticketAPI from "@/services/ticketAPI";
 
 const videoConstraints = {
@@ -18,8 +18,13 @@ const videoConstraints = {
 
 export default function CameraFrame({
   setIsAdd,
+  getList,
   ...props
-}: HtmlDivPropsType & { setIsAdd: (state: boolean) => void }) {
+}: HtmlDivPropsType & {
+  setIsAdd: (state: boolean) => void;
+  getList: () => void;
+}) {
+  const { setLoading } = useLoading();
   const webcamRef = useRef<Webcam>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
@@ -45,12 +50,12 @@ export default function CameraFrame({
     } catch {
     } finally {
       setIsAdd(false);
-      window.location.reload();
+      getList();
     }
   };
 
   return (
-    <BasePopup {...props} title="相機掃描">
+    <BasePopup {...props} title="相機拍攝">
       <div className={styles.wrap}>
         {capturedImage ? (
           <>

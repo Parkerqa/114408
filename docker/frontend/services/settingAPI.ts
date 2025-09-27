@@ -8,10 +8,14 @@ const settingAPI = {
     API.patch(
       `${BASE_URL}/change_theme`,
       { theme },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+      { headers: { "Content-Type": "application/json" } }
     ),
+  getColor: (): Promise<Response<any>> => API.get(`${BASE_URL}/get_color`),
+  editColor: (data: any): Promise<Response<any>> =>
+    API.patch(`${BASE_URL}/change_color`, data, {
+      headers: { "Content-Type": "application/json" },
+      toast: true,
+    }),
 };
 
 export default settingAPI;

@@ -9,3 +9,10 @@ export type BudgetRow = {
   account_name: string;
   budget_limit: number;
 };
+
+export type EditBudget = {
+  accounting_items: {
+    accounting_id: number;
+    budget_limit: number;
+  }[];
+};

@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation";
 import { UserInfo } from "@/lib/types/UserAPIType";
 import userAPI from "@/services/userAPI";
 
-type Role = 0 | 1;
+type Role = 0 | 1 | 2 | 3;
 type Theme = 0 | 1;
 
 type ConfigContextType = {
-  role: number;
+  role: number | undefined;
   theme: number;
   setTheme: (theme: Theme) => void;
   fetchUser: () => void;
@@ -19,7 +19,7 @@ type ConfigContextType = {
 };
 
 const ConfigContext = createContext<ConfigContextType>({
-  role: 0,
+  role: undefined,
   theme: 0,
   user: undefined,
   setTheme: () => {},
@@ -30,7 +30,7 @@ export const useConfig = () => useContext(ConfigContext);
 
 export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
   const route = useRouter();
-  const [role, setRole] = useState<Role>(0);
+  const [role, setRole] = useState<Role | undefined>(undefined);
   const [theme, setTheme] = useState<Theme>(0);
   const [user, setUser] = useState<UserInfo | null | undefined>(undefined);
 

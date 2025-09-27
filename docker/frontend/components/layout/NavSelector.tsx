@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useConfig } from "@/lib/context/ConfigContext";
+
 import BottomNav from "./BottomNav";
 import Sidebar from "./Sidebar";
 

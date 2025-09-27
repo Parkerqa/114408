@@ -39,6 +39,7 @@ export default function PastRecords() {
           type="text"
           icon={<Pencil size={20} />}
           register={register("keyword")}
+          hint="關鍵字查詢"
         />
         <Search
           className={`${styles.searchBtn} ${onSearch ? styles.onSearch : ""}`}
@@ -46,7 +47,7 @@ export default function PastRecords() {
       </div>
       <div className={styles.list}>
         {data?.map((item, index) => (
-          <MobileListItem data={item} key={index} />
+          <MobileListItem data={item} key={index} getList={getList} />
         ))}
       </div>
     </div>

@@ -9,6 +9,7 @@ import {
   pendingTicket,
   multiTicket,
   multiTicketDetail,
+  report,
 } from "@/lib/types/TicketType";
 
 const BASE_URL = "/ticket";
@@ -22,6 +23,7 @@ const ticketAPI = {
     }),
   getTicket: (id: number): Promise<Response<ticketListType>> =>
     API.get(`${BASE_URL}/list/${id}`),
+  userSearch: (): Promise<Response<any>> => API.post(``),
   addTicket: (data: FormData): Promise<Response<any>> =>
     API.post(`${BASE_URL}/upload`, data, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -48,17 +50,24 @@ const ticketAPI = {
       toast: true,
     }),
   searchTicket: ({
+    status,
     q,
-    class_info_id,
     date,
     limit,
   }: searchTicket): Promise<Response<any>> =>
     API.get(`${BASE_URL}/search`, {
       params: {
+        status: status,
         q: q,
-        class_info_id: class_info_id,
         date: date,
         limit: limit,
+      },
+    }),
+  report: (start: string, end: string): Promise<Response<report>> =>
+    API.get(`${BASE_URL}/report`, {
+      params: {
+        start_date: start,
+        end_date: end,
       },
     }),
 };
