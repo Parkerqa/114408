@@ -150,17 +150,12 @@ def get_departments_with_accounts() -> Optional[List[Dict]]:
                 AccountingItems.account_name,
                 DepartmentAccounting.budget_limit
             )
-            .join(DepartmentAccounting, Departments.department_id == DepartmentAccounting.department_id)
-            .join(AccountingItems, AccountingItems.accounting_id == DepartmentAccounting.accounting_id)
-            .filter(
-                Departments.is_active == 1,
-                AccountingItems.is_active == 1,
-                DepartmentAccounting.is_active == 1
-            )
+            .outerjoin(DepartmentAccounting, Departments.department_id == DepartmentAccounting.department_id)
+            .outerjoin(AccountingItems, AccountingItems.accounting_id == DepartmentAccounting.accounting_id)
+            .filter(Departments.is_active == 1)
             .all()
         )
 
-        # 整理成 {部門: [科目清單]}
         dept_map: Dict[int, Dict] = {}
         for r in rows:
             if r.department_id not in dept_map:
@@ -169,15 +164,67 @@ def get_departments_with_accounts() -> Optional[List[Dict]]:
                     "dept_name": r.dept_name,
                     "accounts": []
                 }
-            dept_map[r.department_id]["accounts"].append({
-                "accounting_id": r.accounting_id,
-                "account_name": r.account_name,
-                "budget_limit": float(r.budget_limit) if r.budget_limit else 0.0
-            })
+            if r.accounting_id:
+                dept_map[r.department_id]["accounts"].append({
+                    "accounting_id": r.accounting_id,
+                    "account_name": r.account_name,
+                    "budget_limit": float(r.budget_limit) if r.budget_limit else 0.0
+                })
 
         return list(dept_map.values())
+
     except Exception as e:
         print(f"[ERROR] get_departments_with_accounts failed: {e}")
         return None
+    finally:
+        db.close()
+
+
+def sync_department_accountings(department_id: int, accounting_items: list, updated_by: int) -> bool:
+    db: Session = SessionLocal()
+    try:
+        # 1. DB 目前有哪些 accounting_id
+        existing = db.query(DepartmentAccounting).filter(
+            DepartmentAccounting.department_id == department_id
+        ).all()
+        existing_map = {d.accounting_id: d for d in existing}
+
+        incoming_ids = {item.accounting_id for item in accounting_items}
+
+        # 2. 更新 & 新增
+        for item in accounting_items:
+            if item.accounting_id in existing_map:
+                # 更新
+                db.query(DepartmentAccounting).filter(
+                    DepartmentAccounting.department_id == department_id,
+                    DepartmentAccounting.accounting_id == item.accounting_id
+                ).update({
+                    DepartmentAccounting.budget_limit: item.budget_limit,
+                    DepartmentAccounting.updated_by: updated_by
+                })
+            else:
+                # 新增
+                new_acc = DepartmentAccounting(
+                    department_id=department_id,
+                    accounting_id=item.accounting_id,
+                    budget_limit=item.budget_limit,
+                    updated_by=updated_by
+                )
+                db.add(new_acc)
+
+        # 3. 刪除 DB 裡有但前端沒傳的
+        to_delete_ids = set(existing_map.keys()) - incoming_ids
+        if to_delete_ids:
+            db.query(DepartmentAccounting).filter(
+                DepartmentAccounting.department_id == department_id,
+                DepartmentAccounting.accounting_id.in_(to_delete_ids)
+            ).delete(synchronize_session=False)
+
+        db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        print(e)
+        return False
     finally:
         db.close()
