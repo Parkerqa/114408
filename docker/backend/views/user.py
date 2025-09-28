@@ -57,6 +57,14 @@ async def forget_password_logic(email: str):
     raise HTTPException(status_code=500, detail="寄送失敗")
 
 
+def hash_password_logic(password: str):
+    new_password = hash_password(password)
+
+    if new_password:
+        return new_password
+    raise HTTPException(status_code=500, detail="Hash失敗")
+
+
 async def change_user_info_logic(user, payload: ModifyUserInfo, avatar: Optional[UploadFile]):
     if user.email != payload.email and get_user_by_email(payload.email):
         raise HTTPException(status_code=409, detail="此電子郵件已被其他帳戶使用")

@@ -1,12 +1,12 @@
 from core.response import make_response
 from dependencies import require_role
 from fastapi import APIRouter, Depends, File, UploadFile
-from schemas.user import (ModifyUserInfo, ModifyUserInfoForm, PasswordForget,
+from schemas.user import (ModifyUserInfo, ModifyUserInfoForm, PasswordForget, HashIn,
                           UserCreate, UserLogin)
 from views.user import (change_user_info_logic, forget_password_logic,
                         get_current_user_info_logic,
                         get_current_user_settings_logic, login_logic,
-                        register_logic)
+                        register_logic, hash_password_logic)
 
 user_router = APIRouter()
 
@@ -23,9 +23,15 @@ def login(payload: UserLogin):
     return make_response(message, data=data)
 
 
-@user_router.post("/forget_password", summary="忘記密碼")
-async def forget_password(payload: PasswordForget):
-    message = await forget_password_logic(payload.email)
+# @user_router.post("/forget_password", summary="忘記密碼")
+# async def forget_password(payload: PasswordForget):
+#     message = await forget_password_logic(payload.email)
+#     return make_response(message)
+
+
+@user_router.post("/security/hash_password", summary="產生密碼Hash")
+def hash_n8n_password(payload: HashIn):
+    message = hash_password_logic(payload.password)
     return make_response(message)
 
 
