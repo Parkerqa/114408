@@ -34,6 +34,7 @@ export default function Admin() {
   const [editId, setEditId] = useState<number>();
   const [isAdd, setIsAdd] = useState<boolean>(false);
   const [isEdit, setIsEdit] = useState<boolean>(false);
+  const [chartSummary, setChartSummary] = useState<string>();
   const [summaryData, setSummaryData] = useState<SummaryRow[]>();
 
   if (role) {
@@ -67,6 +68,17 @@ export default function Admin() {
     } catch {}
   };
 
+  const getChartSummary = async () => {
+    try {
+      const res = await n8nAPI.getSummary({
+        question: "請幫我綜整目前支出的狀況，並提醒我個部分需要注意",
+      });
+      if (res.data) {
+        setChartSummary(res.data);
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     // const getChart = async () => {
     //   try {
@@ -75,6 +87,7 @@ export default function Admin() {
     // };
 
     // getChart();
+    getChartSummary();
     getCount();
     getSummary();
     getDropdown();
@@ -104,8 +117,7 @@ export default function Admin() {
               &nbsp;&nbsp;幫你分析：
             </p>
             <p className={styles.aiMessage}>
-              　　本月支出最高總額為資產類，第二為文具類，第三為交通類，還請主人再多加留意資產類的支出。
-              資產類雖為最高支出總額，支出狀況卻為”健康”，建議主人可以調整該預算上限，讓其他資金能充分運用喔！
+              　　{chartSummary}
             </p>
           </div>
           <div className={styles.pending}>

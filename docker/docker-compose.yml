@@ -3,15 +3,58 @@ version: "3.8"
 services:
   n8n:
     image: n8nio/n8n:latest
-    restart: always
-    networks:
-      - app-net
-    env_file:
-      - .env
     ports:
       - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - OLLAMA_BASE=http://ollama:11434
+      - OLLAMA_EMBED_MODEL=mxbai-embed-large
+      - OLLAMA_CHAT_MODEL=gemma3:4b
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_COLLECTION=documents
+      - NODE_FUNCTION_ALLOW_BUILTIN=crypto
+      - TEI_URL=http://tei:80
+      - N8N_CORS_ALLOW_ORIGIN=https://tts.micky.codes
+    depends_on: [tei, qdrant, ollama]
     volumes:
-      - n8n_storage:/home/node/.n8n
+      - n8n_data:/home/node/.n8n
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    restart: unless-stopped
+
+  tei:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-latest
+    environment:
+      - MODEL_ID=sentence-transformers/all-distilroberta-v1
+      - HF_ENDPOINT=https://huggingface.co
+      - HUGGINGFACE_HUB_CACHE=/data/tei-cache
+    ports:
+      - "8080:80"
+    volumes:
+      - tei-cache:/data/tei-cache
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost | grep -q embeddings || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
   backend:
     build: ./backend
     image: tts_backend
@@ -28,6 +71,16 @@ services:
       - ./backend:/app
       - ./static:/app/static
     restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
   frontend:
     build: ./frontend
@@ -82,7 +135,10 @@ services:
 #      LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
 
 volumes:
-  n8n_storage:
+  n8n_data:
+  ollama:
+  qdrant_storage:
+  tei-cache:
   mysql-data:
 
 networks:

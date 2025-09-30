@@ -10,11 +10,6 @@ export default function Home() {
   const route = useRouter();
 
   useEffect(() => {
-    if (user === null) {
-      route.push("/auth");
-      return;
-    }
-
     switch (role) {
       case 1:
         route.replace("/user");
@@ -23,6 +18,9 @@ export default function Home() {
       case 2:
       case 3:
         route.replace("/admin");
+        break;
+      default:
+        route.push("/auth");
         break;
     }
   }, [user, role]);

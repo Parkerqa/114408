@@ -26,6 +26,10 @@ class PasswordForget(BaseModel):
     email: EmailStr
 
 
+class HashIn(BaseModel):
+    password: str
+
+
 class ModifyUserInfo(BaseModel):
     username: str
     email: EmailStr
