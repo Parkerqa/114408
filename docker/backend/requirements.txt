@@ -20,5 +20,6 @@ opencc-python-reimplemented
 openai
 requests
 pyngrok
-paddleocr>=3.2.0
+paddlepaddle==3.1.0 -f https://www.paddlepaddle.org.cn/packages/stable/cpu/
+paddleocr
 qreader
