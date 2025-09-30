@@ -22,8 +22,8 @@ logging.basicConfig(filename="docs_access.log", level=logging.INFO)
 app = FastAPI(title="TicketTransformer", description="整合 LINE Bot 與 OpenAI 的智慧服務", version="1.0",
               docs_url=None, redoc_url=None, openapi_url=None)
 
-# === 掛載靜態資源 ===
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# 直接指定容器內 /app/static
+app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
 
 # === 自動重建資料夾的中介層 ===
