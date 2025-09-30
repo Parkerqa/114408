@@ -36,21 +36,16 @@ converter = opencc.OpenCC("s2t")
 
 # 初始化模型
 @lru_cache(maxsize=1)
-def get_ocr(device: str = "gpu"):
-    start = time.time()
-    print(f"[OCR] 初始化模型 (device = {device})...", flush=True)
-
-    ocr = PaddleOCR(
-        device=device,
+def get_ocr():
+    print("[OCR] 初始化 Lite CPU 模型...", flush=True)
+    return PaddleOCR(
+        lang="ch",
+        det_model_dir=None,
+        rec_model_dir=None,
+        use_angle_cls=False,
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
-        use_textline_orientation=False,
-        lang="ch",
     )
-
-    elapsed = time.time() - start
-    print(f"[OCR] 模型載入完成，用時 {elapsed:.2f} 秒", flush=True)
-    return ocr
 
 
 # 單例模型載入（確保全域只載一次）
