@@ -3,7 +3,8 @@ uvicorn
 sqlalchemy
 pymysql
 python-dotenv
-passlib[Bcrypt]>=1.7.4
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 cryptography
 python-jose>=3.3.0
 pydantic[email]>=1.10.0
@@ -16,7 +17,8 @@ numpy
 tensorflow>=2.12.0
 pyzbar
 opencc-python-reimplemented
-openai==0.28
+openai
+requests
 pyngrok
 paddlepaddle==3.1.0 -f https://www.paddlepaddle.org.cn/packages/stable/cpu/
 paddleocr

@@ -1,12 +1,13 @@
 import os
 
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Set
 from sqlalchemy import String, desc, cast, func, or_, and_, Date
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import Session, aliased, joinedload
 from datetime import datetime, timedelta, date as date_cls
+from decimal import Decimal
 
 from .db_utils import SessionLocal
-from .models import User, Ticket, TicketDetail
+from .models import User, Ticket, TicketDetail, AccountingItems, DepartmentAccounting
 from views.checker import check_type, check_status
 from constants.ticket_status import TicketStatus, FINAL_STATES
 
@@ -53,6 +54,31 @@ def get_ticket_by_id(ticket_id: int):
         db.close()
 
 
+def update_ticket_info(ticket_id: int, type_: Optional[int], invoice_number: Optional[str], total_money: str) -> bool:
+    db: Session = SessionLocal()
+    try:
+        updates = {}
+        if type_ is not None:
+            updates[Ticket.type] = type_
+        if invoice_number is not None:
+            updates[Ticket.invoice_number] = invoice_number
+        if total_money is not None:
+            updates[Ticket.total_money] = Decimal(total_money)
+
+        if not updates:
+            return True
+
+        result = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).update(updates)
+        db.commit()
+        return result > 0
+    except Exception as e:
+        db.rollback()
+        print(f"[ERROR] update_ticket_info failed: {e}")
+        return False
+    finally:
+        db.close()
+
+
 def get_tickets_by_ids(ticket_ids: List[int]) -> Optional[List[Ticket]]:
     db: Session = SessionLocal()
     try:
@@ -82,7 +108,7 @@ def delete_ticket_by_id(ticket_id: int) -> bool:
 def update_ticket_class(ticket_id: int, new_class: str) -> bool:
     db: Session = SessionLocal()
     try:
-        result = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).update({Ticket.class_info_id: new_class})
+        result = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).update({Ticket.accounting_id: new_class})
         db.commit()
         return result > 0
     except Exception as e:
@@ -112,7 +138,7 @@ def update_ticket_detail(td_id: int, ticket_id: int, title: str, money: str) -> 
             TicketDetail.ticket_id == ticket_id
         ).update({
             TicketDetail.title: title,
-            TicketDetail.money: money
+            TicketDetail.money: Decimal(money)
         })
         db.commit()
         return result > 0
@@ -154,63 +180,40 @@ def delete_ticket_details_by_ids(td_ids: set) -> bool:
 
 
 def search_tickets_combined(
-    status: int,
+    status: List[int],
     keyword: Optional[str] = None,
-    class_info_id: Optional[str] = None,
     date: Optional[date_cls] = None,
     limit: int = 50,
-) -> Optional[List]:
+) -> Optional[List[Ticket]]:
     db: Session = SessionLocal()
     try:
-        t = aliased(Ticket)
-        td = aliased(TicketDetail)
-
         q = (
-            db.query(
-                t.ticket_id.label("ticket_id"),
-                t.class_info_id.label("class_info_id"),
-                t.user_id.label("user_id"),
-                t.status.label("status"),
-                t.invoice_number.label("invoice_number"),
-                t.created_at.label("created_at"),
-                td.title.label("title"),
-                td.money.label("money"),
-            )
-            .outerjoin(td, t.ticket_id == td.ticket_id)
+            db.query(Ticket)
+            .options(joinedload(Ticket.ticket_detail))
         )
 
-        filters = []
-
-        # ✅ 已核銷 vs 未核銷
-        if status == 1:  # 已核銷
-            filters.append(t.status == 3)  # 只抓審核通過
-        elif status == 0:  # 未核銷
-            filters.append(t.status.in_([0, 1, 2, 4]))
-        else:
-            # 若傳入其他值，回傳空
-            return []
+        filters = [Ticket.status.in_(status)]
 
         # 關鍵字模糊搜尋
         if keyword:
             like = f"%{keyword}%"
             filters.append(
                 or_(
-                    cast(t.created_at, String).ilike(like),
-                    cast(t.class_info_id, String).ilike(like),
-                    t.invoice_number.ilike(like),
-                    td.title.ilike(like),
-                    cast(td.money, String).ilike(like),
+                    cast(Ticket.created_at, String).ilike(like),
+                    Ticket.invoice_number.ilike(like),
+                    TicketDetail.title.ilike(like),
+                    cast(TicketDetail.money, String).ilike(like),
                 )
             )
 
-        if class_info_id:
-            filters.append(t.class_info_id == class_info_id)
-
+        # 日期過濾
         if date:
-            filters.append(cast(t.created_at, Date) == date)
+            filters.append(cast(Ticket.created_at, Date) == date)
 
-        q = q.filter(and_(*filters))
-        q = q.order_by(desc(t.created_at)).limit(limit)
+        q = q.outerjoin(TicketDetail, TicketDetail.ticket_id == Ticket.ticket_id) \
+             .filter(and_(*filters)) \
+             .order_by(desc(Ticket.created_at)) \
+             .limit(limit)
 
         return q.all()
 
@@ -363,7 +366,7 @@ def get_latest_approved(limit: int = 4) -> Optional[List[Dict]]:
                 Ticket.ticket_id,
                 Ticket.type,
                 Ticket.invoice_number,
-                Ticket.class_info_id,
+                Ticket.accounting_id,
                 Ticket.user_id,
                 Ticket.check_man,
                 Ticket.check_date,
@@ -460,12 +463,14 @@ def get_approved_records(limit: int = 20):
                 Ticket.ticket_id,
                 Ticket.created_at.label("upload_date"),
                 Ticket.type,
-                TicketDetail.title.label("title"),
                 Ticket.total_money,
                 User.username.label("creator_name"),
                 Ticket.check_man,
                 Ticket.status,
                 Ticket.img,
+                TicketDetail.td_id,
+                TicketDetail.title,
+                TicketDetail.money,
             )
             .join(TicketDetail, TicketDetail.ticket_id == Ticket.ticket_id, isouter=True)
             .join(User, User.user_id == Ticket.created_by, isouter=True)
@@ -473,23 +478,102 @@ def get_approved_records(limit: int = 20):
             .order_by(desc(Ticket.check_date))
             .limit(limit)
         )
+
         rows = q.all()
+
+        ticket_map = {}
+        for r in rows:
+            if r.ticket_id not in ticket_map:
+                ticket_map[r.ticket_id] = {
+                    "ticket_id": r.ticket_id,
+                    "upload_date": r.upload_date.strftime("%Y-%m-%d") if r.upload_date else None,
+                    "type": check_type(r.type),
+                    "total_money": float(r.total_money) if r.total_money is not None else None,
+                    "creator_name": r.creator_name,
+                    "check_man": r.check_man,
+                    "status": check_status(r.status),
+                    "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}' if r.img else None,
+                    "Details": [],
+                }
+
+            if r.title:
+                ticket_map[r.ticket_id]["Details"].append({
+                    "id": r.td_id,
+                    "title": r.title,
+                    "money": int(r.money) if r.money is not None else 0,
+                })
+
+        return list(ticket_map.values())
+
+    except Exception as e:
+        print(f"[ERROR] get_approved_records failed: {e}")
+        return None
+    finally:
+        db.close()
+
+
+def get_tickets_in_range(start_date: date_cls, end_date: date_cls):
+    db: Session = SessionLocal()
+    try:
+        return (
+            db.query(Ticket)
+            .filter(Ticket.created_at >= start_date, Ticket.created_at <= end_date)
+            .options(
+                joinedload(Ticket.ticket_detail),
+                joinedload(Ticket.user)
+            )
+            .all()
+        )
+    finally:
+        db.close()
+
+
+def get_top_accounting_in_range(start_date: date_cls, end_date: date_cls, limit: int = 3):
+    db: Session = SessionLocal()
+    try:
+        rows = (
+            db.query(
+                AccountingItems.account_class,
+                func.sum(Ticket.total_money).label("total_amount"),
+                func.sum(DepartmentAccounting.budget_limit).label("total_budget"),
+            )
+            .join(Ticket, Ticket.accounting_id == AccountingItems.accounting_id)
+            .join(DepartmentAccounting, DepartmentAccounting.accounting_id == AccountingItems.accounting_id)
+            .filter(Ticket.created_at >= start_date, Ticket.created_at <= end_date)
+            .group_by(AccountingItems.account_class)
+            .order_by(desc(func.sum(Ticket.total_money)))
+            .limit(limit)
+            .all()
+        )
         return [
             {
-                "ticket_id": r.ticket_id,
-                "upload_date": r.upload_date.strftime("%Y-%m-%d") if r.upload_date else None,
-                "type": check_type(r.type),
-                "title": r.title,
-                "total_money": float(r.total_money) if r.total_money is not None else None,
-                "creator_name": r.creator_name,
-                "check_man": r.check_man,
-                "status": check_status(r.status),
-                "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}',
+                "account_class": r.account_class,
+                "total_budget": float(r.total_budget) if r.total_budget else 0.0,
+                "total_amount": float(r.total_amount) if r.total_amount else 0.0
             }
             for r in rows
         ]
-    except Exception as e:
-        print(e)
-        return None
+    finally:
+        db.close()
+
+
+def get_daily_amounts_in_range(start_date: date_cls, end_date: date_cls):
+    db: Session = SessionLocal()
+    try:
+        rows = (
+            db.query(
+                cast(Ticket.created_at, Date).label("day"),
+                func.sum(Ticket.total_money).label("money")
+            )
+            .filter(Ticket.created_at >= start_date, Ticket.created_at <= end_date)
+            .group_by(cast(Ticket.created_at, Date))
+            .order_by(cast(Ticket.created_at, Date))
+            .all()
+        )
+
+        return [
+            {"id": idx + 1, "money": float(r.money) if r.money else 0.0}
+            for idx, r in enumerate(rows)
+        ]
     finally:
         db.close()

@@ -1,61 +1,208 @@
 import io
+import os
+import requests
 import json
 import re
+import time
 
 import base64
 import cv2
 import numpy as np
 import opencc
+import threading
+from functools import lru_cache
 from core.upload_utils import BASE_DIR, INVOICE_UPLOAD_FOLDER
 from keras.models import load_model
 from model.parser_model import save_error, save_ocr_result, save_qrcode_result
 from paddleocr import PaddleOCR
 from PIL import Image
 from pyzbar.pyzbar import decode
-from views.openai import ocr_correction_logic
 from qreader import QReader
 
 
-# 初始化模型
-def get_ocr():
-    return PaddleOCR(
-        use_doc_orientation_classify=False,
-        use_doc_unwarping=False,
-        use_textline_orientation=False,
-        lang="ch",
-    )
+# === TF GPU 設定 ===
+try:
+    import tensorflow as tf
+    gpus = tf.config.list_physical_devices('GPU')
+    for g in gpus:
+        tf.config.experimental.set_memory_growth(g, True)
+except Exception:
+    pass
 
 
 # 初始化語言轉換器
 converter = opencc.OpenCC("s2t")
 
 
-def snn_logic(image_path) -> int:
+# 初始化模型
+@lru_cache(maxsize=1)
+def get_ocr():
+    print("[OCR] 初始化 Lite CPU 模型...", flush=True)
+    return PaddleOCR(
+        lang="ch",
+        det_model_dir=None,
+        rec_model_dir=None,
+        use_angle_cls=False,
+        use_doc_orientation_classify=False,
+        use_doc_unwarping=False,
+    )
+
+
+# 單例模型載入（確保全域只載一次）
+_snn_lock = threading.Lock()
+_snn_model = None
+
+def get_snn_model():
+    global _snn_model
+    if _snn_model is None:
+        _snn_model = tf.keras.models.load_model("invoice_single_classifier_siamese.keras")
+    return _snn_model
+
+
+# 系統定義的 Type 對應
+class_map = {
+    0: 3,  # electronic → Type 3
+    1: 6,  # receipt → Type 6
+    2: 5,  # three_part → Type 5
+    3: 2,  # traditional → Type 2
+    4: 4   # two_part → Type 4
+}
+
+
+def load_and_preprocess_image(path, img_height=128, img_width=128):
+    image = tf.io.read_file(str(path))
+    if str(path).lower().endswith(('.jpg', '.jpeg')):
+        image = tf.image.decode_jpeg(image, channels=3)
+    else:
+        image = tf.image.decode_png(image, channels=3)
+    image = tf.image.resize(image, [img_height, img_width])
+    image = tf.cast(image, tf.float32) / 255.0
+    return np.expand_dims(image, axis=0)
+
+
+def snn_logic(image_path: str, threshold: float = 0.5) -> int:
     try:
-        # 路徑
-        model_path = BASE_DIR / "invoice_single_classifier_siamese.keras"
-
         # 載入模型
-        model = load_model(model_path)
+        model = get_snn_model()
 
-        # 處理圖片
-        img = Image.open(image_path).convert("RGB")
-        img = img.resize((128, 128))
-        img_array = np.array(img) / 255.0
-        img_array = np.expand_dims(img_array, axis=0)
+        # 前處理圖片
+        img_array = load_and_preprocess_image(image_path)
 
         # 預測
-        pred = model.predict(img_array)
-        score = float(pred[0][0])
+        with _snn_lock:
+            pred = model.predict(img_array, verbose=0)
 
-        # 根據預測分數判斷類別
-        if score > 0.5:
-            return 2  # 傳統發票
-        else:
-            return 3  # 電子發票
+        predicted_index = int(np.argmax(pred, axis=1)[0])
+        confidence = float(np.max(pred))
+
+        # 若信心度太低，視為失敗
+        # if confidence < threshold:
+        #     return 0
+
+        # 依照系統 class_map 轉換成 Type
+        return class_map.get(predicted_index, 0)
+
     except Exception as e:
-        print(e)
+        print("推論錯誤:", e)
         return 0
+
+
+# 呼叫 Ollama 進行結構化
+def ai_parse_invoice(ocr_text: str):
+    prompt = f"""
+    你是一個票據辨識助手。請根據以下 OCR 文字，輸出 JSON 格式。
+
+    輸出 JSON：
+    {{
+      "invoice_number": "string or null",
+      "date": "YYYY-MM-DD or null",
+      "total_money": "number or null",
+      "items": [
+        {{"title": "string", "money": number}}
+      ]
+    }}
+
+    如果某欄位缺失，請填 null。
+    OCR 文字如下：
+    {ocr_text}
+    """
+
+    # 加逾時與錯誤處理，避免卡住
+    resp = requests.post(
+        "http://localhost:11434/api/generate",
+        json={"model": "gemma3:4b", "prompt": prompt, "stream": False},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    txt = resp.json().get("response", "").strip()
+
+    # 容錯：有時模型會包 code fence
+    if txt.startswith("```"):
+        txt = txt.strip("`").strip()
+        if txt.startswith("json"):
+            txt = txt[4:].strip()
+    return json.loads(txt or "{}")
+
+
+# OCR → Ollama 流程
+def ocr_ai_logic(image_path, ticket_id, invoice_type):
+    try:
+        # (1) OCR（單例）
+        ocr_model = get_ocr()
+        ocr_result = ocr_model.ocr(str(image_path))
+
+        # (2) 整理文字
+        text_lines = [converter.convert(item[1][0]).strip() for item in (ocr_result[0] or [])]
+        raw_ocr_text = "\n".join([t for t in text_lines if t])
+
+        # (3) 丟到 Ollama
+        try:
+            structured_data = ai_parse_invoice(raw_ocr_text)
+        except Exception as e:
+            print(f"[Ollama 解析失敗] ticket_id={ticket_id}：{e}")
+            save_error(ticket_id)
+            return
+
+        # (4) 存 DB
+        ok = save_ocr_result(ticket_id, invoice_type, structured_data or {})
+        if not ok:
+            print(f"[警告] OCR 結果存檔失敗 ticket_id={ticket_id}")
+            save_error(ticket_id)
+
+    except Exception as e:
+        print(f"[OCR_AI 錯誤] ticket_id={ticket_id}：{e}")
+        save_error(ticket_id)
+
+
+def invoice_parser(filename: str, ticket_id: int):
+    """
+    背景任務：票據解析流程
+    - filename: 上傳檔案名稱
+    - ticket_id: DB 建立的 ticket 主鍵
+    """
+    try:
+        # 圖片路徑
+        image_path = BASE_DIR / INVOICE_UPLOAD_FOLDER / filename
+        # 1. 用 SNN 判斷類型
+        invoice_type = snn_logic(image_path)
+        print(invoice_type)
+
+        # 2. 流程分支
+        if invoice_type == 0:
+            print(f"[辨識失敗] ticket_id={ticket_id} file={filename}")
+            save_error(ticket_id)
+            return
+
+        if invoice_type == 3:
+            # 電子發票 → QRCode 解析
+            qrcode_decoder_logic(image_path, ticket_id, invoice_type)
+        else:
+            # 其他類型 (2,4,5,6) → OCR + Ollama
+            ocr_ai_logic(image_path, ticket_id, invoice_type)
+
+    except Exception as e:
+        print(f"[invoice_parser 錯誤] ticket_id={ticket_id}, file={filename}: {e}")
+        save_error(ticket_id)
 
 
 HEX_CHARS = set("0123456789abcdefABCDEF")
@@ -273,94 +420,3 @@ def qrcode_decoder_logic(image_path, ticket_id, invoice_type, debug=False):
     except Exception as e:
         print("解析錯誤:", e)
         save_error(ticket_id)
-
-
-def extract_clean_json(content: str) -> str:
-    match = re.search(r"\{[\s\S]*?\}", content)
-    if match:
-        return match.group(0)
-    return content
-
-
-def ocr_logic(image_path, ticket_id, invoice_type):
-    try:
-        # 步驟 1：執行 OCR，得到原始文字塊
-        ocr_model = get_ocr()
-        ocr_result = ocr_model.ocr(str(image_path))
-    except Exception as e:
-        print(f"[OCR 錯誤] ticket_id={ticket_id}：{e}")
-        save_error(ticket_id)
-        return
-
-    # 步驟 2：將原始 ocr 結果傳給 ChatGPT 校正與結構化
-    try:
-        # 整理純文字內容
-        text_lines = []
-        for item in ocr_result[0]:
-            _, (text, _) = item
-            text_lines.append(converter.convert(text).strip())
-
-        raw_ocr_text = "\n".join(text_lines)
-
-        prompt = f"""
-        請從以下發票文字中擷取欄位，回傳 JSON 格式（五個欄位皆需輸出）：
-
-        - invoice_number（string）：格式為 2 英文字母 + 8 數字
-        - date（string）：YYYY-MM-DD，支援 YYYY/MM/DD，若年月日不合理（如 2821/88/31）請修正為合理日期
-        - title（string[]）：商品名稱，無明細輸出 []
-        - money（number[]）：商品金額，與 title 順序對應，無明細輸出 []
-        - total_money（number）：總金額，純數字
-
-        規則：
-        - 「單價×數量」格式（如 237×2）請計算總金額
-        - 金額若含 TX、Tx、tx，請去除後取數字
-        - 商品與金額可能換行，請正確對應
-
-        發票內容如下：
-
-        {raw_ocr_text}
-        """
-
-        gpt_response_str = ocr_correction_logic(prompt)
-        if not gpt_response_str:
-            raise ValueError("GPT 回傳為空")
-
-        cleaned_json_str = extract_clean_json(gpt_response_str)
-        structured_data = json.loads(cleaned_json_str)
-
-    except Exception as e:
-        print(f"[ChatGPT 校正失敗] ticket_id={ticket_id}：{e}")
-        save_error(ticket_id)
-        return
-
-    if structured_data.get("title") and structured_data.get("money"):
-        if save_ocr_result(ticket_id, invoice_type, structured_data):
-            return
-    else:
-        print(f"[警告] 校正後仍無有效明細，ticket_id={ticket_id}")
-
-    save_error(ticket_id)
-
-
-def invoice_parser(filename, ticket_id):
-    try:
-        image_path = (
-            BASE_DIR / INVOICE_UPLOAD_FOLDER / filename
-        )  # /app/static/invoice/filename
-
-        # 執行 SNN 處理
-        invoice_type = snn_logic(image_path)
-
-        if invoice_type == 0:
-            save_error(ticket_id)
-        elif invoice_type == 3:
-            # 執行 QRCode 解析（電子發票）
-            qrcode_decoder_logic(image_path, ticket_id, invoice_type)
-        else:
-            # 執行 OCR 處理
-            ocr_logic(image_path, ticket_id, invoice_type)
-        return
-    except Exception as e:
-        save_error(ticket_id)
-        print(e)
-        return

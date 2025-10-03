@@ -1,16 +1,16 @@
-import API from "@/lib/api/api";
+import N8NAPI from "@/lib/api/n8nApi";
 import { Response } from "@/lib/types/ResponseType";
 
-const BASE_URL = "http://localhost:5678/webhook-test";
-
-type n8nType = {
-  reminder: string;
-  labels: [];
-  datasets: {label: string, data: number[]}[];
-};
+const BASE_URL = "webhook-test";
 
 const n8nAPI = {
-  getHomeChart: (): Promise<Response<n8nType>> => API.get(`${BASE_URL}/home-chart`),
+  forgetPassword: (gmail: { email: string }): Promise<Response<any>> =>
+    N8NAPI.post(
+      `${BASE_URL}/forget-password`, gmail,
+      { toast: true }
+    ),
+  getSummary: (data: { question: string }): Promise<Response<any>> =>
+    N8NAPI.post(`${BASE_URL}/ask-final`, data)
 };
 
 export default n8nAPI;

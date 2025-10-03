@@ -38,19 +38,20 @@ def update_or_insert_color_setting(user_id: int, payload) -> bool:
         else:
             new_setting = OtherSetting(
                 user_id=user_id,
-                red_bot=payload.red_usage_rate,
-                red_top=payload.red_remaining_rate,
-                yellow_bot=payload.yellow_usage_rate,
-                yellow_top=payload.yellow_remaining_rate,
-                green_bot=payload.green_usage_rate,
-                green_top=payload.green_remaining_rate,
+                red_usage_rate=payload.red_usage_rate,
+                red_remaining_rate=payload.red_remaining_rate,
+                yellow_usage_rate=payload.yellow_usage_rate,
+                yellow_remaining_rate=payload.yellow_remaining_rate,
+                green_usage_rate=payload.green_usage_rate,
+                green_remaining_rate=payload.green_remaining_rate,
             )
             db.add(new_setting)
 
         db.commit()
         return True
-    except Exception:
+    except Exception as e:
         db.rollback()
+        print(f"[ERROR] DB 更新失敗: {e}")
         return False
     finally:
         db.close()

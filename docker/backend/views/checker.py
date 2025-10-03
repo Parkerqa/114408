@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 
-def check_type(type: str) -> str:
+def check_type(type: int) -> str:
     if type == 0:
         return "系統辨識失敗"
     elif type == 1:
@@ -16,6 +16,7 @@ def check_type(type: str) -> str:
         return "三聯發票"
     elif type == 6:
         return "收據"
+    return "未知票據"
 
 
 def check_status(status: int) -> str:

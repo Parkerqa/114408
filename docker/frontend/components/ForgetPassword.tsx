@@ -7,6 +7,7 @@ import ShadowPopup from "@/components/common/ShadowBg";
 import InputField from "@/components/common/InputField";
 import styles from "@/styles/components/ForgetPassword.module.scss";
 import userAPI from "@/services/userAPI";
+import n8nAPI from "@/services/n8nAPI";
 
 export default function ForgetPassword({
   setIsPopup,
@@ -21,8 +22,9 @@ export default function ForgetPassword({
     const data = {
       email: getValues("email"),
     };
+    
     try {
-      await userAPI.forgetPassword(data);
+      await n8nAPI.forgetPassword(data);
       setIsPopup(false);
     } catch {}
   };
