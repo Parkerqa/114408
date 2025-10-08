@@ -94,9 +94,7 @@ export default function EditBudgetPopup({
                       { value: "雜支" },
                       { value: "差旅費" },
                       { value: "交通費" },
-                      { value: "交際費" },
                       { value: "廣告費" },
-                      { value: "郵電費" },
                       { value: "文具用品" },
                     ]}
                   />
