@@ -1,12 +1,10 @@
-import io
-import os
 import requests
 import json
 import re
-import time
 
 import base64
 import cv2
+import tensorflow as tf
 import numpy as np
 import opencc
 import threading
@@ -19,33 +17,17 @@ from PIL import Image
 from pyzbar.pyzbar import decode
 from qreader import QReader
 
-
-# === TF GPU 設定 ===
-try:
-    import tensorflow as tf
-    gpus = tf.config.list_physical_devices('GPU')
-    for g in gpus:
-        tf.config.experimental.set_memory_growth(g, True)
-except Exception:
-    pass
-
-
 # 初始化語言轉換器
-converter = opencc.OpenCC("s2t")
-
-
-# 初始化模型
-@lru_cache(maxsize=1)
-def get_ocr():
-    print("[OCR] 初始化 Lite CPU 模型...", flush=True)
-    return PaddleOCR(
-        lang="ch",
-        det_model_dir=None,
-        rec_model_dir=None,
-        use_angle_cls=False,
-        use_doc_orientation_classify=False,
-        use_doc_unwarping=False,
-    )
+# converter = opencc.OpenCC("s2t")
+#
+# @lru_cache(maxsize=1)
+# def get_ocr():
+#     return PaddleOCR(
+#         device="cpu",
+#         use_doc_orientation_classify=False,
+#         use_doc_unwarping=False,
+#         use_textline_orientation=False
+#     )
 
 
 # 單例模型載入（確保全域只載一次）
@@ -55,7 +37,15 @@ _snn_model = None
 def get_snn_model():
     global _snn_model
     if _snn_model is None:
-        _snn_model = tf.keras.models.load_model("invoice_single_classifier_siamese.keras")
+        model_path = BASE_DIR / "invoice_single_classifier_siamese.keras"
+        print(f"[SNN] 載入模型: {model_path}", flush=True)
+        _snn_model = tf.keras.models.load_model(model_path.as_posix())
+        print("[SNN] 模型載入成功", flush=True)
+
+        dummy = np.zeros((1, 128, 128, 3), dtype=np.float32)
+        _snn_model.predict(dummy, verbose=0)
+        print("[SNN] 預熱完成", flush=True)
+
     return _snn_model
 
 
@@ -70,36 +60,24 @@ class_map = {
 
 
 def load_and_preprocess_image(path, img_height=128, img_width=128):
-    image = tf.io.read_file(str(path))
-    if str(path).lower().endswith(('.jpg', '.jpeg')):
-        image = tf.image.decode_jpeg(image, channels=3)
-    else:
-        image = tf.image.decode_png(image, channels=3)
-    image = tf.image.resize(image, [img_height, img_width])
-    image = tf.cast(image, tf.float32) / 255.0
-    return np.expand_dims(image, axis=0)
+    img = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
+    if img is None:
+        raise ValueError(f"讀取圖片失敗: {path}")
+    if img.shape[-1] == 4:
+        img = img[:, :, :3]
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.resize(img, (img_width, img_height))
+    img = np.asarray(img, dtype=np.float32) / 255.0
+    return np.expand_dims(img, axis=0)
 
 
 def snn_logic(image_path: str, threshold: float = 0.5) -> int:
     try:
-        # 載入模型
         model = get_snn_model()
-
-        # 前處理圖片
         img_array = load_and_preprocess_image(image_path)
-
-        # 預測
         with _snn_lock:
             pred = model.predict(img_array, verbose=0)
-
-        predicted_index = int(np.argmax(pred, axis=1)[0])
-        confidence = float(np.max(pred))
-
-        # 若信心度太低，視為失敗
-        # if confidence < threshold:
-        #     return 0
-
-        # 依照系統 class_map 轉換成 Type
+        predicted_index = int(np.argmax(pred[0]))
         return class_map.get(predicted_index, 0)
 
     except Exception as e:
@@ -129,7 +107,7 @@ def ai_parse_invoice(ocr_text: str):
 
     # 加逾時與錯誤處理，避免卡住
     resp = requests.post(
-        "http://localhost:11434/api/generate",
+        "http://ollama:11434/api/generate",
         json={"model": "gemma3:4b", "prompt": prompt, "stream": False},
         timeout=30,
     )
@@ -147,13 +125,28 @@ def ai_parse_invoice(ocr_text: str):
 # OCR → Ollama 流程
 def ocr_ai_logic(image_path, ticket_id, invoice_type):
     try:
+        cloudflare_url = "https://parental-calls-cigarettes-edit.trycloudflare.com"
+        url = cloudflare_url + "/ocr"
+        files = {"file": open(image_path, "rb")}
+        res = requests.post(url, files=files)
+
+        raw_ocr_text = res.json()
+
+        with open("ocr_result.json", "w", encoding="utf-8") as f:
+            json.dump(raw_ocr_text, f, ensure_ascii=False, indent=2)
+
+        print(json.dumps(raw_ocr_text, ensure_ascii=False, indent=2))
+
         # (1) OCR（單例）
-        ocr_model = get_ocr()
-        ocr_result = ocr_model.ocr(str(image_path))
+        # ocr_model = get_ocr()
+        # ocr_result = ocr_model.predict(str(image_path))
+        #
+        # if not ocr_result or not ocr_result[0]:
+        #     raise ValueError("OCR 無結果")
 
         # (2) 整理文字
-        text_lines = [converter.convert(item[1][0]).strip() for item in (ocr_result[0] or [])]
-        raw_ocr_text = "\n".join([t for t in text_lines if t])
+        # text_lines = [converter.convert(item[1][0]).strip() for item in (ocr_result[0] or [])]
+        # raw_ocr_text = "\n".join([t for t in text_lines if t])
 
         # (3) 丟到 Ollama
         try:
@@ -185,7 +178,7 @@ def invoice_parser(filename: str, ticket_id: int):
         image_path = BASE_DIR / INVOICE_UPLOAD_FOLDER / filename
         # 1. 用 SNN 判斷類型
         invoice_type = snn_logic(image_path)
-        print(invoice_type)
+        print(invoice_type, flush=True)
 
         # 2. 流程分支
         if invoice_type == 0:
@@ -201,7 +194,7 @@ def invoice_parser(filename: str, ticket_id: int):
             ocr_ai_logic(image_path, ticket_id, invoice_type)
 
     except Exception as e:
-        print(f"[invoice_parser 錯誤] ticket_id={ticket_id}, file={filename}: {e}")
+        print(f"[invoice_parser 錯誤] ticket_id={ticket_id}, file={filename}: {e}", flush=True)
         save_error(ticket_id)
 
 

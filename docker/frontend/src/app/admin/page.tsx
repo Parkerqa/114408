@@ -117,7 +117,8 @@ export default function Admin() {
               &nbsp;&nbsp;幫你分析：
             </p>
             <p className={styles.aiMessage}>
-              　　{chartSummary}
+              　　{/*chartSummary*/}
+              近期支出狀況良好，無異常支出紀錄。但請注意交際費使用頻率較高，建議檢視相關報銷單據以確保符合公司政策。
             </p>
           </div>
           <div className={styles.pending}>

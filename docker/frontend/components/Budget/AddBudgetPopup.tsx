@@ -71,10 +71,10 @@ export default function AddBudgetPopup({
                     value={field.value}
                     onChange={field.onChange}
                     optionData={[
-                      { value: "銷售部門" },
-                      { value: "技術部門" },
-                      { value: "研發部門" },
-                      { value: "人事部門" },
+                      { value: "人力資源部" },
+                      { value: "財務部" },
+                      { value: "市場部" },
+                      { value: "資訊部" },
                     ]}
                   />
                 )}

@@ -61,8 +61,11 @@ services:
     container_name: tts_backend
     ports:
       - "8000:8000"
+    environment:
+      - OLLAMA_BASE=http://ollama:11434
     depends_on:
       - db
+      - ollama
     networks:
       - app-net
     env_file:
@@ -70,6 +73,7 @@ services:
     volumes:
       - ./backend:/app
       - ./static:/app/static
+      - ./ocr_model:/root/.paddlex/official_models
     restart: always
     deploy:
       resources:
@@ -78,21 +82,19 @@ services:
             - driver: nvidia
               count: all
               capabilities: [ gpu ]
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    runtime: nvidia
 
-  frontend:
-    build: ./frontend
-    image: tts_frontend
-    container_name: tts_frontend
-    ports:
-      - "3000:3000"
-    networks:
-      - app-net
-    env_file:
-      - ./frontend/.env
-    restart: always
+#  frontend:
+#    build: ./frontend
+#    image: tts_frontend
+#    container_name: tts_frontend
+#    ports:
+#      - "3000:3000"
+#    networks:
+#      - app-net
+#    env_file:
+#      - ./frontend/.env
+#    restart: always
 
   db:
     image: mysql:8.4.4
