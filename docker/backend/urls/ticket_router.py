@@ -114,7 +114,7 @@ def write_off(current_user=Depends(get_current_user)):
 @ticket_router.patch("/audit", summary="批次審核發票（每筆可不同狀態）")
 def audit_ticket_bulk(
     payload: TicketAuditBulkRequest,
-    current_user=Depends(require_role(0)),  # 僅限管理員
+    current_user=Depends(require_role(0, 2, 3)),
 ):
     message, data = audit_ticket_bulk_logic(payload, current_user)
     return make_response(message, data=data)
