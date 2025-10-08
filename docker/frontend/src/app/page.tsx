@@ -3,27 +3,28 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { useLoading } from "@/lib/context/LoadingContext";
 import { useConfig } from "@/lib/context/ConfigContext";
 
 export default function Home() {
-  const { user, role } = useConfig();
+  const { setLoading } = useLoading();
+  const { role } = useConfig();
   const route = useRouter();
 
   useEffect(() => {
     switch (role) {
       case 1:
-        route.replace("/user");
+        setLoading(false);
+        route.push("/user");
         break;
       case 0:
       case 2:
       case 3:
-        route.replace("/admin");
-        break;
-      default:
-        route.push("/auth");
+        setLoading(false);
+        route.push("/admin");
         break;
     }
-  }, [user, role]);
+  }, [role, route, setLoading]);
 
   return <></>;
 }

@@ -56,7 +56,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
           theme === 1 ? "dark" : "light"
         );
       } catch (err) {
-        setRole(0);
+        setRole(undefined);
         setTheme(0);
         document.body.setAttribute("data-theme", "light");
       }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -129,8 +130,10 @@ export default function VerifyPopup({
                 </div>
               ))}
               <p className={styles.file}>
-                <Paperclip />
-                報帳附件
+                <Link href={item.img_url}>
+                  <Paperclip />
+                  報帳附件
+                </Link>
                 <span className={styles.hint}>*點擊檢視</span>
               </p>
               <div className={styles.status}>

@@ -50,6 +50,12 @@
       align-items: center;
       gap: 5px;
 
+      a {
+        color: var(--text-light-color);
+        display: flex;
+        align-items: center;
+      }
+
       .hint {
         color: var(--point-red);
         font-size: $small-size;

@@ -97,7 +97,6 @@ const SignUp = ({ register }: { register: any }) => {
 
 export default function Auth() {
   const route = useRouter();
-  const [summary, setSummary] = useState("");
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [isForget, setIsForget] = useState<boolean>();
   const { register, handleSubmit } = useForm<AuthFormData>();
@@ -107,11 +106,10 @@ export default function Auth() {
   const signupClass = !isLogin ? styles.focusItem : styles.item;
 
   const onSubmit = async (data: AuthFormData) => {
-    let res;
     setLoading(true);
     try {
       if (isLogin) {
-        res = await userAPI.login({
+        const res = await userAPI.login({
           email: data.email,
           password: data.password,
         });
@@ -119,7 +117,7 @@ export default function Auth() {
           route.push("./");
         }
       } else if (data.username) {
-        res = await userAPI.register({
+        const res = await userAPI.register({
           username: data.username,
           email: data.email,
           password: data.password,
