@@ -8,26 +8,23 @@ import { useConfig } from "@/lib/context/ConfigContext";
 
 export default function Home() {
   const { setLoading } = useLoading();
-  const { user, role } = useConfig();
+  const { role } = useConfig();
   const route = useRouter();
 
   useEffect(() => {
     switch (role) {
       case 1:
         setLoading(false);
-        route.replace("/user");
+        route.push("/user");
         break;
       case 0:
       case 2:
       case 3:
         setLoading(false);
-        route.replace("/admin");
-        break;
-      default:
-        setLoading(true);
+        route.push("/admin");
         break;
     }
-  }, [user, role]);
+  }, [role, route, setLoading]);
 
   return <></>;
 }
