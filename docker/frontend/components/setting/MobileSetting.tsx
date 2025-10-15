@@ -12,7 +12,7 @@ import userAPI from "@/services/userAPI";
 import styles from "@/styles/components/setting/MobileSetting.module.scss";
 
 export const MobileSetting = () => {
-  const { user, fetchUser } = useConfig();
+  const { user, fetchUser, setRole, setUser } = useConfig();
   const [isEdit, setIsEdit] = useState<boolean>();
   const [newImg, setNewImg] = useState<string | null>(null);
   const route = useRouter();
@@ -143,8 +143,10 @@ export const MobileSetting = () => {
               <button
                 className={styles.logout}
                 onClick={() => {
-                  route.push("/auth");
                   localStorage.clear();
+                  setRole(undefined);
+                  setUser(undefined);
+                  route.push("/auth");
                   document.body.setAttribute("data-theme", "light");
                 }}
               >
