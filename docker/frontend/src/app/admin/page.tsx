@@ -93,7 +93,6 @@ export default function Admin() {
 
     const handleResize = () => {
       const width = window.innerWidth;
-      console.log(width);
       if (width < 1440) setSize(20);
       else setSize(30);
     };
@@ -176,7 +175,7 @@ export default function Admin() {
                       <td>
                         <Settings
                           className={styles.edit}
-                          size={size}
+                          size={20}
                           onClick={() => {
                             setIsEdit(true);
                             setEditTitle(item.dept_name);
@@ -185,7 +184,7 @@ export default function Admin() {
                         />
                         <Trash2
                           className={styles.delete}
-                          size={size}
+                          size={20}
                           onClick={async () => {
                             const id = item.department_id;
                             const data: EditBudget = {
@@ -202,7 +201,7 @@ export default function Admin() {
               </tbody>
             </table>
             <Plus
-              size={size === 30 ? 50 : 20}
+              size={20}
               className={styles.addBudget}
               strokeWidth={3}
               onClick={() => {

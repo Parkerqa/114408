@@ -35,7 +35,7 @@ export default function MuiThemeProvider({
 
   return (
     <ThemeProvider theme={muiTheme}>
-      <CssBaseline />
+      {/* <CssBaseline /> */}
       {children}
     </ThemeProvider>
   );
