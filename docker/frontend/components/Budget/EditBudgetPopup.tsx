@@ -14,6 +14,14 @@ type FormValues = {
   budgets: BudgetRow[];
 };
 
+const ACCOUNT_OPTIONS = [
+  { id: 1, name: "雜支" },
+  { id: 2, name: "差旅費" },
+  { id: 3, name: "交通費" },
+  { id: 4, name: "廣告費" },
+  { id: 5, name: "文具用品" },
+];
+
 export default function EditBudgetPopup({
   deptTitle,
   deptId,
@@ -30,6 +38,7 @@ export default function EditBudgetPopup({
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { isSubmitting },
   } = useForm<FormValues>({
     defaultValues: { budgets: [] },
@@ -39,6 +48,9 @@ export default function EditBudgetPopup({
     control,
     name: "budgets",
   });
+
+  const mapNameToId = (name: string) =>
+    ACCOUNT_OPTIONS.find((o) => o.name === name)?.id ?? 0;
 
   useEffect(() => {
     const getBudget = async () => {
@@ -66,7 +78,7 @@ export default function EditBudgetPopup({
     };
 
     try {
-      const res = await departmentAPI.editBudget(deptId, data);
+      await departmentAPI.editBudget(deptId, data);
     } finally {
       setIsPopup(false);
       getSummary();
@@ -89,16 +101,25 @@ export default function EditBudgetPopup({
                     style={{ width: "200px" }}
                     title="會計科目"
                     value={field.value}
-                    onChange={field.onChange}
-                    optionData={[
-                      { value: "雜支" },
-                      { value: "差旅費" },
-                      { value: "交通費" },
-                      { value: "廣告費" },
-                      { value: "文具用品" },
-                    ]}
+                    onChange={(name: string) => {
+                      field.onChange(name);
+                      const id = mapNameToId(name);
+                      setValue(`budgets.${index}.accounting_id`, id, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }}
+                    optionData={ACCOUNT_OPTIONS.map((o) => ({ value: o.name }))}
                   />
                 )}
+              />
+              <input
+                type="hidden"
+                {...register(`budgets.${index}.accounting_id`, {
+                  valueAsNumber: true,
+                  required: true,
+                  min: 1,
+                })}
               />
               <InputField
                 type="text"

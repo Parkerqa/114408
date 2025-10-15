@@ -211,7 +211,9 @@ export default function Admin() {
           </div>
         </div>
       </div>
-      {isAdd && <AddBudgetPopup setIsPopup={setIsAdd} />}
+      {isAdd && (
+        <AddBudgetPopup setIsPopup={setIsAdd} getSummary={getSummary} />
+      )}
       {isEdit && editTitle && editId && (
         <EditBudgetPopup
           setIsPopup={setIsEdit}
