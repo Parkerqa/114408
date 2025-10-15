@@ -8,12 +8,19 @@ import styles from "@/styles/components/LargeTable.module.scss";
 const columns: GridColDef[] = [
   { field: "upload_date", headerName: "報帳時間", width: 100 },
   { field: "type", headerName: "報帳種類", width: 100 },
-  { field: "title", headerName: "標題", width: 580 },
-  { field: "total_money", headerName: "金額", width: 50 },
+  { field: "title", headerName: "標題", width: 630 },
+  { field: "total_money", headerName: "金額", width: 70 },
   {
     field: "creator_name",
     headerName: "申請人",
-    width: 70,
+    width: 120,
+    headerAlign: "center",
+    align: "center",
+  },
+  {
+    field: "check_man",
+    headerName: "核銷人",
+    width: 120,
     headerAlign: "center",
     align: "center",
   },
@@ -21,6 +28,8 @@ const columns: GridColDef[] = [
     field: "prove",
     headerName: "證明",
     width: 50,
+    headerAlign: "center",
+    align: "center",
     renderCell: (params) => (
       <Eye
         style={{ cursor: "pointer" }}
@@ -62,17 +71,6 @@ export default function PendingTable({
         initialState={{
           pagination: {
             paginationModel: { pageSize: 8, page: 0 },
-          },
-        }}
-        sx={{
-          backgroundColor: "var(--list-bg)",
-          color: "var(--text-color)",
-          "& .MuiDataGrid-columnHeader": {
-            backgroundColor: "var(--list-bg)",
-            color: "var(--text-color)",
-          },
-          "& .MuiSvgIcon-root": {
-            color: "var(--text-color)",
           },
         }}
       />
