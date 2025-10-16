@@ -433,7 +433,7 @@ def get_pending_reimbursements(limit: int = 20):
                     "total_money": float(r.total_money) if r.total_money is not None else None,
                     "creator_name": r.creator_name,
                     "check_man": r.check_man,
-                    "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}' if r.img else None,
+                    "img_url": f'{os.getenv("BASE_INVOICE_IMAGE_URL")}{r.img}' if r.img else None,
                     "titles": []
                 }
             if r.title:  # 有 title 才加
