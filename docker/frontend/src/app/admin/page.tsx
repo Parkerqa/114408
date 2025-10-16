@@ -6,6 +6,7 @@ import { Bot, Settings, Trash2, Plus } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { useConfig } from "@/lib/context/ConfigContext";
+import { useLoading } from "@/lib/context/LoadingContext";
 import Table from "@/components/Table";
 import Chart from "@/components/chart/Chart";
 import AddBudgetPopup from "@/components/Budget/AddBudgetPopup";
@@ -29,7 +30,9 @@ const chartData = {
 
 export default function Admin() {
   const { role } = useConfig();
+  const { setLoading } = useLoading();
   const [count, setCount] = useState();
+  const [size, setSize] = useState<number>(20);
   const [editTitle, setEditTitle] = useState<string>();
   const [editId, setEditId] = useState<number>();
   const [isAdd, setIsAdd] = useState<boolean>(false);
@@ -64,7 +67,6 @@ export default function Admin() {
   const getDropdown = async () => {
     try {
       const res = await departmentAPI.getDropdown();
-      console.log(res.data);
     } catch {}
   };
 
@@ -87,6 +89,15 @@ export default function Admin() {
     // };
 
     // getChart();
+    setLoading(false);
+
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 1440) setSize(20);
+      else setSize(30);
+    };
+
+    handleResize();
     getChartSummary();
     getCount();
     getSummary();
@@ -104,7 +115,7 @@ export default function Admin() {
             </div>
             <div className={styles.topThree}>
               <p>前三支出會計科目</p>
-              <div className={styles.charts}>
+              <div className={styles.charts} style={{ gap: `${size}px` }}>
                 <Chart data={chartData} title="旅費" />
                 <Chart data={chartData} title="雜支" />
                 <Chart data={chartData} title="交際費 " />
@@ -190,6 +201,7 @@ export default function Admin() {
               </tbody>
             </table>
             <Plus
+              size={20}
               className={styles.addBudget}
               strokeWidth={3}
               onClick={() => {
@@ -199,7 +211,9 @@ export default function Admin() {
           </div>
         </div>
       </div>
-      {isAdd && <AddBudgetPopup setIsPopup={setIsAdd} />}
+      {isAdd && (
+        <AddBudgetPopup setIsPopup={setIsAdd} getSummary={getSummary} />
+      )}
       {isEdit && editTitle && editId && (
         <EditBudgetPopup
           setIsPopup={setIsEdit}

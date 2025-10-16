@@ -133,13 +133,15 @@ function LineMoneyChart({
         style={{
           width: "100%",
           height: fixedHeightPx ?? 100,
+          padding: 100,
+          boxSizing: "border-box",
           display: "grid",
           placeItems: "center",
           border: "1px dashed var(--border-color, #ccc)",
           borderRadius: 8,
         }}
       >
-        無資料
+        載入中...
       </div>
     );
   }

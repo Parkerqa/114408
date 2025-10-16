@@ -15,11 +15,6 @@ export const reportItemData = [
     link: "/report/year",
   },
   {
-    icon: ChartCandlestick,
-    title: "自訂期間圖表",
-    link: "/report/custom",
-  },
-  {
     icon: BookOpenText,
     title: "事件簿",
     link: "/report/event",

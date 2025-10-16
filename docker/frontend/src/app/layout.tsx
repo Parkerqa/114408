@@ -2,6 +2,7 @@ import "@/styles/main.scss";
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 
+import MuiThemeProvider from "@/lib/context/MuiThemeProvider";
 import { ConfigProvider } from "@/lib/context/ConfigContext";
 import { LoadingProvider } from "@/lib/context/LoadingContext";
 import NavSelector from "@/components/layout/NavSelector";
@@ -29,8 +30,10 @@ export default function RootLayout({
         <Toaster richColors position="top-center" />
         <LoadingProvider>
           <ConfigProvider>
-            <NavSelector />
-            {children}
+            <MuiThemeProvider>
+              <NavSelector />
+              {children}
+            </MuiThemeProvider>
           </ConfigProvider>
         </LoadingProvider>
       </body>

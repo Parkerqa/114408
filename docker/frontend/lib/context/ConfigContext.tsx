@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 import { UserInfo } from "@/lib/types/UserAPIType";
@@ -14,7 +13,10 @@ type ConfigContextType = {
   role: number | undefined;
   theme: number;
   setTheme: (theme: Theme) => void;
+  setRole: (number: Role | undefined) => void;
+  setUser: (data: UserInfo | null | undefined) => void;
   fetchUser: () => void;
+  fetch: () => void;
   user?: UserInfo | null | undefined;
 };
 
@@ -22,7 +24,10 @@ const ConfigContext = createContext<ConfigContextType>({
   role: undefined,
   theme: 0,
   user: undefined,
+  setRole: () => {},
+  setUser: () => {},
   setTheme: () => {},
+  fetch: () => {},
   fetchUser: () => {},
 });
 
@@ -44,33 +49,38 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await userAPI.getConfig();
-        setRole(res.data.priority);
-        const theme = res.data.theme;
-        setTheme(theme);
-        document.body.setAttribute(
-          "data-theme",
-          theme === 1 ? "dark" : "light"
-        );
-      } catch (err) {
-        setRole(undefined);
-        setTheme(0);
-        document.body.setAttribute("data-theme", "light");
-      }
-    };
+  const fetch = async () => {
+    try {
+      const res = await userAPI.getConfig();
+      setRole(res.data.priority);
+      const theme = res.data.theme;
+      setTheme(theme);
+      document.body.setAttribute("data-theme", theme === 1 ? "dark" : "light");
+    } catch (err) {
+      setRole(undefined);
+      setTheme(0);
+      document.body.setAttribute("data-theme", "light");
+    }
+  };
 
+  useEffect(() => {
     fetch();
-  }, []);
-
-  useEffect(() => {
     fetchUser();
   }, []);
 
   return (
-    <ConfigContext.Provider value={{ role, theme, setTheme, user, fetchUser }}>
+    <ConfigContext.Provider
+      value={{
+        role,
+        theme,
+        setTheme,
+        user,
+        fetchUser,
+        setUser,
+        setRole,
+        fetch,
+      }}
+    >
       {children}
     </ConfigContext.Provider>
   );
