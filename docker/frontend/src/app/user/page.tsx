@@ -43,6 +43,7 @@ export default function User() {
   };
 
   useEffect(() => {
+    setLoading(false);
     getList();
   }, []);
 

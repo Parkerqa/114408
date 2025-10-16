@@ -3,6 +3,7 @@
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { ChartDataType } from "@/lib/types/ChartDataType";
+import { useEffect, useState } from "react";
 
 const centerTextPlugin = {
   id: "centerText",
@@ -25,12 +26,31 @@ ChartJS.register(ArcElement, Tooltip, Legend, centerTextPlugin);
 export default function Chart({
   data,
   title,
+  width,
+  height,
 }: {
   data: ChartDataType;
   title: string;
+  width?: number;
+  height?: number;
 }) {
+  const [size, setSize] = useState(150);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 1440) setSize(150);
+      else if (width < 1680) setSize(170);
+      else setSize(210);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const options = {
     cutout: "65%",
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         display: false,
@@ -45,7 +65,8 @@ export default function Chart({
     <div
       style={{
         position: "relative",
-        width: `${title === "總預算" ? "160px" : "150px"}`,
+        width: `${size}px`,
+        height: `${size}px`,
         margin: "0 auto",
         textAlign: "center",
       }}

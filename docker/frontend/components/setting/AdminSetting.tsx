@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useConfig } from "@/lib/context/ConfigContext";
 
 import SelfInfo from "./SelfInfo";
 import AddDepartment from "./AddDepartment";
@@ -11,6 +12,7 @@ import styles from "@/styles/components/setting/AdminSetting.module.scss";
 
 export default function AdminSetting() {
   const route = useRouter();
+  const { setRole, setUser } = useConfig();
 
   return (
     <div className={styles.wrap}>
@@ -23,8 +25,10 @@ export default function AdminSetting() {
       <button
         className={styles.logout}
         onClick={() => {
-          route.push("/auth");
           localStorage.clear();
+          setRole(undefined);
+          setUser(undefined);
+          route.push("/auth");
           document.body.setAttribute("data-theme", "light");
         }}
       >
