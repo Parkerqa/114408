@@ -1,33 +1,21 @@
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
-
-import styles from "@/styles/components/LargeTable.module.scss";
 import { useEffect, useState } from "react";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { Eye } from "lucide-react";
+
+import PriviewImg from "@/components/common/PriviewImg";
 import ticketAPI from "@/services/ticketAPI";
 import { pendingTicket } from "@/lib/types/TicketType";
-
-const columns: GridColDef[] = [
-  { field: "upload_date", headerName: "報帳時間", width: 100 },
-  { field: "type", headerName: "報帳種類", width: 100 },
-  { field: "title", headerName: "標題", width: 550 },
-  { field: "total_money", headerName: "金額", width: 50 },
-  {
-    field: "creator_name",
-    headerName: "申請人",
-    width: 100,
-    headerAlign: "center",
-    align: "center",
-  },
-  {
-    field: "check_man",
-    headerName: "核銷人",
-    width: 100,
-    headerAlign: "center",
-    align: "center",
-  },
-];
+import styles from "@/styles/components/LargeTable.module.scss";
 
 export default function ApprovedTable() {
   const [data, setData] = useState<pendingTicket[]>();
+  const [imgUrl, setImgUrl] = useState<string>();
+  const [preview, setPriview] = useState<boolean>(false);
+
+  const handlePreview = (url: string) => {
+    setImgUrl(url);
+    setPriview(true);
+  };
 
   useEffect(() => {
     const getData = async () => {
@@ -41,6 +29,40 @@ export default function ApprovedTable() {
 
     getData();
   }, []);
+
+  const columns: GridColDef[] = [
+    { field: "upload_date", headerName: "報帳時間", width: 100 },
+    { field: "type", headerName: "報帳種類", width: 100 },
+    { field: "title", headerName: "標題", width: 630 },
+    { field: "total_money", headerName: "金額", width: 70 },
+    {
+      field: "creator_name",
+      headerName: "申請人",
+      width: 120,
+      headerAlign: "center",
+      align: "center",
+    },
+    {
+      field: "check_man",
+      headerName: "核銷人",
+      width: 120,
+      headerAlign: "center",
+      align: "center",
+    },
+    {
+      field: "prove",
+      headerName: "證明",
+      width: 50,
+      headerAlign: "center",
+      align: "center",
+      renderCell: (params) => (
+        <Eye
+          style={{ cursor: "pointer" }}
+          onClick={() => handlePreview(params.row.img_url)}
+        />
+      ),
+    },
+  ];
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
@@ -68,6 +90,9 @@ export default function ApprovedTable() {
           },
         }}
       />
+      {preview && imgUrl && (
+        <PriviewImg imgUrl={imgUrl} setPriview={setPriview} />
+      )}
     </div>
   );
 }

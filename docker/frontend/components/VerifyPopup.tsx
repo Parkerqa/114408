@@ -1,9 +1,11 @@
+"use client";
+
 import Link from "next/link";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Paperclip } from "lucide-react";
 
+import PriviewImg from "@/components/common/PriviewImg";
 import ShadowBg from "@/components/common/ShadowBg";
 import InputField from "@/components/common/InputField";
 import {
@@ -27,7 +29,7 @@ export default function VerifyPopup({
   setPendingTable: (data: pendingTicket[]) => void;
   data: multiTicketDetail[];
 }) {
-  const route = useRouter();
+  const [priview, setPriview] = useState<boolean>(false);
   const { register, reset, handleSubmit } = useForm<FormValues>({
     defaultValues: { items: data },
   });
@@ -129,13 +131,18 @@ export default function VerifyPopup({
                   />
                 </div>
               ))}
-              <p className={styles.file}>
-                <Link href={item.img_url}>
+              <div className={styles.file}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPriview(true);
+                  }}
+                >
                   <Paperclip />
                   報帳附件
-                </Link>
+                </button>
                 <span className={styles.hint}>*點擊檢視</span>
-              </p>
+              </div>
               <div className={styles.status}>
                 <label>
                   <input
@@ -156,6 +163,9 @@ export default function VerifyPopup({
                   不可核銷
                 </label>
               </div>
+              {priview && (
+                <PriviewImg imgUrl={item.img_url} setPriview={setPriview} />
+              )}
             </div>
           ))}
         </div>
