@@ -17,7 +17,7 @@ from typing import List, Dict, Any, Optional
 from functools import lru_cache
 from core.upload_utils import BASE_DIR, INVOICE_UPLOAD_FOLDER
 from keras.models import load_model
-from model.parser_model import save_error, save_ocr_result, save_qrcode_result
+from model.parser_model import save_error, save_ocr_result, save_qrcode_result, update_ticket_from_n8n
 from paddleocr import PaddleOCR
 from PIL import Image
 from pyzbar.pyzbar import decode
@@ -127,10 +127,11 @@ def get_with_retry(url: str, retries: int = 2, backoff: float = 1.7, **kwargs) -
 # 建議用環境變數覆蓋（以下為預設）
 OLLAMA_URL = "http://localhost:11434"
 # 你目前寫的是 trycloudflare 臨時網址；建議改成 Named Tunnel 固定域名
-CLOUDFLARE_OCR_URL = "https://exploration-parliament-letter-modified.trycloudflare.com/ocr"
+CLOUDFLARE_OCR_URL = "https://howto-briefly-certification-cable.trycloudflare.com/ocr"
 
 # ===================== ① n8n 參數（放在檔案前面區塊） =====================
-N8N_VALIDATE_TEST_URL = "https://n8n.micky.codes/webhook-test/validate-invoice"
+# N8N_VALIDATE_URL = "https://n8n.micky.codes/webhook/validate-invoice"
+N8N_VALIDATE_URL = "https://n8n.micky.codes/webhook-test/validate-invoice"
 
 # 明細策略：你說「只應該一個 title」→ 開 True
 SINGLE_DETAIL_MODE = True
@@ -435,9 +436,9 @@ def post_to_n8n(parsed: Dict[str, Any],
                 raw_b64: str = "",
                 preprocessed_b64: str = "",
                 prompt_overrides: str = "") -> Optional[Dict[str, Any]]:
-    url = N8N_VALIDATE_TEST_URL
+    url = N8N_VALIDATE_URL
     if not url:
-        print("[n8n] 未設定 N8N_VALIDATE_URL / N8N_VALIDATE_TEST_URL，略過上送。")
+        print("[n8n] 未設定 N8N_VALIDATE_URL，略過上送。")
         return None
 
     doc_obj = _build_doc_for_n8n(parsed)
@@ -497,6 +498,7 @@ def ocr_ai_logic(image_path: str, ticket_id: int, invoice_type: int):
         n8n_resp = post_to_n8n(parsed, raw_url=image_path)
         if n8n_resp is not None:
             print("[n8n] 回應：", json.dumps(n8n_resp, ensure_ascii=False, indent=2))
+            update_ticket_from_n8n(ticket_id, n8n_resp)
 
     except requests.exceptions.RequestException as e:
         print(f"[OCR_AI 錯誤] ticket_id={ticket_id}：OCR 連線/逾時失敗 - {e}")

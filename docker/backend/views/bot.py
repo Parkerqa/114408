@@ -2,7 +2,7 @@ import logging
 import time
 import json
 import requests
-from typing import Optional
+from typing import Optional, Any, Dict, List, Union
 
 from linebot.models import (ImageSendMessage, MessageEvent, TextMessage,
                             TextSendMessage)
@@ -23,65 +23,242 @@ PREDEFINED_RESPONSES = {
 }
 
 
-# === 你自己的環境變數/常數 ===
-N8N_RAG_ENDPOINT = "https://n8n.micky.codes/webhook-test/rag/chat"
-BOT_PROXY_KEY = "some-secret"  # 對 n8n 的簡單驗證(選用)
-RAG_WAIT_TTL_SEC = 600         # 等待下一則問題的有效時間(秒)
+# === 環境變數 ===
+N8N_RAG_ENDPOINT_RAG = "https://n8n.micky.codes/webhook/rag/chat"
+
+N8N_RAG_ENDPOINT_FINAL = "https://n8n.micky.codes/webhook/ask-final"
+
+BOT_PROXY_KEY = "some-secret"
+RAG_WAIT_TTL_SEC = 600
+
 
 # === 超簡易 in-memory session（可換成 Redis）===
-_SESS = {}  # key: user_id, val: dict
-def _now() -> int:
-    return int(time.time())
-
-def set_session(user_id: int, data: dict):
-    _SESS[user_id] = {**data, "expire_at": _now() + RAG_WAIT_TTL_SEC}
-
-def get_session(user_id: int) -> Optional[dict]:
-    rec = _SESS.get(user_id)
-    if not rec:
-        return None
-    if _now() > rec.get("expire_at", 0):
-        _SESS.pop(user_id, None)
-        return None
+_SESS = {}
+def _now(): return int(time.time())
+def set_session(uid, data): _SESS[uid] = {**data, "expire_at": _now() + RAG_WAIT_TTL_SEC}
+def get_session(uid):
+    rec = _SESS.get(uid)
+    if not rec or _now() > rec.get("expire_at", 0): _SESS.pop(uid, None); return None
     return rec
+def del_session(uid): _SESS.pop(uid, None)
 
-def del_session(user_id: int):
-    _SESS.pop(user_id, None)
+def _coerce_to_text_from_message_field(msg_field):
+    """
+    將 message 欄位可能的型別統一成文字：
+    - str: 直接回傳
+    - list[dict]: 嘗試取其中的 {type:'text', text:'...'} 串接
+    - list[str]: 串接
+    - 其他: 轉成字串
+    """
+    if isinstance(msg_field, str):
+        return msg_field
+    if isinstance(msg_field, list):
+        texts = []
+        for m in msg_field:
+            if isinstance(m, dict):
+                # LINE 常見 {type:'text', text:'...'}
+                if m.get("type") == "text" and isinstance(m.get("text"), str):
+                    texts.append(m["text"])
+                # 其他鍵值也嘗試抓字串
+                elif isinstance(m.get("message"), str):
+                    texts.append(m["message"])
+            elif isinstance(m, str):
+                texts.append(m)
+        if texts:
+            return "\n".join(texts)
+        return str(msg_field)
+    return str(msg_field)
+
+def _parse_data_field(data_field):
+    """
+    嘗試把 data 欄位解析成可讀文字：
+    - 若是 JSON 字串/物件：轉成較易讀的字串
+    - 若是像 "[object Object]"：直接忽略（回空字串）
+    """
+    if not data_field:
+        return ""
+    if isinstance(data_field, (dict, list)):
+        try:
+            return json.dumps(data_field, ensure_ascii=False, indent=2)
+        except Exception:
+            return str(data_field)
+    if isinstance(data_field, str):
+        s = data_field.strip()
+        # 避免 "[object Object]" 垃圾字串
+        if s.lower().startswith("[object object]"):
+            return ""
+        # 嘗試 JSON 解析
+        if (s.startswith("{") and s.endswith("}")) or (s.startswith("[") and s.endswith("]")):
+            try:
+                obj = json.loads(s)
+                return json.dumps(obj, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+        return s
+    return str(data_field)
 
 def call_n8n_rag(user_id: int, kb: str, question: str, timeout_sec: int = 25) -> str:
-    """呼叫 n8n RAG workflow，回傳文字（你也可以改成回傳陣列以支援多訊息）"""
     payload = {
         "userId": user_id,
         "mode": "rag",
-        "text": question,
-        "meta": {
-            "kb": kb,
-            "source": "line",
-            "lang": "zh-Hant"
-        }
+        "question": question,  # 新工作流使用 question
+        "meta": {"kb": kb, "source": "line", "lang": "zh-Hant"}
     }
     headers = {"Content-Type": "application/json"}
     if BOT_PROXY_KEY:
         headers["x-bot-key"] = BOT_PROXY_KEY
 
-    r = requests.post(N8N_RAG_ENDPOINT, data=json.dumps(payload), headers=headers, timeout=timeout_sec)
+    r = requests.post(N8N_RAG_ENDPOINT_RAG, data=json.dumps(payload), headers=headers, timeout=timeout_sec)
     r.raise_for_status()
-    data = r.json() if r.text else {}
 
-    # 兼容兩種回傳：{text: "..."} 或 {messages: [{type:'text', text:'...'}, ...]}
+    # ---- 解析回傳 ----
+    text_out = None
+    if r.text:
+        try:
+            data = r.json()
+        except ValueError:
+            # 非 JSON，直接當純文字
+            return r.text.strip()
+
+        # 1) 回傳是 list（你目前的新 n8n 就是這種）
+        if isinstance(data, list) and data:
+            first = data[0]
+            if isinstance(first, dict):
+                # 先拿 message
+                if "message" in first:
+                    text_out = _coerce_to_text_from_message_field(first["message"])
+                # 若沒有明確 message，嘗試 text
+                if (not text_out or not text_out.strip()) and "text" in first:
+                    text_out = str(first["text"])
+                # 補充：若 message 很短或空，且 data 有內容就附上（排除 [object Object]）
+                data_blob = _parse_data_field(first.get("data"))
+                if (not text_out or not text_out.strip()) and data_blob:
+                    text_out = data_blob
+                elif data_blob and data_blob != "[object Object]":
+                    # 視情況把 data 當附註加上
+                    text_out = (text_out or "").rstrip() + ("\n\n" if text_out else "") + data_blob
+
+        # 2) 回傳是 dict（相容舊格式）
+        elif isinstance(data, dict):
+            # 常見舊 RAG：{messages:[...]} 或 {message:[...]} 或 {text:"..."}
+            for key in ("messages", "message"):
+                if key in data:
+                    text_out = _coerce_to_text_from_message_field(data[key])
+                    break
+            if (not text_out or not text_out.strip()) and "text" in data:
+                text_out = str(data["text"])
+            if (not text_out or not text_out.strip()) and "data" in data:
+                text_out = _parse_data_field(data["data"])
+
+    # fallback
+    final_text = (text_out or "（RAG 沒有回傳內容）").strip()
+    # 清掉多餘空白/換行
+    return final_text if final_text else "（RAG 沒有回傳內容）"
+
+
+def _pick_text_from_item(item: dict) -> str:
+    """
+    依優先序取文字：
+    1) data（若為可用字串）
+    2) message（字串或 LINE 風格的 [{type:'text', text:'...'}]）
+    """
+    def _clean(s: str) -> str:
+        if not isinstance(s, str):
+            return ""
+        s = s.strip()
+        # 忽略無意義的 "[object Object]"
+        if s.lower().startswith("[object object]"):
+            return ""
+        return s
+
+    # 優先用 data
+    data_val = item.get("data")
+    if isinstance(data_val, str):
+        data_txt = _clean(data_val)
+        if data_txt:
+            return data_txt
+    elif isinstance(data_val, (dict, list)):
+        try:
+            dumped = json.dumps(data_val, ensure_ascii=False)
+            if dumped:
+                return dumped
+        except Exception:
+            pass
+
+    # 退回用 message
+    msg_val = item.get("message")
+    if isinstance(msg_val, str):
+        msg_txt = _clean(msg_val)
+        if msg_txt:
+            return msg_txt
+    elif isinstance(msg_val, list):
+        texts = []
+        for m in msg_val:
+            if isinstance(m, dict) and m.get("type") == "text" and isinstance(m.get("text"), str):
+                t = _clean(m["text"])
+                if t:
+                    texts.append(t)
+            elif isinstance(m, str):
+                t = _clean(m)
+                if t:
+                    texts.append(t)
+        if texts:
+            return "\n".join(texts)
+
+    # 最後再試 text 欄
+    text_val = item.get("text")
+    if isinstance(text_val, str):
+        t = _clean(text_val)
+        if t:
+            return t
+
+    return ""
+
+def call_n8n_final(user_id: int, kb: str, question: str, timeout_sec: int = 25) -> str:
+    payload = {
+        "question": question,   # 新 workflow 主要吃這個欄位
+        "userId": user_id,
+        "source": "line",
+        "kb": kb,
+    }
+    headers = {"Content-Type": "application/json"}
+    if BOT_PROXY_KEY:
+        headers["x-bot-key"] = BOT_PROXY_KEY
+
+    r = requests.post(
+        N8N_RAG_ENDPOINT_FINAL,
+        data=json.dumps(payload),
+        headers=headers,
+        timeout=timeout_sec,
+    )
+    r.raise_for_status()
+
+    if not r.text:
+        return "（沒有回傳內容）"
+
+    try:
+        data = r.json()
+    except ValueError:
+        # 非 JSON，直接回純文字
+        return r.text.strip() or "（沒有回傳內容）"
+
+    # 回傳可能是 list 或 dict
+    if isinstance(data, list):
+        texts = []
+        for item in data:
+            if isinstance(item, dict):
+                picked = _pick_text_from_item(item)
+                if picked:
+                    texts.append(picked)
+        if texts:
+            return ("\n\n".join(texts)).strip()
+        return "（沒有回傳內容）"
+
     if isinstance(data, dict):
-        if "messages" in data and isinstance(data["messages"], list) and data["messages"]:
-            # 合併成單段文字；你也可改成回傳多段 LINE 訊息
-            texts = []
-            for m in data["messages"]:
-                if isinstance(m, dict) and m.get("type") == "text" and m.get("text"):
-                    texts.append(str(m["text"]))
-            if texts:
-                return "\n".join(texts)
-        if "text" in data and isinstance(data["text"], str):
-            return data["text"]
+        picked = _pick_text_from_item(data)
+        return picked or "（沒有回傳內容）"
 
-    return "（RAG 沒有回傳內容）"
+    return "（沒有回傳內容）"
 
 
 # 訊息回覆
@@ -115,61 +292,55 @@ def get_reply_text(msg: str, user_id: int = 1):
             prompt = msg[3:].strip()
             return TextSendMessage(text=chat_with_gpt_logic(prompt))
 
-        # === RAG 問答：第一階段（進入等待） ===
+        # ---- 進入等待： RAG 問答 ----
         if msg.startswith("RAG 問答"):
-            # 支援 "RAG 問答" 或 "RAG 問答:invoice"
             kb = "default"
-            seg = msg.split(":", 1)
-            if len(seg) == 2 and seg[1].strip():
-                kb = seg[1].strip()
+            if ":" in msg:
+                kb = msg.split(":", 1)[1].strip() or "default"
+            set_session(user_id, {"mode": "rag_old", "kb": kb, "awaiting": True, "started_at": _now()})
+            return TextSendMessage(text=f"已進入「RAG 問答」知識庫：{kb}\n請輸入你的問題（或輸入「取消」離開）")
 
-            set_session(user_id, {
-                "mode": "rag",
-                "kb": kb,
-                "awaiting_question": True,
-                "started_at": _now(),
-            })
+        # ---- 進入等待：支出佔比分析 ----
+        if msg.startswith("支出佔比分析"):
+            kb = "default"
+            if ":" in msg:
+                kb = msg.split(":", 1)[1].strip() or "default"
+            set_session(user_id, {"mode": "rag_new", "kb": kb, "awaiting": True, "started_at": _now()})
+            return TextSendMessage(text=f"已進入「支出佔比分析」：{kb}\n請輸入你的問題（或輸入「取消」離開）")
 
-            hint = f"已進入「RAG 問答」模式（知識庫：{kb}）。\n請直接輸入你的問題。輸入「取消」可離開。"
-            return TextSendMessage(text=hint)
-
-        # === RAG 問答：取消 ===
+        # ---- 取消 ----
         if msg in ("取消", "cancel", "退出"):
             del_session(user_id)
-            return TextSendMessage(text="已取消「RAG 問答」流程。")
+            return TextSendMessage(text="已取消流程。")
 
-        # === RAG 問答：第二階段（等待中 → 當前訊息就是問題，呼叫 n8n） ===
+        # ---- 等待中的第二步：把本次訊息當問題，依 mode 分流打不同的 n8n ----
         sess = get_session(user_id)
-        if sess and sess.get("mode") == "rag" and sess.get("awaiting_question"):
-            question = msg  # 這則當成真正的問題
+        if sess and sess.get("awaiting") and sess.get("mode") in ("rag_old", "rag_new"):
+            question = msg
             kb = sess.get("kb", "default")
-            # 先關閉等待（避免重入）
-            set_session(user_id, {**sess, "awaiting_question": False, "last_question": question})
-
+            mode = sess.get("mode")
+            set_session(user_id, {**sess, "awaiting": False, "last_q": question})
             try:
-                answer_text = call_n8n_rag(user_id=user_id, kb=kb, question=question, timeout_sec=25)
-                # 你可視需要保留最後答案在 session
-                set_session(user_id, {**sess, "awaiting_question": False, "last_question": question, "last_answer": answer_text})
-                return TextSendMessage(text=answer_text)
+                if mode == "rag_old":
+                    ans = call_n8n_rag(user_id, kb, question, timeout_sec=25)
+                else:
+                    ans = call_n8n_final(user_id, kb, question, timeout_sec=25)
+                set_session(user_id, {**sess, "awaiting": False, "last_q": question, "last_a": ans})
+                return TextSendMessage(text=ans)
             except requests.Timeout:
-                # 時間較長時，LINE Reply API 容易逾時；這裡先回覆占位（若你有 Push 通道可再補送正式答案）
                 return TextSendMessage(text="我正在為你檢索資料，稍後把結果傳給你！")
             except Exception as e:
-                # 任何錯誤都不要讓流程卡死
                 print("[RAG ERROR]", e)
-                return TextSendMessage(text="抱歉，暫時無法取回答案，請稍後再試或重新輸入「RAG 問答」。")
+                return TextSendMessage(text="抱歉，暫時無法取回答案，請稍後再試或重新輸入指令。")
 
-        # === 其他預設回覆 ===
+        # ---- 其他預設回覆 ----
         response = PREDEFINED_RESPONSES.get(msg)
-
         if response == "awaiting":
             try:
                 ticket_list = get_awaiting_list_by_uid(user_id)
                 return TextSendMessage(text=ticket_list)
-            except Exception as e:
-                print(e)
+            except Exception:
                 return TextSendMessage(text="使用者驗證錯誤")
-
         return TextSendMessage(text=response or "盡請期待")
 
     except Exception as e:

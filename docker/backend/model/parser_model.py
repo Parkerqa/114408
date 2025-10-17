@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
+from datetime import datetime
 from .db_utils import SessionLocal
 from .models import Ticket, TicketDetail
 
@@ -159,6 +161,110 @@ def save_qrcode_result(ticket_id, invoice_type, catch_result, items):
         return True
     except Exception as e:
         print(f"[ERROR] 儲存 QRcode Decorder 結果失敗：{e}")
+        db.rollback()
+        return False
+    finally:
+        db.close()
+
+
+def _normalize_n8n_response(n8n_resp):
+    """
+    將 n8n 回應統一成：
+    {
+      "ticket": {"invoice_number": str, "date": str, "total_money": number},
+      "ticket_detail": [{"title": str, "money": number}, ...]
+    }
+    """
+    if n8n_resp is None:
+        return None
+    # n8n 目前回傳是 [ { "ticket": {...}, "ticket_detail": [...] } ]
+    if isinstance(n8n_resp, list):
+        n8n_resp = n8n_resp[0] if n8n_resp else None
+    if not isinstance(n8n_resp, dict):
+        return None
+
+    ticket = n8n_resp.get("ticket", {}) or {}
+    details = n8n_resp.get("ticket_detail", []) or []
+
+    return {
+        "ticket": {
+            "invoice_number": ticket.get("invoice_number"),
+            "date": ticket.get("date"),
+            "total_money": ticket.get("total_money"),
+        },
+        "ticket_detail": details,
+    }
+
+def _parse_dt(dt_str):
+    """
+    嘗試解析多種常見格式；失敗回傳 None。
+    """
+    if not dt_str:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%Y/%m/%d", "%Y/%m/%d %H:%M:%S"):
+        try:
+            return datetime.strptime(dt_str, fmt)
+        except ValueError:
+            continue
+    return None
+
+def update_ticket_from_n8n(ticket_id, n8n_resp):
+    db: Session = SessionLocal()
+    try:
+        payload = _normalize_n8n_response(n8n_resp)
+        if not payload:
+            print("[WARN] n8n 回應為空或格式不符，略過更新。")
+            return False
+
+        t = payload["ticket"]
+        details = payload["ticket_detail"]
+
+        ticket = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).one_or_none()
+        if ticket is None:
+            print(f"[ERROR] 找不到 ticket_id={ticket_id} 的票據。")
+            return False
+
+        # === 更新主表欄位（有值才更新；避免覆蓋成 None） ===
+        if t.get("invoice_number"):
+            ticket.invoice_number = t["invoice_number"]
+
+        if t.get("date") is not None:
+            parsed = _parse_dt(t["date"])
+            # 依你的模型欄位型別選擇：若 Ticket.date 是 DATE，可用 parsed.date()
+            # 若是 DATETIME 就用 parsed；如果解析失敗就不更新
+            if parsed:
+                # 假設欄位是 DATETIME；若是 DATE 請改成 parsed.date()
+                ticket.date = parsed
+
+        if t.get("total_money") is not None:
+            ticket.total_money = t["total_money"]
+
+        ticket.updated_by = "system"
+
+        # === 覆蓋明細：先刪舊後加新，避免重複 ===
+        db.query(TicketDetail).filter(TicketDetail.ticket_id == ticket_id).delete(synchronize_session=False)
+
+        # details 可能是空陣列；這樣等於清空明細
+        for item in details:
+            title = item.get("title")
+            money = item.get("money")
+            if title is None and money is None:
+                continue  # 全空就跳過
+            db.add(TicketDetail(
+                ticket_id=ticket_id,
+                title=title,
+                money=money
+            ))
+
+        db.commit()
+        return True
+
+    except SQLAlchemyError as e:
+        print(f"[ERROR] 儲存 N8N 結果失敗（DB）：{e}")
+        db.rollback()
+        return False
+    except Exception as e:
+        print(f"[ERROR] 儲存 N8N 結果失敗（程式）：{e}")
         db.rollback()
         return False
     finally:
