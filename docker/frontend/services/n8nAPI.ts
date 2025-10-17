@@ -1,7 +1,7 @@
 import N8NAPI from "@/lib/api/n8nApi";
 import { Response } from "@/lib/types/ResponseType";
 
-const BASE_URL = "webhook-test";
+const BASE_URL = "webhook";
 
 const n8nAPI = {
   forgetPassword: (gmail: { email: string }): Promise<Response<any>> =>
