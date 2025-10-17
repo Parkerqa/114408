@@ -6,6 +6,10 @@ services:
     ports:
       - "5678:5678"
     environment:
+      - N8N_PUBLIC_URL=https://n8n.micky.codes
+      - N8N_PROTOCOL=https
+      - N8N_HOST=localhost
+      - GENERIC_TIMEZONE=Asia/Taipei
       - N8N_BASIC_AUTH_ACTIVE=false
       - OLLAMA_BASE=http://ollama:11434
       - OLLAMA_EMBED_MODEL=mxbai-embed-large
@@ -37,6 +41,8 @@ services:
     volumes:
       - qdrant_storage:/qdrant/storage
     restart: unless-stopped
+    networks:
+      - app-net
 
   tei:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-latest
@@ -54,6 +60,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
+    networks:
+      - app-net
 
   backend:
     build: ./backend
