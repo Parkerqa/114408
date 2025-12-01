@@ -58,7 +58,8 @@ def list_ticket_logic(mode, user) -> Tuple[str, List[Dict] or None]:
             "total_money": str(int(t.total_money)) if not is_processing and t.total_money is not None else (
                 check_status(t.status) if t.status == 0 else "等待系統辨識"
             ),
-            "status": check_status(t.status)
+            "status": check_status(t.status),
+            "reject_reason": t.reject_reason
         }
         results.append(result)
 

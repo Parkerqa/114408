@@ -16,8 +16,8 @@ def get_all_tickets(status: Optional[List[int]]):
     db: Session = SessionLocal()
     try:
         if status:
-            return db.query(Ticket).filter(Ticket.status.in_(status)).all()
-        return db.query(Ticket).all()
+            return db.query(Ticket).filter(Ticket.status.in_(status)).order_by(Ticket.created_at.desc()).all()
+        return db.query(Ticket).order_by(Ticket.created_at.desc()).all()
     except Exception as e:
         print(e)
         return None
@@ -27,8 +27,8 @@ def get_tickets_by_user(user_id: int, status: Optional[List[int]]):
     db: Session = SessionLocal()
     try:
         if status:
-            return db.query(Ticket).filter(Ticket.user_id == user_id, Ticket.status.in_(status)).all()
-        return db.query(Ticket).filter(Ticket.user_id == user_id).all()
+            return db.query(Ticket).filter(Ticket.user_id == user_id, Ticket.status.in_(status)).order_by(Ticket.created_at.desc()).all()
+        return db.query(Ticket).filter(Ticket.user_id == user_id).order_by(Ticket.created_at.desc()).all()
     except Exception as e:
         print(e)
         return None
@@ -472,6 +472,7 @@ def get_approved_records(limit: int = 20):
                 User.username.label("creator_name"),
                 Ticket.check_man,
                 Ticket.status,
+                Ticket.reject_reason,
                 Ticket.img,
                 TicketDetail.td_id,
                 TicketDetail.title,
@@ -497,6 +498,7 @@ def get_approved_records(limit: int = 20):
                     "creator_name": r.creator_name,
                     "check_man": r.check_man,
                     "status": check_status(r.status),
+                    "reject_reason": r.reject_reason,
                     "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}' if r.img else None,
                     "Details": [],
                 }
