@@ -35,6 +35,7 @@ class TicketOut(BaseModel):
 class TicketAuditItem(BaseModel):
     ticket_id: int = Field(..., description="發票ID")
     status: int = Field(..., description="欲更新的狀態")
+    reject_reason: Optional[str]
 
 
 class TicketAuditBulkRequest(BaseModel):

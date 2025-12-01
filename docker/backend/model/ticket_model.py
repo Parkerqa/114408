@@ -338,6 +338,11 @@ def bulk_update_ticket_status(payload, checker_user_id: int) -> Dict[str, Any]:
                 if hasattr(t, "check_date"):
                     t.check_date = now
 
+            # 若不可核銷，更新 reject_reason
+            if new_status == TicketStatus.REJECTED:
+                if hasattr(t, "reject_reason"):
+                    t.reject_reason = item.reject_reason
+
             updated_ids.append(tid)
 
         db.commit()
