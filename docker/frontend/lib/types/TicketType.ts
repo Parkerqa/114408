@@ -9,6 +9,7 @@ export type ticketListType = {
   invoice_number: string;
   total_money: number;
   status: string;
+  reject_reason?: string;
 };
 
 export type editTicket = {
@@ -68,6 +69,7 @@ export type multiTicketDetail = {
   applicant: string;
   img_url: string;
   state?: number;
+  reason?: string;
 };
 
 export type daily_amounts = {
