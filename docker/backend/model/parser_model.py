@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from datetime import datetime
 from .db_utils import SessionLocal
-from .models import Ticket, TicketDetail
+from .models import Ticket, TicketDetail, AccountingItems
 
 
 def save_error(ticket_id):
@@ -145,6 +145,8 @@ def save_qrcode_result(ticket_id, invoice_type, catch_result, items):
         ticket = db.query(Ticket).filter(Ticket.ticket_id == ticket_id).one_or_none()
         ticket.type = invoice_type
         ticket.invoice_number = catch_result["invoice_number"]
+        ticket.seller_id = catch_result["seller_id"]
+        ticket.buyer_id = catch_result["buyer_id"]
         ticket.date = catch_result["date"]
         ticket.total_money = catch_result["total_money"]
         ticket.status = 2
@@ -267,5 +269,24 @@ def update_ticket_from_n8n(ticket_id, n8n_resp):
         print(f"[ERROR] 儲存 N8N 結果失敗（程式）：{e}")
         db.rollback()
         return False
+    finally:
+        db.close()
+
+def load_accounting_items():
+    db = SessionLocal()
+    try:
+        rows = db.query(AccountingItems).filter(AccountingItems.is_active == True).all()
+        out = []
+        for r in rows:
+            out.append({
+                "id": r.accounting_id,
+                "name": r.account_name,
+                "code": r.account_code,
+                "class": r.account_class
+            })
+        return out
+    except Exception as e:
+        print("load_accounting_items ERROR:", e)
+        return None
     finally:
         db.close()

@@ -14,14 +14,14 @@ from pathlib import Path
 from decimal import Decimal
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional
-from functools import lru_cache
 from core.upload_utils import BASE_DIR, INVOICE_UPLOAD_FOLDER
-from keras.models import load_model
-from model.parser_model import save_error, save_ocr_result, save_qrcode_result, update_ticket_from_n8n
-from paddleocr import PaddleOCR
+from model.parser_model import save_error, save_ocr_result, save_qrcode_result, update_ticket_from_n8n, load_accounting_items
 from PIL import Image
 from pyzbar.pyzbar import decode
 from qreader import QReader
+from keras.models import load_model
+# from paddleocr import PaddleOCR
+# from functools import lru_cache
 
 # 初始化語言轉換器
 # converter = opencc.OpenCC("s2t")
@@ -127,11 +127,11 @@ def get_with_retry(url: str, retries: int = 2, backoff: float = 1.7, **kwargs) -
 # 建議用環境變數覆蓋（以下為預設）
 OLLAMA_URL = "http://localhost:11434"
 # 你目前寫的是 trycloudflare 臨時網址；建議改成 Named Tunnel 固定域名
-CLOUDFLARE_OCR_URL = "https://howto-briefly-certification-cable.trycloudflare.com/ocr"
+CLOUDFLARE_OCR_URL = "https://citizens-environmental-trio-dice.trycloudflare.com/ocr"
 
 # ===================== ① n8n 參數（放在檔案前面區塊） =====================
-# N8N_VALIDATE_URL = "https://n8n.micky.codes/webhook/validate-invoice"
-N8N_VALIDATE_URL = "https://n8n.micky.codes/webhook-test/validate-invoice"
+N8N_VALIDATE_URL = "https://n8n.micky.codes/webhook/validate-invoice"
+# N8N_VALIDATE_URL = "https://n8n.micky.codes/webhook-test/validate-invoice"
 
 # 明細策略：你說「只應該一個 title」→ 開 True
 SINGLE_DETAIL_MODE = True
@@ -272,18 +272,44 @@ def safe_json_dumps(obj, **kwargs):
 
 # ---- 3) LLM 解析（可選）----
 def ai_parse_invoice(rec_texts: List[str]) -> Optional[Dict[str, Any]]:
-    # 健康檢查略…
+    # 1. 讀取會計科目清單
+    accounting_items = load_accounting_items()
+
+    # 2. 做成 prompt 用的文字
+    items_text = "\n".join(
+        [f"- {i['id']} | {i['code']} | {i['name']} | {i['class'] or ''}"
+         for i in accounting_items]
+    )
+
+    # 3. 原本的 OCR→抽取 prompt + 新增分類要求
     prompt = (
-        "你是資料抽取器。請只輸出 JSON（不要任何多餘文字/註解/程式碼圍欄）。\n"
-        "結構：{\n"
-        '  "ticket": {"invoice_number": string|null, "date": string|null, "total_money": number|null},\n'
-        '  "ticket_detail": [{"title": string, "money": number}] \n'
-        "}\n"
-        "- invoice_number：兩英+八數，如 AB12345678；找不到給 null\n"
-        "- date：YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS；找不到給 null\n"
-        "- total_money：整數；找不到給 null\n"
-        "- ticket_detail：若不確定就給空陣列 []\n"
-        "只輸出上述 JSON，不能有其他文字。\n\n"
+        "你是一個發票資料抽取器，同時也能依發票內容判斷此票屬於哪個會計科目。\n"
+        "請只輸出 JSON，不能有其他文字。\n"
+        "JSON 結構如下：\n"
+        "{\n"
+        '  "ticket": {\n'
+        '      "invoice_number": string|null,\n'
+        '      "date": string|null,\n'
+        '      "total_money": number|null\n'
+        "  },\n"
+        '  "ticket_detail": [\n'
+        '      {"title": string, "money": number}\n'
+        "  ],\n"
+        '  "classification": {\n'
+        '      "accounting_id": number|null,\n'
+        '      "accounting_name": string|null,\n'
+        '      "reason": string|null\n'
+        "  }\n"
+        "}\n\n"
+        "- invoice_number：AB12345678 這類格式，沒找到給 null\n"
+        "- date：YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS，沒找到給 null\n"
+        "- total_money：整數或小數，沒找到給 null\n"
+        "- ticket_detail：若不確定給空陣列 []\n"
+        "- classification：請依發票內容從下方科目清單選出最適合的一個 accounting_id\n"
+        "- 必須從清單中選擇，不可亂造 ID\n\n"
+        "### 會計科目清單\n"
+        f"{items_text}\n\n"
+        "### OCR 文字\n"
         f"{json.dumps(rec_texts, ensure_ascii=False)}"
     )
 
@@ -294,15 +320,14 @@ def ai_parse_invoice(rec_texts: List[str]) -> Optional[Dict[str, Any]]:
                 "model": os.getenv("OLLAMA_MODEL", "gemma:4b"),
                 "prompt": prompt,
                 "stream": False,
-                "format": "json"  # ←← 重點：強制 JSON
+                "format": "json"
             },
             timeout=60
         )
         r.raise_for_status()
-        # 使用 Ollama 的 JSON 格式輸出：r.json() 仍是 {response: "<json-string>"}
         data = r.json()
         text = data.get("response", "")
-        return json.loads(text)  # 直接 parse
+        return json.loads(text)
     except Exception:
         return None
 
@@ -742,6 +767,8 @@ def qrcode_decoder_logic(image_path, ticket_id, invoice_type, debug=False):
                 invoice_type,
                 {
                     "invoice_number": result.get("invoice_number"),
+                    "seller_id": result.get("seller_id"),
+                    "buyer_id": result.get("buyer_id"),
                     "date": result.get("date"),
                     "total_money": total_money,
                 },
