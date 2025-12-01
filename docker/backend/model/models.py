@@ -94,6 +94,8 @@ class Ticket(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DATETIME(fsp=6), nullable=False, server_default=text('CURRENT_TIMESTAMP(6)'))
     type: Mapped[Optional[int]] = mapped_column(Integer)
     invoice_number: Mapped[Optional[str]] = mapped_column(String(10))
+    seller_id: Mapped[Optional[str]] = mapped_column(String(10))
+    buyer_id: Mapped[Optional[str]] = mapped_column(String(10))
     accounting_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("accounting_items.accounting_id", ondelete="SET NULL"),
         nullable=True
@@ -111,6 +113,7 @@ class Ticket(Base):
     date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
     total_money: Mapped[Optional[decimal.Decimal]] = mapped_column(DECIMAL(10, 2))
     status: Mapped[Optional[int]] = mapped_column(Integer)
+    reject_reason: Mapped[Optional[str]] = mapped_column(String(255))
     writeoff_date: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
     updated_by: Mapped[Optional[str]] = mapped_column(String(150))
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DATETIME(fsp=6))
