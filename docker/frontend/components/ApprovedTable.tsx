@@ -33,7 +33,8 @@ export default function ApprovedTable() {
   const columns: GridColDef[] = [
     { field: "upload_date", headerName: "報帳時間", width: 100 },
     { field: "type", headerName: "報帳種類", width: 100 },
-    { field: "title", headerName: "標題", width: 630 },
+    { field: "title", headerName: "標題", width: 500 },
+    { field: "reject_reason", headerName: "未通過原因", width: 130 },
     { field: "total_money", headerName: "金額", width: 70 },
     {
       field: "creator_name",

@@ -68,6 +68,21 @@
           color: var(--point-red);
         }
       }
+
+      .reject {
+        display: flex;
+        gap: 20px;
+        width: 100%;
+        align-items: center;
+
+        span {
+          color: var(--hover-color);
+        }
+
+        p {
+          font-size: $medium-size;
+        }
+      }
     }
   }
 }

@@ -110,6 +110,12 @@ export default function MobileListItem({
                   <span>狀態</span>
                   <p>{item.status}</p>
                 </div>
+                {item.reject_reason && (
+                  <div className={styles.reject}>
+                    <span>未通過原因</span>
+                    <p>{item.reject_reason}</p>
+                  </div>
+                )}
                 {!isPastRecord && (
                   <div className={styles.info}>
                     <span>操作</span>
