@@ -7,15 +7,12 @@
 
   .hr {
     border: 2px solid var(--second-color);
-    width: 100%;
     border-radius: 20px;
   }
 
   .itemWrap {
     position: relative;
     display: flex;
-    flex-direction: column;
-    align-items: end;
     gap: 10px;
     padding: 5rem 3rem 2rem;
     height: fit-content;
