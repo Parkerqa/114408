@@ -2,38 +2,39 @@ import requests
 import json
 import re
 import os
-import time
-
 import base64
 import cv2
 import tensorflow as tf
 import numpy as np
-import opencc
+# import opencc
 import threading
 from pathlib import Path
 from decimal import Decimal
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 from core.upload_utils import BASE_DIR, INVOICE_UPLOAD_FOLDER
-from model.parser_model import save_error, save_ocr_result, save_qrcode_result, update_ticket_from_n8n, load_accounting_items
+from model.parser_model import save_error, save_qrcode_result, load_accounting_items
 from PIL import Image
 from pyzbar.pyzbar import decode
 from qreader import QReader
 from keras.models import load_model
-# from paddleocr import PaddleOCR
+# from paddleocr import PPStructureV3
 # from functools import lru_cache
 
 # 初始化語言轉換器
 # converter = opencc.OpenCC("s2t")
-#
+
 # @lru_cache(maxsize=1)
 # def get_ocr():
-#     return PaddleOCR(
-#         device="cpu",
+#     return PPStructureV3(
+#         lang="chinese_cht",
 #         use_doc_orientation_classify=False,
 #         use_doc_unwarping=False,
-#         use_textline_orientation=False
-#     )
+#         use_textline_orientation=False,
+#         use_seal_recognition=False,
+#         use_formula_recognition=False,
+#         use_region_detection=True,
+#         enable_mkldnn=False)
 
 
 # 單例模型載入（確保全域只載一次）
@@ -74,12 +75,12 @@ def load_and_preprocess_image(path, img_height=128, img_width=128):
     return np.expand_dims(img, axis=0)
 
 
-def snn_logic(image_path: str, threshold: float = 0.5) -> int:
+def snn_logic(image_path: str) -> int:
     try:
         model = get_snn_model()
-        img_array = load_and_preprocess_image(image_path)
+        img = load_and_preprocess_image(image_path)
         with _snn_lock:
-            pred = model.predict(img_array, verbose=0)
+            pred = model.predict(img)
         predicted_index = int(np.argmax(pred[0]))
         return class_map.get(predicted_index, 0)
 
@@ -88,479 +89,194 @@ def snn_logic(image_path: str, threshold: float = 0.5) -> int:
         return 0
 
 
-# ========== HTTP 工具（重試/退避） ==========
-HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "120"))
+# ---- 本地 LLM 解析 ----
+def ai_parse_invoice(ocr_html: str) -> Optional[Dict[str, Any]]:
+    """
+    使用 LLM 解析 OCR 產生的 HTML (包含 p 標籤與 table) 並進行會計科目分類
+    """
 
-def post_with_retry(url: str, retries: int = 3, backoff: float = 1.7, **kwargs) -> requests.Response:
-    last_err = None
-    for i in range(retries):
-        try:
-            r = requests.post(url, timeout=HTTP_TIMEOUT, **kwargs)
-            r.raise_for_status()
-            return r
-        except requests.exceptions.RequestException as e:
-            last_err = e
-            if i == retries - 1:
-                break
-            time.sleep(backoff ** i)
-    raise last_err
-
-
-def get_with_retry(url: str, retries: int = 2, backoff: float = 1.7, **kwargs) -> requests.Response:
-    last_err = None
-    for i in range(retries):
-        try:
-            r = requests.get(url, timeout=HTTP_TIMEOUT, **kwargs)
-            r.raise_for_status()
-            return r
-        except requests.exceptions.RequestException as e:
-            last_err = e
-            if i == retries - 1:
-                break
-            time.sleep(backoff ** i)
-    raise last_err
-
-
-# OCR → Ollama 流程
-# === 1) Ollama 連線設定：用環境變數可解決 container DNS 問題 ===
-# ========== 連線設定 ==========
-# 建議用環境變數覆蓋（以下為預設）
-OLLAMA_URL = "http://localhost:11434"
-# 你目前寫的是 trycloudflare 臨時網址；建議改成 Named Tunnel 固定域名
-CLOUDFLARE_OCR_URL = "https://citizens-environmental-trio-dice.trycloudflare.com/ocr"
-
-# ===================== ① n8n 參數（放在檔案前面區塊） =====================
-N8N_VALIDATE_URL = "https://n8n.micky.codes/webhook/validate-invoice"
-# N8N_VALIDATE_URL = "https://n8n.micky.codes/webhook-test/validate-invoice"
-
-# 明細策略：你說「只應該一個 title」→ 開 True
-SINGLE_DETAIL_MODE = True
-
-# 金額合理上下限（依場景調整）
-MIN_MONEY = 1
-MAX_MONEY = 2_000_000  # 單項/總金額上限（同時也拿來擋 DB out-of-range）
-
-# ------- 規則常數 -------
-TOTAL_KEYWORDS = ["總計", "合計", "應付", "金額", "總額", "現金", "實收"]
-META_KEYWORDS  = ["發票", "票", "機", "車", "電話", "統一編號", "統編", "編號", "號碼", "發車", "交易序號", "序號"]
-ADDR_TOKENS    = ["路", "街", "巷", "弄", "段", "樓", "號", "里", "鄉", "鎮", "市", "區", "屯", "坪"]
-NOISE_TOKENS   = ["Tx", "TX", "率用", "折扣", "折讓", "稅", "稅別", "稅率", "合稅", "未稅"]
-ID_PATTERNS = [
-    r"\d{2,4}[-–]\d{3,4}[-–]\d{3,4}",  # 電話 02-2582-3333
-    r"[A-Z]{2}\d{8}",                  # 統一發票號
-    r"[A-Z0-9]{5,8}",                  # 車牌/代碼（寬鬆）
-    r"\d{10,}",                        # 10 碼以上長數字
-]
-
-
-def _call_save_ocr_result(ticket_id: int, invoice_type: int, parsed: dict) -> bool:
-    try:
-        return save_ocr_result(ticket_id, invoice_type, parsed)  # noqa: F821
-    except NameError:
-        print("[提示] save_ocr_result 尚未匯入，請在專案中導入。")
-        return False
-
-
-def _call_save_error(ticket_id: int):
-    try:
-        save_error(ticket_id)  # noqa: F821
-    except NameError:
-        print(f"[提示] save_error 尚未匯入，ticket_id={ticket_id}。")
-
-
-# ---- 公用小工具 ----
-def _norm_date_candidate(s: str) -> Optional[str]:
-    s = s.strip()
-    m_dt = re.search(r"(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})[\sT]*(\d{1,2}):(\d{2})(?::(\d{2}))?", s)
-    if m_dt:
-        y, mo, d, hh, mm, ss = m_dt.groups()
-        try:
-            dt = datetime(int(y), max(1, min(12, int(mo))), max(1, min(31, int(d))),
-                          max(0, min(23, int(hh))), max(0, min(59, int(mm))), int(ss or 0))
-            return dt.strftime("%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            pass
-    m_d = re.search(r"(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})", s)
-    if m_d:
-        y, mo, d = m_d.groups()
-        try:
-            dt = datetime(int(y), max(1, min(12, int(mo))), max(1, min(31, int(d))))
-            return dt.strftime("%Y-%m-%d")
-        except ValueError:
-            pass
-    m_tw = re.search(r"(\d{2,3})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})", s)
-    if m_tw:
-        y, mo, d = m_tw.groups()
-        y_adj = int(y) + 1911 if int(y) < 1911 else int(y)
-        try:
-            dt = datetime(y_adj, max(1, min(12, int(mo))), max(1, min(31, int(d))))
-            return dt.strftime("%Y-%m-%d")
-        except ValueError:
-            pass
-    return None
-
-
-def _is_total_line(t: str) -> bool:
-    return any(k in t for k in TOTAL_KEYWORDS)
-
-
-def _is_meta_like(t: str) -> bool:
-    if any(kw in t for kw in META_KEYWORDS):  return True
-    if any(tok in t for tok in ADDR_TOKENS):  return True
-    if any(tok in t for tok in NOISE_TOKENS): return True
-    for pat in ID_PATTERNS:
-        if re.search(pat, t): return True
-    return False
-
-
-def _extract_money_robust(t: str, total_money: Optional[int] = None, forbid_equal_total: bool = True) -> Optional[int]:
-    """抽最後一個金額；排除地址/票號/電話/稅；避免把總額行當明細。"""
-    if _is_meta_like(t):
-        return None
-    nums = re.findall(r"\d[\d,]*(?:\.\d{1,2})?", t)
-    if not nums:
-        return None
-    val = nums[-1].replace(",", "")
-    try:
-        money = int(float(val))
-    except ValueError:
-        return None
-    if money < MIN_MONEY or money > MAX_MONEY:
-        return None
-    if forbid_equal_total and total_money is not None and money == total_money:
-        return None
-    return money
-
-
-def _looks_like_invoice_no(s: str) -> bool:
-    return bool(re.fullmatch(r"[A-Z]{2}\d{8}", s.strip()))
-
-
-def make_jsonable(x):
-    """把 Path / datetime / Decimal / numpy / bytes 等轉成可 JSON 序列化型別。"""
-    # 標量
-    if x is None or isinstance(x, (str, int, float, bool)):
-        return x
-    # Path -> string
-    if isinstance(x, Path):
-        return str(x)
-    # datetime/date -> ISO
-    if isinstance(x, (datetime, date)):
-        return x.isoformat()
-    # Decimal -> float（或改成 str 視需求）
-    if isinstance(x, Decimal):
-        return float(x)
-    # bytes -> base64（或改成 bytes.hex()）
-    if isinstance(x, (bytes, bytearray)):
-        return base64.b64encode(x).decode("utf-8")
-    # numpy 標量/陣列
-    if isinstance(x, (np.generic,)):
-        return x.item()
-    if isinstance(x, (np.ndarray,)):
-        return x.tolist()
-    # dict / list / tuple / set 遞迴處理
-    if isinstance(x, dict):
-        return {str(k): make_jsonable(v) for k, v in x.items()}
-    if isinstance(x, (list, tuple, set)):
-        return [make_jsonable(v) for v in x]
-    # 最後退路：字串化
-    return str(x)
-
-def safe_json_dumps(obj, **kwargs):
-    return json.dumps(make_jsonable(obj), **kwargs)
-
-
-# ---- 3) LLM 解析（可選）----
-def ai_parse_invoice(rec_texts: List[str]) -> Optional[Dict[str, Any]]:
     # 1. 讀取會計科目清單
     accounting_items = load_accounting_items()
 
-    # 2. 做成 prompt 用的文字
     items_text = "\n".join(
-        [f"- {i['id']} | {i['code']} | {i['name']} | {i['class'] or ''}"
+        [f"- ID:{i['id']} | 代碼:{i['code']} | 名稱:{i['name']}"
          for i in accounting_items]
     )
 
-    # 3. 原本的 OCR→抽取 prompt + 新增分類要求
+    # 2. 建構 Prompt
     prompt = (
-        "你是一個發票資料抽取器，同時也能依發票內容判斷此票屬於哪個會計科目。\n"
-        "請只輸出 JSON，不能有其他文字。\n"
-        "JSON 結構如下：\n"
+        "你是一個專業的台灣會計憑證識別專家。請閱讀底下的 HTML 原始碼 (包含標題文字與表格)，"
+        "提取關鍵資訊並輸出 JSON。\n\n"
+
+        "### 資料來源特性 (重要)\n"
+        "1. **文字沾黏處理**：在 `<p>` 標籤中，欄位名稱與數值可能連在一起。例如 '統一編號：國立臺灣師範大學'，"
+        "   這代表 '買受人' 是 '國立臺灣師範大學'，而非統編是大學。請依據語意邏輯切分。\n"
+        "2. **日期轉換**：將 '中華民國XX年' 轉換為西元年 (民國年+1911)。若日期缺漏 (如 '6月日')，請填 null 或僅輸出 'YYYY-MM'。\n"
+        "3. **數值清洗與驗算**：\n"
+        "   - 表格內的 '1140-' 應修正為數字 1140。\n"
+        "   - 若 '合計金額' (如 '萬宮...') 與 '明細加總' (1140) 不符且差異微小，請優先信任 **明細加總** 的數值。\n"
+        "   - '萬宮'、'5拾' 等雜訊請修正為正確數字 (萬壹、50)。\n"
+        "4. **賣方資訊**：通常位於表格下方的 rowspan 區塊 (例如 '免用登票享用章... 統一編號...')，請仔細提取。\n\n"
+
+        "### 輸出 JSON 結構要求\n"
         "{\n"
         '  "ticket": {\n'
-        '      "invoice_number": string|null,\n'
-        '      "date": string|null,\n'
-        '      "total_money": number|null\n'
+        '      "invoice_number": string|null, // 若有發票號碼/收據編號請填此。注意：賣方的 "統一編號" (8碼數字) 不是發票號碼，請勿填入此欄。\n'
+        '      "date": string|null,           // 格式 YYYY-MM-DD\n'
+        '      "total_money": number|null     // 最終金額 (請以明細計算結果為準)\n'
         "  },\n"
         '  "ticket_detail": [\n'
-        '      {"title": string, "money": number}\n'
+        '      {"title": string, "money": number} // 產品名稱與金額\n'
         "  ],\n"
         '  "classification": {\n'
-        '      "accounting_id": number|null,\n'
+        '      "accounting_id": number|null,  // 從科目清單選擇 ID\n'
         '      "accounting_name": string|null,\n'
-        '      "reason": string|null\n'
+        '      "reason": string|null          // 分類理由\n'
         "  }\n"
         "}\n\n"
-        "- invoice_number：AB12345678 這類格式，沒找到給 null\n"
-        "- date：YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS，沒找到給 null\n"
-        "- total_money：整數或小數，沒找到給 null\n"
-        "- ticket_detail：若不確定給空陣列 []\n"
-        "- classification：請依發票內容從下方科目清單選出最適合的一個 accounting_id\n"
-        "- 必須從清單中選擇，不可亂造 ID\n\n"
+
         "### 會計科目清單\n"
         f"{items_text}\n\n"
-        "### OCR 文字\n"
-        f"{json.dumps(rec_texts, ensure_ascii=False)}"
+
+        "### 待處理 HTML 資料\n"
+        f"```html\n{ocr_html}\n```"
     )
 
+    # 3. 呼叫 LLM (使用 Ollama)
     try:
+        # 根據你的環境設定 Payload
+        payload = {
+            "model": "gemma3:4b",  # 建議用 llama3, mistral 或 gpt-4o
+            "prompt": prompt,
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": 0.1
+            }
+        }
+
+        print(f"正在呼叫 LLM 解析收據 (Model: {payload['model']})...")
+
+        # 呼叫 API
         r = requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": os.getenv("OLLAMA_MODEL", "gemma:4b"),
-                "prompt": prompt,
-                "stream": False,
-                "format": "json"
-            },
-            timeout=60
+            "http://localhost:11434/api/generate",
+            json=payload,
+            timeout=120
         )
         r.raise_for_status()
+
+        # 解析回傳
         data = r.json()
-        text = data.get("response", "")
-        return json.loads(text)
-    except Exception:
+        response_text = data.get("response", "")
+
+        # 轉換為 Dict
+        result = json.loads(response_text)
+
+        return result
+
+    except json.JSONDecodeError:
+        print(f"錯誤: LLM 回傳內容無法解析為 JSON。\n原始回傳: {response_text}")
+        return None
+    except Exception as e:
+        print(f"發生錯誤: {e}")
         return None
 
 
-# ---- 4) 本地規則解析（強韌、一定有產出）----
-def parse_invoice_locally(rec_texts: List[str]) -> Dict[str, Any]:
-    """不把總金額行/地址/票號/電話當明細；明細合計偏離總金額就清空；支援只留一筆。"""
-    invoice_number = None
-    date_iso = None
-    total_money = None
-    details: List[Dict[str, Any]] = []
-
-    # A) 先抓發票號、日期、總金額
-    for raw in rec_texts:
-        t = str(raw).strip()
-        if not invoice_number and _looks_like_invoice_no(t):
-            invoice_number = t
-        if not date_iso:
-            d = _norm_date_candidate(t)
-            if d: date_iso = d
-        if total_money is None and _is_total_line(t):
-            m = _extract_money_robust(t, total_money=None, forbid_equal_total=False)
-            if m is not None: total_money = m
-
-    # B) 明細（過濾地址/票號/電話/稅/折扣/總額行）
-    for raw in rec_texts:
-        t = str(raw).strip()
-        if _is_total_line(t) or _is_meta_like(t):
-            continue
-        # 必須同時有中文字與數字
-        if not (re.search(r"[一-龥]", t) and re.search(r"\d", t)):
-            continue
-        money = _extract_money_robust(t, total_money=total_money, forbid_equal_total=True)
-        if money is None:
-            continue
-        title = re.sub(r"[\d,\.]+", "", t)
-        title = re.sub(r"[：:，,。．.／/－\-—\s]+$", "", title).strip()
-        if len(title) < 2 or _is_meta_like(title):
-            continue
-        if total_money is not None and money > total_money:
-            continue
-        details.append({"title": title, "money": money})
-
-    # C) 合理性檢查
-    if details and total_money is not None:
-        s = sum(d["money"] for d in details)
-        if s > total_money or s < int(total_money * 0.6):
-            details = []
-
-    # D) 只留一筆（若開啟）
-    if SINGLE_DETAIL_MODE:
-        if total_money is not None:
-            eq = [d for d in details if d["money"] == total_money]
-            details = eq[:1] if eq else []
-        else:
-            details = details[:1] if details else []
-
-    return {
-        "ticket": {
-            "invoice_number": invoice_number,
-            "date": date_iso,
-            "total_money": total_money
-        },
-        "ticket_detail": details
-    }
+# ---- OCR主流程 ----
+OCR_SERVER_URL = "http://host.docker.internal:8002/ocr_process"
+N8N_URL = os.getenv("N8N_WEBHOOK_URL", "http://host.docker.internal:5678/webhook/validate-invoice")
 
 
-# ---- 5) 取得 OCR（加上逾時 & 錯誤處理）----
-def _normalize_ocr_url(url: str) -> str:
-    # 支援傳入 base 或已含 /ocr 的完整路徑
-    u = url.rstrip("/")
-    return u if u.endswith("/ocr") else (u + "/ocr")
+def ocr_ai_logic(image_path: str, ticket_id: int, invoice_type: int):
+    """
+    修正後的邏輯：
+    1. 呼叫本地 OCR Server 獲取文字資料
+    2. 準備 Payload (含會計科目)
+    3. 發送給 n8n 進行 LLM 處理
+    """
 
-def fetch_rec_texts_from_cloud(image_path: str) -> List[str]:
-    ocr_url = _normalize_ocr_url(CLOUDFLARE_OCR_URL)
-    with open(image_path, "rb") as f:
-        files = {"file": (os.path.basename(image_path), f, "application/octet-stream")}
-        res = post_with_retry(ocr_url, files=files)
+    # 變數初始化，避免後續參照錯誤
+    ocr_result_data = None
+
+    print(f"=== 開始處理 Ticket ID: {ticket_id} ===", flush=True)
+
+    # ---------------------------------------------------------
+    # Step 1: 執行 OCR (呼叫本地 Server)
+    # ---------------------------------------------------------
     try:
-        data = res.json()
-    except ValueError as e:
-        raise ValueError(f"OCR 回傳非 JSON：{e}; text={res.text[:200]}")
-
-    # 你的雲端 API 最後是「只回傳純陣列」或包 {"rec_texts": [...]} 兩種都支援
-    if isinstance(data, list):
-        return [str(x) for x in data]
-    if isinstance(data, dict) and "rec_texts" in data:
-        return [str(x) for x in data["rec_texts"]]
-    raise ValueError(f"無法識別 OCR API 回傳格式：{type(data)} keys={list(data) if isinstance(data, dict) else ''}")
-
-
-def _build_doc_for_n8n(parsed: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    將本地解析的巢狀結構，整理成 n8n workflow 期待的 doc 物件。
-    你的 workflow 會把 doc stringify 後交給後續節點。
-    """
-    ticket = parsed.get("ticket") or {}
-    details = parsed.get("ticket_detail") or []
-
-    # 確保型別正確（total_money 整數；money 整數）
-    def _to_int_safe(x):
-        try:
-            if x is None: return None
-            return int(float(str(x).replace(",", "")))
-        except Exception:
+        if not os.path.exists(image_path):
+            print(f"錯誤: 找不到圖片檔案 {image_path}")
             return None
 
-    total_money = _to_int_safe(ticket.get("total_money"))
-    sane_details = []
-    for d in details:
-        if not isinstance(d, dict):
-            continue
-        title = str(d.get("title") or "").strip()
-        money = _to_int_safe(d.get("money"))
-        if title and money is not None:
-            sane_details.append({"title": title, "money": money})
+        with open(image_path, 'rb') as f:
+            files = {'file': f}
+            print(f"正在請求 OCR Server ({OCR_SERVER_URL})...", flush=True)
+            response = requests.post(OCR_SERVER_URL, files=files, timeout=300)
 
-    return {
-        "ticket": {
-            "invoice_number": (ticket.get("invoice_number") or "") or None,
-            "date": ticket.get("date") or None,
-            "total_money": total_money
-        },
-        "ticket_detail": sane_details
-    }
-
-
-def post_to_n8n(parsed: Dict[str, Any],
-                raw_url: str = "",
-                preprocessed_url: str = "",
-                raw_b64: str = "",
-                preprocessed_b64: str = "",
-                prompt_overrides: str = "") -> Optional[Dict[str, Any]]:
-    url = N8N_VALIDATE_URL
-    if not url:
-        print("[n8n] 未設定 N8N_VALIDATE_URL，略過上送。")
-        return None
-
-    doc_obj = _build_doc_for_n8n(parsed)
-    doc_json_str = safe_json_dumps(doc_obj, ensure_ascii=False)
-
-    payload = {
-        "doc": doc_obj,
-        "doc_json_str": doc_json_str,
-        "images": {
-            # 這些如果你傳的是 Path，就會被 make_jsonable 轉成字串
-            "raw_url": raw_url or "",
-            "preprocessed_url": preprocessed_url or "",
-            "raw_b64": raw_b64 or "",
-            "preprocessed_b64": preprocessed_b64 or ""
-        },
-        "gemm3": {"prompt_overrides": prompt_overrides or ""}
-    }
-
-    # 重要：payload 先淨化
-    payload = make_jsonable(payload)
-
-    r = post_with_retry(url, json=payload, retries=3, backoff=1.7)
-    try:
-        return r.json()
-    except Exception:
-        return {"status_code": r.status_code, "text": r.text}
-
-
-# ---- 6) 主流程（你現有函式替換成這個）----
-def ocr_ai_logic(image_path: str, ticket_id: int, invoice_type: int):
-    try:
-        # (A) 取 OCR 結果（rec_texts）
-        rec_texts = fetch_rec_texts_from_cloud(image_path)
-
-        # (B) 保留原始 OCR log（方便除錯）
-        try:
-            with open("ocr_result.json", "w", encoding="utf-8") as f:
-                f.write(safe_json_dumps(rec_texts, ensure_ascii=False, indent=2))
-        except Exception:
-            pass
-        print(json.dumps({"rec_texts": rec_texts}, ensure_ascii=False, indent=2))
-
-        # (C) 嘗試 LLM 解析（可用才用）
-        parsed = ai_parse_invoice(rec_texts)
-
-        # (D) LLM 失敗或不可用 → 本地規則解析
-        if not parsed:
-            parsed = parse_invoice_locally(rec_texts)
-
-        # (E) 寫 DB（若你的專案未匯入 save_ocr_result，會提示）
-        ok = _call_save_ocr_result(ticket_id, invoice_type, parsed or {})
-        if not ok:
-            print(f"[警告] OCR 結果存檔失敗 ticket_id={ticket_id}")
-            _call_save_error(ticket_id)
-
-        # === 新增：丟到 n8n（不影響 DB 成功與否；失敗只記 log） ===
-        n8n_resp = post_to_n8n(parsed, raw_url=image_path)
-        if n8n_resp is not None:
-            print("[n8n] 回應：", json.dumps(n8n_resp, ensure_ascii=False, indent=2))
-            update_ticket_from_n8n(ticket_id, n8n_resp)
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("status") == "success":
+                ocr_result_data = result.get("data")
+                print("OCR 識別成功！\n", f"OCR_Result:{ocr_result_data}")
+            else:
+                print(f"OCR Server 回報錯誤: {result.get('message')}")
+                return None
+        else:
+            print(f"OCR Server 連線失敗，狀態碼: {response.status_code}")
+            return None
 
     except requests.exceptions.RequestException as e:
-        print(f"[OCR_AI 錯誤] ticket_id={ticket_id}：OCR 連線/逾時失敗 - {e}")
-        _call_save_error(ticket_id)
-    except Exception as e:
-        print(f"[OCR_AI 錯誤] ticket_id={ticket_id}：{e}")
-        _call_save_error(ticket_id)
+        print(f"OCR 連線例外錯誤 (請確認本地 Server 是否開啟): {e}")
+        return None
 
+    # ---------------------------------------------------------
+    # Step 2: 準備資料 (OCR 結果 + 會計科目)
+    # ---------------------------------------------------------
+    if not ocr_result_data:
+        print("錯誤: OCR 處理失敗或無內容，中止後續 n8n 請求")
+        return None
 
-def invoice_parser(filename: str, ticket_id: int):
-    """
-    背景任務：票據解析流程
-    - filename: 上傳檔案名稱
-    - ticket_id: DB 建立的 ticket 主鍵
-    """
     try:
-        # 圖片路徑
-        image_path = BASE_DIR / INVOICE_UPLOAD_FOLDER / filename
-        # 1. 用 SNN 判斷類型
-        invoice_type = snn_logic(image_path)
+        ocr_html = json.dumps(ocr_result_data, ensure_ascii=False)
 
-        # 2. 流程分支
-        if invoice_type == 0:
-            print(f"[辨識失敗] ticket_id={ticket_id} file={filename}")
-            save_error(ticket_id)
-            return
+        # 讀取會計科目清單
+        accounting_items = load_accounting_items()
 
-        if invoice_type == 3:
-            # 電子發票 → QRCode 解析
-            qrcode_decoder_logic(image_path, ticket_id, invoice_type)
-        else:
-            # 其他類型 (2,4,5,6) → OCR + Ollama
-            ocr_ai_logic(image_path, ticket_id, invoice_type)
+        payload = {
+            "ocr_html": ocr_html,
+            "accounting_items": accounting_items,
+            "ticket_id": ticket_id,
+            "invoice_type": invoice_type,
+        }
 
+        # ---------------------------------------------------------
+        # Step 3: 發送 POST 請求給 n8n
+        # ---------------------------------------------------------
+        print(f"正在發送資料給 n8n ({N8N_URL})...", flush=True)
+
+        # timeout 建議設長一點，因為 n8n 後面的 LLM 可能跑很久
+        response = requests.post(N8N_URL, json=payload, timeout=120)
+
+        # 檢查 HTTP 狀態碼是否為 200-299
+        response.raise_for_status()
+
+        print("n8n 處理完成，已接收回傳資料。")
+
+        return None
+
+    except requests.exceptions.Timeout:
+        print("錯誤: n8n 處理逾時 (LLM Timeout)")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"錯誤: 無法連線到 n8n Webhook: {e}")
+        if e.response is not None:
+            print(f"n8n 回應內容: {e.response.text}")
+        return None
     except Exception as e:
-        print(f"[invoice_parser 錯誤] ticket_id={ticket_id}, file={filename}: {e}", flush=True)
-        save_error(ticket_id)
+        print(f"發生未預期錯誤: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 
 HEX_CHARS = set("0123456789abcdefABCDEF")
@@ -658,14 +374,11 @@ def extract_qrcodes(image_path: str, debug: bool = False):
 
 # ---------------- 左碼解析 ---------------- #
 def parse_amount_8(val: str) -> int | None:
-    if val.isdigit():
-        return int(val)
     try:
-        return int(val, 16)  # fallback：十六進位
+        return int(val, 16)
     except ValueError:
         print(f"[警告] 左碼金額格式無法解析: {val}")
-        return None
-
+        return 0
 def parse_left_qrcode(left_data: str) -> dict:
     if len(left_data) < 77:
         raise ValueError(f"左碼長度不足 77 碼: {left_data}")
@@ -779,4 +492,35 @@ def qrcode_decoder_logic(image_path, ticket_id, invoice_type, debug=False):
 
     except Exception as e:
         print("解析錯誤:", e)
+        save_error(ticket_id)
+
+
+def invoice_parser(filename: str, ticket_id: int):
+    """
+    背景任務：票據解析流程
+    - filename: 上傳檔案名稱
+    - ticket_id: DB 建立的 ticket 主鍵
+    """
+    try:
+        # 圖片路徑
+        image_path = BASE_DIR / INVOICE_UPLOAD_FOLDER / filename
+        # 1. 用 SNN 判斷類型
+        invoice_type = snn_logic(image_path)
+        print(invoice_type)
+
+        # 2. 流程分支
+        if invoice_type == 0:
+            print(f"[辨識失敗] ticket_id={ticket_id} file={filename}")
+            save_error(ticket_id)
+            return
+
+        if invoice_type == 3:
+            # 電子發票 → QRCode 解析
+            qrcode_decoder_logic(image_path, ticket_id, invoice_type)
+        else:
+            # 其他類型 (2,4,5,6) → OCR + Ollama
+            ocr_ai_logic(image_path, ticket_id, invoice_type)
+
+    except Exception as e:
+        print(f"[invoice_parser 錯誤] ticket_id={ticket_id}, file={filename}: {e}", flush=True)
         save_error(ticket_id)

@@ -290,3 +290,15 @@ def load_accounting_items():
         return None
     finally:
         db.close()
+
+
+def load_accounting_item_for_checker(accounting_id: int):
+    db = SessionLocal()
+    try:
+        result = db.query(AccountingItems).filter(AccountingItems.accounting_id == accounting_id, AccountingItems.is_active == True).one()
+        return result.account_name
+    except Exception as e:
+        print("load_accounting_items ERROR:", e)
+        return None
+    finally:
+        db.close()
