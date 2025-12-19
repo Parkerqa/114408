@@ -32,6 +32,7 @@ services:
       - "11434:11434"
     volumes:
       - ollama:/root/.ollama
+    shm_size: '4gb'
     restart: unless-stopped
 
   qdrant:
@@ -69,8 +70,12 @@ services:
     container_name: tts_backend
     ports:
       - "8000:8000"
+    shm_size: '4gb'
     environment:
       - OLLAMA_BASE=http://ollama:11434
+      - OMP_NUM_THREADS=1
+      - MKL_NUM_THREADS=1
+      - KMP_DUPLICATE_LIB_OK=TRUE
     depends_on:
       - db
       - ollama
@@ -81,16 +86,8 @@ services:
     volumes:
       - ./backend:/app
       - ./static:/app/static
-      - ./ocr_model:/root/.paddlex/official_models
+      - ./paddle_cache:/root/.paddleocr
     restart: always
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
-    runtime: nvidia
 
 #  frontend:
 #    build: ./frontend

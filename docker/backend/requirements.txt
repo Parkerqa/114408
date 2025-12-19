@@ -11,14 +11,27 @@ pydantic[email]>=1.10.0
 line-bot-sdk
 fastapi-mail
 python-multipart
-pillow
-opencv-python
-numpy
 tensorflow>=2.12.0
 pyzbar
-opencc-python-reimplemented
 openai
-requests
 pyngrok
-paddleocr[all]
+# paddleocr[all]
+# opencc-python-reimplemented
+# shapely
+# scikit-image
+# pyclipper
+# lmdb
+# tqdm
+numpy
+# rapidfuzz
+# opencv-python
+# opencv-contrib-python
+# cython
+# Pillow
+# pyyaml
+requests
+# albumentations
+# to be compatible with albumentations
+# albucore
+# packaging
 qreader
