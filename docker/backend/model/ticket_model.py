@@ -8,7 +8,7 @@ from decimal import Decimal
 
 from .db_utils import SessionLocal
 from .models import User, Ticket, TicketDetail, AccountingItems, DepartmentAccounting
-from views.checker import check_type, check_status
+from views.checker import check_type, check_status, check_accounting_item
 from constants.ticket_status import TicketStatus, FINAL_STATES
 
 
@@ -54,12 +54,14 @@ def get_ticket_by_id(ticket_id: int):
         db.close()
 
 
-def update_ticket_info(ticket_id: int, type_: Optional[int], invoice_number: Optional[str], total_money: str) -> bool:
+def update_ticket_info(ticket_id: int, type_: Optional[int], buyer_id: Optional[str], invoice_number: Optional[str], total_money: str) -> bool:
     db: Session = SessionLocal()
     try:
         updates = {}
         if type_ is not None:
             updates[Ticket.type] = type_
+        if buyer_id is not None:
+            updates[Ticket.buyer_id] = buyer_id
         if invoice_number is not None:
             updates[Ticket.invoice_number] = invoice_number
         if total_money is not None:
@@ -413,6 +415,8 @@ def get_pending_reimbursements(limit: int = 20):
                 Ticket.ticket_id,
                 Ticket.created_at.label("upload_date"),
                 Ticket.type,
+                Ticket.buyer_id,
+                Ticket.accounting_id,
                 TicketDetail.title.label("title"),
                 Ticket.total_money,
                 User.username.label("creator_name"),
@@ -435,6 +439,8 @@ def get_pending_reimbursements(limit: int = 20):
                     "ticket_id": r.ticket_id,
                     "upload_date": r.upload_date.strftime("%Y-%m-%d") if r.upload_date else None,
                     "type": check_type(r.type),
+                    "buyer_id": r.buyer_id,
+                    "account_name": check_accounting_item(r.accounting_id),
                     "total_money": float(r.total_money) if r.total_money is not None else None,
                     "creator_name": r.creator_name,
                     "check_man": r.check_man,
@@ -468,6 +474,8 @@ def get_approved_records(limit: int = 20):
                 Ticket.ticket_id,
                 Ticket.created_at.label("upload_date"),
                 Ticket.type,
+                Ticket.buyer_id,
+                Ticket.accounting_id,
                 Ticket.total_money,
                 User.username.label("creator_name"),
                 Ticket.check_man,
@@ -494,6 +502,8 @@ def get_approved_records(limit: int = 20):
                     "ticket_id": r.ticket_id,
                     "upload_date": r.upload_date.strftime("%Y-%m-%d") if r.upload_date else None,
                     "type": check_type(r.type),
+                    "buyer_id": r.buyer_id,
+                    "account_name": check_accounting_item(r.accounting_id),
                     "total_money": float(r.total_money) if r.total_money is not None else None,
                     "creator_name": r.creator_name,
                     "check_man": r.check_man,

@@ -12,6 +12,7 @@ class TicketDetailUpdate(BaseModel):
 
 class TicketUpdate(BaseModel):
     type: int
+    buyer_id: str
     invoice_number: Optional[str] = None
     total_money: int
     Details: List[TicketDetailUpdate]

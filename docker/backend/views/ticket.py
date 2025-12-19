@@ -52,6 +52,7 @@ def list_ticket_logic(mode, user) -> Tuple[str, List[Dict] or None]:
             "id": t.ticket_id,
             "time": t.created_at.strftime("%Y-%m-%d"),
             "type": check_type(t.type) if not is_processing else "等待系統辨識",
+            "buyer_id": t.buyer_id,
             "Details": details if not is_processing else [],
             "invoice_number": t.invoice_number if not is_processing and t.invoice_number is not None else (
                 check_status(t.status) if t.status == 0 else "等待系統辨識"),
@@ -94,12 +95,14 @@ def list_specify_ticket_logic(ticket_id: int, user) -> Tuple[str, Dict or None]:
         "id": ticket.ticket_id,
         "time": ticket.created_at.strftime("%Y-%m-%d"),
         "type": check_type(ticket.type) if not is_processing else "等待系統辨識",
+        "buyer_id": ticket.buyer_id,
         "Details": details if not is_processing else [],
         "invoice_number": ticket.invoice_number if not is_processing and ticket.invoice_number is not None else (
             check_status(ticket.status) if ticket.status == 0 else "等待系統辨識"),
         "total_money": str(int(ticket.total_money)) if not is_processing and ticket.total_money is not None else (
             check_status(ticket.status) if ticket.status == 0 else "等待系統辨識"
         ),
+        "img_url": f'{os.getenv("BASE_INVOICE_IMAGE_URL")}{ticket.img}',
         "status": check_status(ticket.status)
     }
 
@@ -140,6 +143,7 @@ def list_multi_tickets_logic(payload: TicketList) -> Tuple[str, List[Dict]]:
                 "Details": details if not is_processing else [],
                 "time": ticket.created_at.strftime("%Y/%m/%d") if ticket.created_at else None,
                 "type": check_type(ticket.type) if not is_processing else "等待系統辨識",
+                "buyer_id": ticket.buyer_id,
                 "applicant": applicant if not is_processing else "等待系統辨識",
                 "img_url": f'{os.getenv("BASE_INVOICE_IMAGE_URL")}{ticket.img}' if ticket.img else None,
             }
@@ -185,7 +189,7 @@ def change_ticket_logic(ticket_id: int, payload, user) -> str:
         raise HTTPException(status_code=403, detail="你無權修改這張發票")
 
     # 更新基本資訊 + total_money
-    success = update_ticket_info(ticket_id, payload.type, payload.invoice_number, payload.total_money)
+    success = update_ticket_info(ticket_id, payload.type, payload.buyer_id, payload.invoice_number, payload.total_money)
     if not success:
         raise HTTPException(status_code=500, detail="更新發票資訊失敗")
 
@@ -369,7 +373,7 @@ def get_ticket_report_logic(start_date: date, end_date: date, user) -> Tuple[str
                 "created_by": t.created_by if t.created_by else None,
                 "check_date": t.check_date.strftime("%Y-%m-%d") if t.check_date else None,
                 "check_man": t.check_man,
-                "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{t.img}' if t.img else None,
+                "img_url": f'{os.getenv("BASE_INVOICE_IMAGE_URL")}{t.img}' if t.img else None,
             }
             for t in tickets
         ]
