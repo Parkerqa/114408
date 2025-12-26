@@ -12,6 +12,7 @@ class TicketDetailUpdate(BaseModel):
 
 class TicketUpdate(BaseModel):
     type: int
+    buyer_id: str
     invoice_number: Optional[str] = None
     total_money: int
     Details: List[TicketDetailUpdate]
@@ -35,6 +36,7 @@ class TicketOut(BaseModel):
 class TicketAuditItem(BaseModel):
     ticket_id: int = Field(..., description="發票ID")
     status: int = Field(..., description="欲更新的狀態")
+    reject_reason: Optional[str]
 
 
 class TicketAuditBulkRequest(BaseModel):

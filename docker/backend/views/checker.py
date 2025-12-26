@@ -1,4 +1,5 @@
 from typing import List, Optional
+from model.parser_model import load_accounting_item_for_checker
 
 
 def check_type(type: int) -> str:
@@ -39,3 +40,7 @@ def check_mode(mode: Optional[int]) -> Optional[List[int]]:
         return [1, 2]
     elif mode == 1:
         return [0, 3, 4]
+
+
+def check_accounting_item(accounting_id: int) -> str:
+    return load_accounting_item_for_checker(accounting_id)

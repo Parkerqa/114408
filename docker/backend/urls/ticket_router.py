@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from core.response import make_response
 from dependencies import get_current_user, require_role
@@ -57,12 +57,15 @@ def change_ticket(
 
 @ticket_router.get("/search", summary="核銷報帳合併查詢（status 必填，關鍵字 / 類別 / 日期為選填）", response_model=List[TicketOut])
 def search_ticket(
-    status: List[int] = Query(..., description="發票狀態（可傳多個）"),
-    q: Optional[str] = Query(None, min_length=1, description="關鍵字（title / invoice_number / created_at / 金額）"),
-    date: Optional[date] = Query(None, description="日期"),
-    limit: int = Query(50, ge=1, le=200, description="最多回傳筆數"),
-    current_user=Depends(get_current_user),
+    status: Union[List[int], str] = Query(..., description="發票狀態（可傳多個）"),
+    q: Optional[str] = Query(None, min_length=1),
+    date: Optional[date] = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    current_user=Depends(require_role(0)),
 ):
+    if isinstance(status, str):
+        status = [int(s) for s in status.split(",") if s.strip()]
+
     message, tickets_out = search_ticket_logic(
         status=status,
         keyword=q.strip() if q else None,

@@ -23,7 +23,7 @@ def get_all_classes_info() -> list[dict] | None:
     try:
         query = (
             db.query(
-                AccountingItems.account_class.label("account_class"),
+                AccountingItems.account_name.label("account_name"),
                 # 只把「啟用中的關聯 + 啟用中的部門」的預算納入合計
                 func.coalesce(
                     func.sum(
@@ -53,14 +53,14 @@ def get_all_classes_info() -> list[dict] | None:
             )
             # 只取啟用中的會計項目
             .filter(AccountingItems.is_active == 1)
-            .group_by(AccountingItems.account_class)
-            .order_by(AccountingItems.account_class.asc())
+            .group_by(AccountingItems.account_name)
+            .order_by(AccountingItems.account_name.asc())
         )
 
         rows = query.all()
         return [
             {
-                "account_class": r.account_class,
+                "account_name": r.account_name,
                 "total_budget": float(r.total_budget or 0),
                 "total_amount": float(r.total_amount or 0),
             }

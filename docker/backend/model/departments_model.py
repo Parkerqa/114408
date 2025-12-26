@@ -208,6 +208,7 @@ def sync_department_accountings(department_id: int, accounting_items: list, upda
                     department_id=department_id,
                     accounting_id=item.accounting_id,
                     budget_limit=item.budget_limit,
+                    created_by=updated_by,
                     updated_by=updated_by
                 )
                 db.add(new_acc)

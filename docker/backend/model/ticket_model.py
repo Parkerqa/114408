@@ -8,7 +8,7 @@ from decimal import Decimal
 
 from .db_utils import SessionLocal
 from .models import User, Ticket, TicketDetail, AccountingItems, DepartmentAccounting
-from views.checker import check_type, check_status
+from views.checker import check_type, check_status, check_accounting_item
 from constants.ticket_status import TicketStatus, FINAL_STATES
 
 
@@ -16,8 +16,8 @@ def get_all_tickets(status: Optional[List[int]]):
     db: Session = SessionLocal()
     try:
         if status:
-            return db.query(Ticket).filter(Ticket.status.in_(status)).all()
-        return db.query(Ticket).all()
+            return db.query(Ticket).filter(Ticket.status.in_(status)).order_by(Ticket.created_at.desc()).all()
+        return db.query(Ticket).order_by(Ticket.created_at.desc()).all()
     except Exception as e:
         print(e)
         return None
@@ -27,8 +27,8 @@ def get_tickets_by_user(user_id: int, status: Optional[List[int]]):
     db: Session = SessionLocal()
     try:
         if status:
-            return db.query(Ticket).filter(Ticket.user_id == user_id, Ticket.status.in_(status)).all()
-        return db.query(Ticket).filter(Ticket.user_id == user_id).all()
+            return db.query(Ticket).filter(Ticket.user_id == user_id, Ticket.status.in_(status)).order_by(Ticket.created_at.desc()).all()
+        return db.query(Ticket).filter(Ticket.user_id == user_id).order_by(Ticket.created_at.desc()).all()
     except Exception as e:
         print(e)
         return None
@@ -54,12 +54,14 @@ def get_ticket_by_id(ticket_id: int):
         db.close()
 
 
-def update_ticket_info(ticket_id: int, type_: Optional[int], invoice_number: Optional[str], total_money: str) -> bool:
+def update_ticket_info(ticket_id: int, type_: Optional[int], buyer_id: Optional[str], invoice_number: Optional[str], total_money: str) -> bool:
     db: Session = SessionLocal()
     try:
         updates = {}
         if type_ is not None:
             updates[Ticket.type] = type_
+        if buyer_id is not None:
+            updates[Ticket.buyer_id] = buyer_id
         if invoice_number is not None:
             updates[Ticket.invoice_number] = invoice_number
         if total_money is not None:
@@ -338,6 +340,11 @@ def bulk_update_ticket_status(payload, checker_user_id: int) -> Dict[str, Any]:
                 if hasattr(t, "check_date"):
                     t.check_date = now
 
+            # 若不可核銷，更新 reject_reason
+            if new_status == TicketStatus.REJECTED:
+                if hasattr(t, "reject_reason"):
+                    t.reject_reason = item.reject_reason
+
             updated_ids.append(tid)
 
         db.commit()
@@ -408,6 +415,8 @@ def get_pending_reimbursements(limit: int = 20):
                 Ticket.ticket_id,
                 Ticket.created_at.label("upload_date"),
                 Ticket.type,
+                Ticket.buyer_id,
+                Ticket.accounting_id,
                 TicketDetail.title.label("title"),
                 Ticket.total_money,
                 User.username.label("creator_name"),
@@ -430,10 +439,12 @@ def get_pending_reimbursements(limit: int = 20):
                     "ticket_id": r.ticket_id,
                     "upload_date": r.upload_date.strftime("%Y-%m-%d") if r.upload_date else None,
                     "type": check_type(r.type),
+                    "buyer_id": r.buyer_id,
+                    "account_name": check_accounting_item(r.accounting_id),
                     "total_money": float(r.total_money) if r.total_money is not None else None,
                     "creator_name": r.creator_name,
                     "check_man": r.check_man,
-                    "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}' if r.img else None,
+                    "img_url": f'{os.getenv("BASE_INVOICE_IMAGE_URL")}{r.img}' if r.img else None,
                     "titles": []
                 }
             if r.title:  # 有 title 才加
@@ -463,10 +474,13 @@ def get_approved_records(limit: int = 20):
                 Ticket.ticket_id,
                 Ticket.created_at.label("upload_date"),
                 Ticket.type,
+                Ticket.buyer_id,
+                Ticket.accounting_id,
                 Ticket.total_money,
                 User.username.label("creator_name"),
                 Ticket.check_man,
                 Ticket.status,
+                Ticket.reject_reason,
                 Ticket.img,
                 TicketDetail.td_id,
                 TicketDetail.title,
@@ -488,10 +502,13 @@ def get_approved_records(limit: int = 20):
                     "ticket_id": r.ticket_id,
                     "upload_date": r.upload_date.strftime("%Y-%m-%d") if r.upload_date else None,
                     "type": check_type(r.type),
+                    "buyer_id": r.buyer_id,
+                    "account_name": check_accounting_item(r.accounting_id),
                     "total_money": float(r.total_money) if r.total_money is not None else None,
                     "creator_name": r.creator_name,
                     "check_man": r.check_man,
                     "status": check_status(r.status),
+                    "reject_reason": r.reject_reason,
                     "img_url": f'{os.getenv("BASE_USER_IMAGE_URL")}{r.img}' if r.img else None,
                     "Details": [],
                 }

@@ -1,33 +1,40 @@
 import requests
 import json
 import re
-
+import os
 import base64
 import cv2
 import tensorflow as tf
 import numpy as np
-import opencc
+# import opencc
 import threading
-from functools import lru_cache
+from pathlib import Path
+from decimal import Decimal
+from datetime import datetime, date
+from typing import List, Dict, Any, Optional
 from core.upload_utils import BASE_DIR, INVOICE_UPLOAD_FOLDER
-from keras.models import load_model
-from model.parser_model import save_error, save_ocr_result, save_qrcode_result
-from paddleocr import PaddleOCR
+from model.parser_model import save_error, save_qrcode_result, load_accounting_items
 from PIL import Image
 from pyzbar.pyzbar import decode
 from qreader import QReader
+from keras.models import load_model
+# from paddleocr import PPStructureV3
+# from functools import lru_cache
 
 # 初始化語言轉換器
 # converter = opencc.OpenCC("s2t")
-#
+
 # @lru_cache(maxsize=1)
 # def get_ocr():
-#     return PaddleOCR(
-#         device="cpu",
+#     return PPStructureV3(
+#         lang="chinese_cht",
 #         use_doc_orientation_classify=False,
 #         use_doc_unwarping=False,
-#         use_textline_orientation=False
-#     )
+#         use_textline_orientation=False,
+#         use_seal_recognition=False,
+#         use_formula_recognition=False,
+#         use_region_detection=True,
+#         enable_mkldnn=False)
 
 
 # 單例模型載入（確保全域只載一次）
@@ -38,13 +45,10 @@ def get_snn_model():
     global _snn_model
     if _snn_model is None:
         model_path = BASE_DIR / "invoice_single_classifier_siamese.keras"
-        print(f"[SNN] 載入模型: {model_path}", flush=True)
         _snn_model = tf.keras.models.load_model(model_path.as_posix())
-        print("[SNN] 模型載入成功", flush=True)
 
         dummy = np.zeros((1, 128, 128, 3), dtype=np.float32)
         _snn_model.predict(dummy, verbose=0)
-        print("[SNN] 預熱完成", flush=True)
 
     return _snn_model
 
@@ -71,12 +75,12 @@ def load_and_preprocess_image(path, img_height=128, img_width=128):
     return np.expand_dims(img, axis=0)
 
 
-def snn_logic(image_path: str, threshold: float = 0.5) -> int:
+def snn_logic(image_path: str) -> int:
     try:
         model = get_snn_model()
-        img_array = load_and_preprocess_image(image_path)
+        img = load_and_preprocess_image(image_path)
         with _snn_lock:
-            pred = model.predict(img_array, verbose=0)
+            pred = model.predict(img)
         predicted_index = int(np.argmax(pred[0]))
         return class_map.get(predicted_index, 0)
 
@@ -85,117 +89,194 @@ def snn_logic(image_path: str, threshold: float = 0.5) -> int:
         return 0
 
 
-# 呼叫 Ollama 進行結構化
-def ai_parse_invoice(ocr_text: str):
-    prompt = f"""
-    你是一個票據辨識助手。請根據以下 OCR 文字，輸出 JSON 格式。
-
-    輸出 JSON：
-    {{
-      "invoice_number": "string or null",
-      "date": "YYYY-MM-DD or null",
-      "total_money": "number or null",
-      "items": [
-        {{"title": "string", "money": number}}
-      ]
-    }}
-
-    如果某欄位缺失，請填 null。
-    OCR 文字如下：
-    {ocr_text}
+# ---- 本地 LLM 解析 ----
+def ai_parse_invoice(ocr_html: str) -> Optional[Dict[str, Any]]:
+    """
+    使用 LLM 解析 OCR 產生的 HTML (包含 p 標籤與 table) 並進行會計科目分類
     """
 
-    # 加逾時與錯誤處理，避免卡住
-    resp = requests.post(
-        "http://ollama:11434/api/generate",
-        json={"model": "gemma3:4b", "prompt": prompt, "stream": False},
-        timeout=30,
+    # 1. 讀取會計科目清單
+    accounting_items = load_accounting_items()
+
+    items_text = "\n".join(
+        [f"- ID:{i['id']} | 代碼:{i['code']} | 名稱:{i['name']}"
+         for i in accounting_items]
     )
-    resp.raise_for_status()
-    txt = resp.json().get("response", "").strip()
 
-    # 容錯：有時模型會包 code fence
-    if txt.startswith("```"):
-        txt = txt.strip("`").strip()
-        if txt.startswith("json"):
-            txt = txt[4:].strip()
-    return json.loads(txt or "{}")
+    # 2. 建構 Prompt
+    prompt = (
+        "你是一個專業的台灣會計憑證識別專家。請閱讀底下的 HTML 原始碼 (包含標題文字與表格)，"
+        "提取關鍵資訊並輸出 JSON。\n\n"
 
+        "### 資料來源特性 (重要)\n"
+        "1. **文字沾黏處理**：在 `<p>` 標籤中，欄位名稱與數值可能連在一起。例如 '統一編號：國立臺灣師範大學'，"
+        "   這代表 '買受人' 是 '國立臺灣師範大學'，而非統編是大學。請依據語意邏輯切分。\n"
+        "2. **日期轉換**：將 '中華民國XX年' 轉換為西元年 (民國年+1911)。若日期缺漏 (如 '6月日')，請填 null 或僅輸出 'YYYY-MM'。\n"
+        "3. **數值清洗與驗算**：\n"
+        "   - 表格內的 '1140-' 應修正為數字 1140。\n"
+        "   - 若 '合計金額' (如 '萬宮...') 與 '明細加總' (1140) 不符且差異微小，請優先信任 **明細加總** 的數值。\n"
+        "   - '萬宮'、'5拾' 等雜訊請修正為正確數字 (萬壹、50)。\n"
+        "4. **賣方資訊**：通常位於表格下方的 rowspan 區塊 (例如 '免用登票享用章... 統一編號...')，請仔細提取。\n\n"
 
-# OCR → Ollama 流程
-def ocr_ai_logic(image_path, ticket_id, invoice_type):
+        "### 輸出 JSON 結構要求\n"
+        "{\n"
+        '  "ticket": {\n'
+        '      "invoice_number": string|null, // 若有發票號碼/收據編號請填此。注意：賣方的 "統一編號" (8碼數字) 不是發票號碼，請勿填入此欄。\n'
+        '      "date": string|null,           // 格式 YYYY-MM-DD\n'
+        '      "total_money": number|null     // 最終金額 (請以明細計算結果為準)\n'
+        "  },\n"
+        '  "ticket_detail": [\n'
+        '      {"title": string, "money": number} // 產品名稱與金額\n'
+        "  ],\n"
+        '  "classification": {\n'
+        '      "accounting_id": number|null,  // 從科目清單選擇 ID\n'
+        '      "accounting_name": string|null,\n'
+        '      "reason": string|null          // 分類理由\n'
+        "  }\n"
+        "}\n\n"
+
+        "### 會計科目清單\n"
+        f"{items_text}\n\n"
+
+        "### 待處理 HTML 資料\n"
+        f"```html\n{ocr_html}\n```"
+    )
+
+    # 3. 呼叫 LLM (使用 Ollama)
     try:
-        cloudflare_url = "https://parental-calls-cigarettes-edit.trycloudflare.com"
-        url = cloudflare_url + "/ocr"
-        files = {"file": open(image_path, "rb")}
-        res = requests.post(url, files=files)
+        # 根據你的環境設定 Payload
+        payload = {
+            "model": "gemma3:4b",  # 建議用 llama3, mistral 或 gpt-4o
+            "prompt": prompt,
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": 0.1
+            }
+        }
 
-        raw_ocr_text = res.json()
+        print(f"正在呼叫 LLM 解析收據 (Model: {payload['model']})...")
 
-        with open("ocr_result.json", "w", encoding="utf-8") as f:
-            json.dump(raw_ocr_text, f, ensure_ascii=False, indent=2)
+        # 呼叫 API
+        r = requests.post(
+            "http://localhost:11434/api/generate",
+            json=payload,
+            timeout=120
+        )
+        r.raise_for_status()
 
-        print(json.dumps(raw_ocr_text, ensure_ascii=False, indent=2))
+        # 解析回傳
+        data = r.json()
+        response_text = data.get("response", "")
 
-        # (1) OCR（單例）
-        # ocr_model = get_ocr()
-        # ocr_result = ocr_model.predict(str(image_path))
-        #
-        # if not ocr_result or not ocr_result[0]:
-        #     raise ValueError("OCR 無結果")
+        # 轉換為 Dict
+        result = json.loads(response_text)
 
-        # (2) 整理文字
-        # text_lines = [converter.convert(item[1][0]).strip() for item in (ocr_result[0] or [])]
-        # raw_ocr_text = "\n".join([t for t in text_lines if t])
+        return result
 
-        # (3) 丟到 Ollama
-        try:
-            structured_data = ai_parse_invoice(raw_ocr_text)
-        except Exception as e:
-            print(f"[Ollama 解析失敗] ticket_id={ticket_id}：{e}")
-            save_error(ticket_id)
-            return
-
-        # (4) 存 DB
-        ok = save_ocr_result(ticket_id, invoice_type, structured_data or {})
-        if not ok:
-            print(f"[警告] OCR 結果存檔失敗 ticket_id={ticket_id}")
-            save_error(ticket_id)
-
+    except json.JSONDecodeError:
+        print(f"錯誤: LLM 回傳內容無法解析為 JSON。\n原始回傳: {response_text}")
+        return None
     except Exception as e:
-        print(f"[OCR_AI 錯誤] ticket_id={ticket_id}：{e}")
-        save_error(ticket_id)
+        print(f"發生錯誤: {e}")
+        return None
 
 
-def invoice_parser(filename: str, ticket_id: int):
+# ---- OCR主流程 ----
+OCR_SERVER_URL = "http://host.docker.internal:8002/ocr_process"
+N8N_URL = os.getenv("N8N_WEBHOOK_URL", "http://host.docker.internal:5678/webhook/validate-invoice")
+
+
+def ocr_ai_logic(image_path: str, ticket_id: int, invoice_type: int):
     """
-    背景任務：票據解析流程
-    - filename: 上傳檔案名稱
-    - ticket_id: DB 建立的 ticket 主鍵
+    修正後的邏輯：
+    1. 呼叫本地 OCR Server 獲取文字資料
+    2. 準備 Payload (含會計科目)
+    3. 發送給 n8n 進行 LLM 處理
     """
+
+    # 變數初始化，避免後續參照錯誤
+    ocr_result_data = None
+
+    print(f"=== 開始處理 Ticket ID: {ticket_id} ===", flush=True)
+
+    # ---------------------------------------------------------
+    # Step 1: 執行 OCR (呼叫本地 Server)
+    # ---------------------------------------------------------
     try:
-        # 圖片路徑
-        image_path = BASE_DIR / INVOICE_UPLOAD_FOLDER / filename
-        # 1. 用 SNN 判斷類型
-        invoice_type = snn_logic(image_path)
-        print(invoice_type, flush=True)
+        if not os.path.exists(image_path):
+            print(f"錯誤: 找不到圖片檔案 {image_path}")
+            return None
 
-        # 2. 流程分支
-        if invoice_type == 0:
-            print(f"[辨識失敗] ticket_id={ticket_id} file={filename}")
-            save_error(ticket_id)
-            return
+        with open(image_path, 'rb') as f:
+            files = {'file': f}
+            print(f"正在請求 OCR Server ({OCR_SERVER_URL})...", flush=True)
+            response = requests.post(OCR_SERVER_URL, files=files, timeout=300)
 
-        if invoice_type == 3:
-            # 電子發票 → QRCode 解析
-            qrcode_decoder_logic(image_path, ticket_id, invoice_type)
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("status") == "success":
+                ocr_result_data = result.get("data")
+                print("OCR 識別成功！\n", f"OCR_Result:{ocr_result_data}")
+            else:
+                print(f"OCR Server 回報錯誤: {result.get('message')}")
+                return None
         else:
-            # 其他類型 (2,4,5,6) → OCR + Ollama
-            ocr_ai_logic(image_path, ticket_id, invoice_type)
+            print(f"OCR Server 連線失敗，狀態碼: {response.status_code}")
+            return None
 
+    except requests.exceptions.RequestException as e:
+        print(f"OCR 連線例外錯誤 (請確認本地 Server 是否開啟): {e}")
+        return None
+
+    # ---------------------------------------------------------
+    # Step 2: 準備資料 (OCR 結果 + 會計科目)
+    # ---------------------------------------------------------
+    if not ocr_result_data:
+        print("錯誤: OCR 處理失敗或無內容，中止後續 n8n 請求")
+        return None
+
+    try:
+        ocr_html = json.dumps(ocr_result_data, ensure_ascii=False)
+
+        # 讀取會計科目清單
+        accounting_items = load_accounting_items()
+
+        payload = {
+            "ocr_html": ocr_html,
+            "accounting_items": accounting_items,
+            "ticket_id": ticket_id,
+            "invoice_type": invoice_type,
+        }
+
+        # ---------------------------------------------------------
+        # Step 3: 發送 POST 請求給 n8n
+        # ---------------------------------------------------------
+        print(f"正在發送資料給 n8n ({N8N_URL})...", flush=True)
+
+        # timeout 建議設長一點，因為 n8n 後面的 LLM 可能跑很久
+        response = requests.post(N8N_URL, json=payload, timeout=120)
+
+        # 檢查 HTTP 狀態碼是否為 200-299
+        response.raise_for_status()
+
+        print("n8n 處理完成，已接收回傳資料。")
+
+        return None
+
+    except requests.exceptions.Timeout:
+        print("錯誤: n8n 處理逾時 (LLM Timeout)")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"錯誤: 無法連線到 n8n Webhook: {e}")
+        if e.response is not None:
+            print(f"n8n 回應內容: {e.response.text}")
+        return None
     except Exception as e:
-        print(f"[invoice_parser 錯誤] ticket_id={ticket_id}, file={filename}: {e}", flush=True)
-        save_error(ticket_id)
+        print(f"發生未預期錯誤: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 
 HEX_CHARS = set("0123456789abcdefABCDEF")
@@ -293,14 +374,11 @@ def extract_qrcodes(image_path: str, debug: bool = False):
 
 # ---------------- 左碼解析 ---------------- #
 def parse_amount_8(val: str) -> int | None:
-    if val.isdigit():
-        return int(val)
     try:
-        return int(val, 16)  # fallback：十六進位
+        return int(val, 16)
     except ValueError:
         print(f"[警告] 左碼金額格式無法解析: {val}")
-        return None
-
+        return 0
 def parse_left_qrcode(left_data: str) -> dict:
     if len(left_data) < 77:
         raise ValueError(f"左碼長度不足 77 碼: {left_data}")
@@ -402,6 +480,8 @@ def qrcode_decoder_logic(image_path, ticket_id, invoice_type, debug=False):
                 invoice_type,
                 {
                     "invoice_number": result.get("invoice_number"),
+                    "seller_id": result.get("seller_id"),
+                    "buyer_id": result.get("buyer_id"),
                     "date": result.get("date"),
                     "total_money": total_money,
                 },
@@ -412,4 +492,35 @@ def qrcode_decoder_logic(image_path, ticket_id, invoice_type, debug=False):
 
     except Exception as e:
         print("解析錯誤:", e)
+        save_error(ticket_id)
+
+
+def invoice_parser(filename: str, ticket_id: int):
+    """
+    背景任務：票據解析流程
+    - filename: 上傳檔案名稱
+    - ticket_id: DB 建立的 ticket 主鍵
+    """
+    try:
+        # 圖片路徑
+        image_path = BASE_DIR / INVOICE_UPLOAD_FOLDER / filename
+        # 1. 用 SNN 判斷類型
+        invoice_type = snn_logic(image_path)
+        print(invoice_type)
+
+        # 2. 流程分支
+        if invoice_type == 0:
+            print(f"[辨識失敗] ticket_id={ticket_id} file={filename}")
+            save_error(ticket_id)
+            return
+
+        if invoice_type == 3:
+            # 電子發票 → QRCode 解析
+            qrcode_decoder_logic(image_path, ticket_id, invoice_type)
+        else:
+            # 其他類型 (2,4,5,6) → OCR + Ollama
+            ocr_ai_logic(image_path, ticket_id, invoice_type)
+
+    except Exception as e:
+        print(f"[invoice_parser 錯誤] ticket_id={ticket_id}, file={filename}: {e}", flush=True)
         save_error(ticket_id)

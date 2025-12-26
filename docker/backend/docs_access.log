@@ -920,3 +920,158 @@ INFO:matplotlib.font_manager:generated new fontManager
 INFO:matplotlib.font_manager:generated new fontManager
 INFO:matplotlib.font_manager:generated new fontManager
 INFO:matplotlib.font_manager:generated new fontManager
+ERROR:sqlalchemy.pool.impl.QueuePool:Exception during reset or similar
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 813, in _write_bytes
+    self._sock.sendall(data)
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 985, in _finalize_fairy
+    fairy._reset(
+  File "/opt/venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1433, in _reset
+    pool._dialect.do_rollback(self)
+  File "/opt/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 711, in do_rollback
+    dbapi_connection.rollback()
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 504, in rollback
+    self._execute_command(COMMAND.COM_QUERY, "ROLLBACK")
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 865, in _execute_command
+    self._write_bytes(packet)
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 816, in _write_bytes
+    raise err.OperationalError(
+pymysql.err.OperationalError: (2006, "MySQL server has gone away (BrokenPipeError(32, 'Broken pipe'))")
+ERROR:sqlalchemy.pool.impl.QueuePool:Exception during reset or similar
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 813, in _write_bytes
+    self._sock.sendall(data)
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 985, in _finalize_fairy
+    fairy._reset(
+  File "/opt/venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1433, in _reset
+    pool._dialect.do_rollback(self)
+  File "/opt/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 711, in do_rollback
+    dbapi_connection.rollback()
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 504, in rollback
+    self._execute_command(COMMAND.COM_QUERY, "ROLLBACK")
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 865, in _execute_command
+    self._write_bytes(packet)
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 816, in _write_bytes
+    raise err.OperationalError(
+pymysql.err.OperationalError: (2006, "MySQL server has gone away (BrokenPipeError(32, 'Broken pipe'))")
+ERROR:sqlalchemy.pool.impl.QueuePool:Exception during reset or similar
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 813, in _write_bytes
+    self._sock.sendall(data)
+BrokenPipeError: [Errno 32] Broken pipe
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 985, in _finalize_fairy
+    fairy._reset(
+  File "/opt/venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1433, in _reset
+    pool._dialect.do_rollback(self)
+  File "/opt/venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 711, in do_rollback
+    dbapi_connection.rollback()
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 504, in rollback
+    self._execute_command(COMMAND.COM_QUERY, "ROLLBACK")
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 865, in _execute_command
+    self._write_bytes(packet)
+  File "/opt/venv/lib/python3.10/site-packages/pymysql/connections.py", line 816, in _write_bytes
+    raise err.OperationalError(
+pymysql.err.OperationalError: (2006, "MySQL server has gone away (BrokenPipeError(32, 'Broken pipe'))")
+INFO:matplotlib.font_manager:generated new fontManager
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:matplotlib.font_manager:generated new fontManager
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:matplotlib.font_manager:generated new fontManager
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:matplotlib.font_manager:generated new fontManager
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:urls.bot_router:[LINE BOT] Callback received.
+INFO:matplotlib.font_manager:generated new fontManager
+INFO:matplotlib.font_manager:generated new fontManager
+INFO:matplotlib.font_manager:generated new fontManager
+INFO:matplotlib.font_manager:generated new fontManager
+INFO:matplotlib.font_manager:generated new fontManager
+INFO:matplotlib.font_manager:generated new fontManager
